@@ -72,6 +72,20 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     flex-shrink: 0; /* 防止被挤压变形 */
+    position: relative;
+    z-index: 1;
+}
+
+/* 圆形搜索框展开状态 - 未输入状态 */
+.search-box-circle.expanded {
+    width: 150px; /* 与中间搜索框的默认宽度相同 */
+    border-radius: 30px;
+    z-index: 2;
+}
+
+/* 圆形搜索框展开状态 - 输入状态 */
+.search-box-circle.expanded.input-active {
+    width: 300px; /* 与中间搜索框的展开宽度相同 */
 }
 
 
@@ -91,6 +105,73 @@ body {
 .search-box-circle .search-icon {
     width: 20px;
     height: 20px;
+    transition: opacity 0.3s ease;
+}
+
+/* 展开的圆形搜索框内的输入框样式 */
+.search-box-circle .circle-search-input {
+    position: absolute;
+    left: 45px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: calc(100% - 105px);
+    height: 36px;
+    padding: 0 40px 0 0;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    outline: none;
+    color: #333;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    user-select: text;
+}
+
+/* 展开状态显示输入框 */
+.search-box-circle.expanded .circle-search-input {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 展开的圆形搜索框内的搜索按钮样式 */
+.search-box-circle .circle-search-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    color: #4CAF50;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+/* 输入状态显示搜索按钮 */
+.search-box-circle.expanded.input-active .circle-search-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.search-box-circle .circle-search-btn:hover {
+    background: rgba(76, 175, 80, 0.2);
+    color: #45a049;
+}
+
+/* 展开状态下隐藏原始搜索图标 */
+.search-box-circle.expanded .search-circle-content {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .search-box-center {

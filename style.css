@@ -52,9 +52,10 @@ body {
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 800px;
+    max-width: 1000px; /* 增加最大宽度以确保有足够的空间 */
     margin: 0 auto;
     position: relative;
+    overflow: visible; /* 确保展开效果可见 */
 }
 
 .search-box-circle {
@@ -67,10 +68,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 10px;
+    margin: 0 5px; /* 减少圆形搜索框的边距以适应更多元素 */
     cursor: pointer;
     transition: all 0.3s ease;
+    flex-shrink: 0; /* 防止被挤压变形 */
 }
+
+
 
 .search-box-circle:hover {
     background: rgba(255, 255, 255, 0.7);
@@ -91,18 +95,24 @@ body {
 
 .search-box-center {
     margin: 0 10px;
+    flex: 0 0 auto; /* 防止居中搜索框被挤压 */
+    position: relative; /* 添加相对定位 */
+    z-index: 1; /* 确保中间搜索框在展开时位于其他元素之上 */
+    align-self: center; /* 确保垂直居中 */
 }
 
 .search-container-shortened {
     position: relative;
-    width: 150px; /* 默认宽度为原来的一半 (300px的一半) */
+    width: 150px; /* 默认宽度为原来的一 half (300px的一 half) */
     max-width: 300px; /* 缩短的搜索框 */
     margin: 0 auto;
     transition: width 0.3s ease;
+    overflow: visible; /* 确保展开时内容可见 */
 }
 
 .search-container-shortened.expanded {
     width: 300px; /* 聚焦时扩展容器宽度 */
+    z-index: 2; /* 确保展开后的搜索框在其他元素之上 */
 }
 
 #search-input {
@@ -270,6 +280,25 @@ body {
     
     .container {
         top: -150px; /* 移动端搜索框位置调整 */
+    }
+    
+    .search-boxes-container {
+        flex-wrap: wrap; /* 在小屏幕上允许换行 */
+        max-width: 100%;
+        gap: 10px; /* 添加元素间距 */
+    }
+    
+    .search-box-circle {
+        margin: 5px; /* 移动端圆形搜索框边距调整 */
+    }
+    
+    .search-container-shortened {
+        width: 100%; /* 移动端展开搜索框占满宽度 */
+        max-width: 100%;
+    }
+    
+    .search-container-shortened.expanded {
+        width: 100%; /* 移动端展开搜索框占满宽度 */
     }
     
     .menu-items {

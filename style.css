@@ -93,7 +93,6 @@ body {
 .search-box-circle:hover {
     background: rgba(255, 255, 255, 0.7);
     border-color: #4CAF50;
-    transform: scale(1.1);
 }
 
 .search-circle-content {

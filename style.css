@@ -173,8 +173,8 @@ body {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     z-index: 1;
     border-radius: 3px; /* 让favicon图标更美观 */
     opacity: 1 !important; /* 确保必应图标始终显示 */

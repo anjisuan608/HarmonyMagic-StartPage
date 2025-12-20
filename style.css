@@ -47,10 +47,56 @@ body {
     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
-.search-container {
+.search-boxes-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.search-box-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-box-circle:hover {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: #4CAF50;
+    transform: scale(1.1);
+}
+
+.search-circle-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-box-circle .search-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.search-box-center {
+    margin: 0 10px;
+}
+
+.search-container-shortened {
     position: relative;
     width: 100%;
-    max-width: 600px;
+    max-width: 300px; /* 缩短的搜索框 */
     margin: 0 auto;
 }
 
@@ -153,7 +199,7 @@ body {
     z-index: 3001 !important; /* 确保在快捷访问打开时时间日期显示在最顶层 */
 }
 
-.context-menu.active .search-box {
+.context-menu.active .search-boxes-container {
     opacity: 0;
     visibility: hidden; /* 打开快捷访问时隐藏搜索框 */
 }

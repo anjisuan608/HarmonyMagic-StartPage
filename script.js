@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         // 隐藏搜索框部分，但保留时间日期
-        const searchBox = document.querySelector('.search-box');
+        const searchBox = document.querySelector('.search-boxes-container');
         searchBox.style.opacity = '0';
         searchBox.style.visibility = 'hidden';
         
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     contextMenu.addEventListener('click', function() {
         contextMenu.classList.remove('active');
         // 重新显示搜索框
-        const searchBox = document.querySelector('.search-box');
+        const searchBox = document.querySelector('.search-boxes-container');
         searchBox.style.opacity = '1';
         searchBox.style.visibility = 'visible';
     });

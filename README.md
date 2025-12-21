@@ -69,16 +69,6 @@ HarmonyMagic/
 ├── images/        # 图片资源
 └── README.md      # 项目说明
 ```
-## 项目结构
-
-```
-HarmonyMagic/
-├── index.html     # 主页面
-├── style.css      # 样式文件
-├── script.js      # JavaScript逻辑
-├── images/        # 图片资源
-└── README.md      # 项目说明
-```
 
 ## 部署指南
 

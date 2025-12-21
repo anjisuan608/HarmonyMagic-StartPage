@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取所有圆形搜索框
     const circleSearchBoxes = document.querySelectorAll('.search-box-circle');
     
-    // 设置默认搜索引擎为必应
+    // 设置默认搜索引擎为必应（用于中心搜索框和作为后备）
     let currentEngine = 'bing';
     
     // 当前展开的搜索框
@@ -197,18 +197,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const query = input.value.trim();
         if (query) {
             let searchUrl = '';
-            switch(currentEngine) {
-                case 'google':
-                    searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-                    break;
-                case 'baidu':
-                    searchUrl = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`;
-                    break;
-                case 'bing':
-                    searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-                    break;
-                default:
-                    searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+            
+            // 根据搜索框的类名确定搜索引擎
+            if (box.classList.contains('left-circle-1')) {
+                // 百度
+                searchUrl = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`;
+            } else if (box.classList.contains('left-circle-2')) {
+                // 搜狗
+                searchUrl = `https://www.sogou.com/web?query=${encodeURIComponent(query)}`;
+            } else if (box.classList.contains('left-circle-3')) {
+                // 360搜索
+                searchUrl = `https://www.so.com/s?q=${encodeURIComponent(query)}`;
+            } else if (box.classList.contains('right-circle-1')) {
+                // Google
+                searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            } else if (box.classList.contains('right-circle-2')) {
+                // duckduckgo
+                searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+            } else if (box.classList.contains('right-circle-3')) {
+                // MC百科
+                searchUrl = `https://search.mcmod.cn/s?key=${encodeURIComponent(query)}`;
+            } else {
+                // 默认使用必应
+                searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
             }
             
             window.location.href = searchUrl;
@@ -346,20 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function performSearch() {
         const query = searchInput.value.trim();
         if (query) {
-            let searchUrl = '';
-            switch(currentEngine) {
-                case 'google':
-                    searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-                    break;
-                case 'baidu':
-                    searchUrl = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`;
-                    break;
-                case 'bing':
-                    searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-                    break;
-                default:
-                    searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-            }
+            // 主搜索框使用必应
+            let searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
             
             window.location.href = searchUrl;
         }
@@ -380,6 +379,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             case 'bing':
                 searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+                break;
+            case 'sogou':
+                searchUrl = `https://www.sogou.com/web?query=${encodeURIComponent(query)}`;
+                break;
+            case 'so':
+                searchUrl = `https://www.so.com/s?q=${encodeURIComponent(query)}`;
+                break;
+            case 'duckduckgo':
+                searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+                break;
+            case 'mcm':
+                searchUrl = `https://search.mcmod.cn/s?key=${encodeURIComponent(query)}`;
                 break;
             default:
                 searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;

@@ -426,7 +426,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 右键菜单功能 - 快捷访问
-    const menuItems = document.querySelectorAll('.menu-item');
     
     // 显示右键菜单（快捷访问）
     document.addEventListener('contextmenu', function(e) {
@@ -446,7 +445,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // 显示菜单
         contextMenu.classList.add('active');
         
-        // 为菜单项添加点击事件
+        // 为菜单项添加点击事件（重新获取菜单项以确保包含所有动态添加的项）
+        const menuItems = document.querySelectorAll('.menu-item');
         menuItems.forEach(item => {
             const url = item.getAttribute('data-url');
             item.onclick = function() {
@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const customBookmarks = JSON.parse(localStorage.getItem('customBookmarks')) || [];
         
         // 清空自定义书签（保留固定的）
-        const fixedItems = Array.from(menuItemsContainer.children).slice(0, 24); // 前24个是固定的
+        const fixedItems = Array.from(menuItemsContainer.children); // 获取所有现有项目，包括我们新添加的
         menuItemsContainer.innerHTML = '';
         
         // 添加固定书签

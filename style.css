@@ -110,12 +110,12 @@ body {
 /* 展开的圆形搜索框内的输入框样式 */
 .search-box-circle .circle-search-input {
     position: absolute;
-    left: 45px;
+    left: 18px; /* 图标位置(12px) + 6px间距 */
     top: 50%;
     transform: translateY(-50%);
-    width: calc(100% - 105px);
+    width: calc(100% - 54px); /* 总宽度减去左边距(18px)和右边距(36px) */
     height: 36px;
-    padding: 0 40px 0 45px; /* 左侧添加内边距以给图标留出空间 */
+    padding: 0 3px 0 3px; /* 左右各添加3px内边距以给文字留出空间 */
     border: none;
     background: transparent;
     font-size: 1rem;
@@ -240,14 +240,16 @@ body {
 
 /* 展开状态显示输入框 */
 .search-container-shortened.expanded #search-input {
-    width: calc(100% - 105px);
-    padding: 0 40px 0 45px;
+    position: absolute;
+    left: 18px; /* 图标位置(12px) + 6px间距 */
+    width: calc(100% - 54px); /* 总宽度减去左边距(18px)和右边距(36px) */
+    padding: 0 3px 0 3px; /* 左右各添加3px内边距以给文字留出空间 */
     border-radius: 30px;
     border: none;
     background: transparent;
     opacity: 1;
     visibility: visible;
-    text-align: center;
+    text-align: center; /* 文字居中对齐 */
 }
 
 #search-input:focus {

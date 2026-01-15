@@ -407,46 +407,119 @@ body {
     #time {
         font-size: 2.3rem;
     }
-    
+
     #date {
-        font-size: 1rem; /* 移动端日期字体调整 */
+        font-size: 1rem;
     }
-    
+
     .container {
-        top: -150px; /* 移动端搜索框位置调整 */
+        top: -150px;
     }
-    
+
+    /* 移动端搜索框容器 - 默认横向排列 */
     .search-boxes-container {
-        flex-wrap: wrap; /* 在小屏幕上允许换行 */
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
         max-width: 100%;
-        gap: 10px; /* 添加元素间距 */
+        gap: 5px;
     }
-    
+
+    /* 默认布局：横向排列 */
     .search-box-circle {
-        margin: 5px; /* 移动端圆形搜索框边距调整 */
+        margin: 3px;
+        flex-shrink: 0;
     }
-    
+
     .search-container-shortened {
-        width: 100%; /* 移动端展开搜索框占满宽度 */
-        max-width: 100%;
+        width: 50px;
+        min-width: 50px;
     }
-    
+
     .search-container-shortened.expanded {
-        width: 100%; /* 移动端展开搜索框占满宽度 */
+        width: 220px;
+        min-width: 180px;
     }
-    
+
+    .search-container-shortened.expanded.input-active {
+        width: 280px;
+        min-width: 240px;
+    }
+
+    /* 搜索框展开时的3排布局 - 使用flex-wrap实现真正的三排 */
+    .search-boxes-container.left-expanded,
+    .search-boxes-container.center-expanded,
+    .search-boxes-container.right-expanded {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-content: flex-start !important;
+        justify-content: center !important;
+        height: 300px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 8px !important;
+        padding: 10px 0 !important;
+    }
+
+    /* 第一排：左边三个球形搜索框（自动排列在第一行） */
+    .search-boxes-container.left-expanded .search-box-circle.left-circle-1,
+    .search-boxes-container.left-expanded .search-box-circle.left-circle-2,
+    .search-boxes-container.left-expanded .search-box-circle.left-circle-3,
+    .search-boxes-container.center-expanded .search-box-circle.left-circle-1,
+    .search-boxes-container.center-expanded .search-box-circle.left-circle-2,
+    .search-boxes-container.center-expanded .search-box-circle.left-circle-3,
+    .search-boxes-container.right-expanded .search-box-circle.left-circle-1,
+    .search-boxes-container.right-expanded .search-box-circle.left-circle-2,
+    .search-boxes-container.right-expanded .search-box-circle.left-circle-3 {
+        width: 50px;
+        height: 50px;
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    /* 第二排：中间的搜索框（占满一行，展开显示） */
+    .search-boxes-container.left-expanded .center-0,
+    .search-boxes-container.center-expanded .center-0,
+    .search-boxes-container.right-expanded .center-0 {
+        width: 100% !important;
+        max-width: 320px;
+        height: 50px;
+        order: 2;
+        flex-shrink: 0;
+    }
+
+    /* 第三排：右边三个球形搜索框（自动排列在第三行） */
+    .search-boxes-container.left-expanded .search-box-circle.right-circle-1,
+    .search-boxes-container.left-expanded .search-box-circle.right-circle-2,
+    .search-boxes-container.left-expanded .search-box-circle.right-circle-3,
+    .search-boxes-container.center-expanded .search-box-circle.right-circle-1,
+    .search-boxes-container.center-expanded .search-box-circle.right-circle-2,
+    .search-boxes-container.center-expanded .search-box-circle.right-circle-3,
+    .search-boxes-container.right-expanded .search-box-circle.right-circle-1,
+    .search-boxes-container.right-expanded .search-box-circle.right-circle-2,
+    .search-boxes-container.right-expanded .search-box-circle.right-circle-3 {
+        width: 50px;
+        height: 50px;
+        flex-shrink: 0;
+        order: 3;
+        margin: 0;
+    }
+
     .menu-items {
-        grid-template-columns: repeat(3, 1fr); /* 移动端为3列，行数自适应 */
-        grid-template-rows: auto; /* 移动端行数自适应 */
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: auto;
         max-width: 95%;
     }
-    
+
     .menu-item {
         min-width: 60px;
         padding: 10px 5px;
         font-size: 0.8rem;
     }
-    
+
     .menu-icon, .menu-item img {
         width: 20px;
         height: 20px;

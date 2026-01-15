@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
             }
             
-            window.location.href = searchUrl;
+            window.open(searchUrl, '_blank');
         }
     }
     

@@ -269,35 +269,33 @@ document.addEventListener('DOMContentLoaded', function() {
     function performCircleSearch(box) {
         const input = box.querySelector('.circle-search-input');
         const query = input.value.trim();
-        if (query) {
-            let searchUrl = '';
-            
-            // 根据搜索框的类名确定搜索引擎
-            if (box.classList.contains('left-circle-1')) {
-                // 百度
-                searchUrl = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`;
-            } else if (box.classList.contains('left-circle-2')) {
-                // 搜狗
-                searchUrl = `https://www.sogou.com/web?query=${encodeURIComponent(query)}`;
-            } else if (box.classList.contains('left-circle-3')) {
-                // 360搜索
-                searchUrl = `https://www.so.com/s?q=${encodeURIComponent(query)}`;
-            } else if (box.classList.contains('right-circle-1')) {
-                // Google
-                searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-            } else if (box.classList.contains('right-circle-2')) {
-                // duckduckgo
-                searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
-            } else if (box.classList.contains('right-circle-3')) {
-                // MC百科
-                searchUrl = `https://search.mcmod.cn/s?key=${encodeURIComponent(query)}`;
-            } else {
-                // 默认使用必应
-                searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-            }
-            
-            window.location.href = searchUrl;
+        let searchUrl = '';
+
+        // 根据搜索框的类名确定搜索引擎
+        if (box.classList.contains('left-circle-1')) {
+            // 百度
+            searchUrl = query ? `https://www.baidu.com/s?wd=${encodeURIComponent(query)}` : 'https://www.baidu.com';
+        } else if (box.classList.contains('left-circle-2')) {
+            // 搜狗
+            searchUrl = query ? `https://www.sogou.com/web?query=${encodeURIComponent(query)}` : 'https://www.sogou.com';
+        } else if (box.classList.contains('left-circle-3')) {
+            // 360搜索
+            searchUrl = query ? `https://www.so.com/s?q=${encodeURIComponent(query)}` : 'https://www.so.com';
+        } else if (box.classList.contains('right-circle-1')) {
+            // Google
+            searchUrl = query ? `https://www.google.com/search?q=${encodeURIComponent(query)}` : 'https://www.google.com';
+        } else if (box.classList.contains('right-circle-2')) {
+            // duckduckgo
+            searchUrl = query ? `https://duckduckgo.com/?q=${encodeURIComponent(query)}` : 'https://duckduckgo.com';
+        } else if (box.classList.contains('right-circle-3')) {
+            // MC百科
+            searchUrl = query ? `https://search.mcmod.cn/s?key=${encodeURIComponent(query)}` : 'https://search.mcmod.cn';
+        } else {
+            // 默认使用必应
+            searchUrl = query ? `https://www.bing.com/search?q=${encodeURIComponent(query)}` : 'https://www.bing.com';
         }
+
+        window.open(searchUrl, '_blank');
     }
     
     // 展开中间搜索框

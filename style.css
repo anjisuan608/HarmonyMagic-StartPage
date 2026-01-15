@@ -407,46 +407,58 @@ body {
     #time {
         font-size: 2.3rem;
     }
-    
+
     #date {
         font-size: 1rem; /* 移动端日期字体调整 */
     }
-    
+
     .container {
         top: -150px; /* 移动端搜索框位置调整 */
     }
-    
+
     .search-boxes-container {
-        flex-wrap: wrap; /* 在小屏幕上允许换行 */
+        flex-wrap: nowrap; /* 禁止换行 */
         max-width: 100%;
-        gap: 10px; /* 添加元素间距 */
+        gap: 5px; /* 减少元素间距 */
     }
-    
+
     .search-box-circle {
-        margin: 5px; /* 移动端圆形搜索框边距调整 */
+        margin: 3px; /* 移动端圆形搜索框边距调整 */
+        flex-shrink: 0; /* 禁止收缩 */
     }
-    
+
+    .search-box-center {
+        flex: 0 0 auto; /* 禁止收缩 */
+        min-width: 50px; /* 确保最小宽度 */
+    }
+
     .search-container-shortened {
-        width: 100%; /* 移动端展开搜索框占满宽度 */
-        max-width: 100%;
+        width: 50px; /* 移动端默认圆形状态 */
+        min-width: 50px; /* 确保最小宽度不被挤压 */
     }
-    
+
     .search-container-shortened.expanded {
-        width: 100%; /* 移动端展开搜索框占满宽度 */
+        width: 200px; /* 移动端展开宽度，不再100% */
+        min-width: 150px; /* 确保展开时不被挤压 */
     }
-    
+
+    .search-container-shortened.expanded.input-active {
+        width: 250px; /* 移动端输入展开宽度 */
+        min-width: 200px; /* 确保输入展开时不被挤压 */
+    }
+
     .menu-items {
         grid-template-columns: repeat(3, 1fr); /* 移动端为3列，行数自适应 */
         grid-template-rows: auto; /* 移动端行数自适应 */
         max-width: 95%;
     }
-    
+
     .menu-item {
         min-width: 60px;
         padding: 10px 5px;
         font-size: 0.8rem;
     }
-    
+
     .menu-icon, .menu-item img {
         width: 20px;
         height: 20px;

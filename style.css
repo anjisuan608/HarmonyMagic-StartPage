@@ -532,3 +532,34 @@ body {
         font-size: 1.2rem;
     }
 }
+
+/* 页脚版权信息样式 */
+.footer-copyright {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.footer-text {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 15px;
+    padding: 4px 20px;
+    text-align: center;
+    font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
+    cursor: default;
+    transition: all 0.3s ease;
+}
+
+.footer-text:hover {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: #4CAF50;
+}

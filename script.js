@@ -65,11 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 点击圆形搜索框展开
         box.addEventListener('click', function(e) {
-            // 如果点击的是输入框或按钮，不触发展开/收缩逻辑
-            if (e.target === circleInput || e.target === circleBtn || circleBtn.contains(e.target)) {
-                return;
-            }
-
             // 如果当前已经有展开的搜索框且不是当前点击的，则先关闭它
             if (currentExpandedBox && currentExpandedBox !== box) {
                 collapseSearchBox(currentExpandedBox);

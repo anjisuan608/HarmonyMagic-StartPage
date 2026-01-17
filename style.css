@@ -17,11 +17,13 @@ body {
     background-size: cover;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     color: #333;
     transition: background 0.5s ease;
     overflow: hidden;
+    padding-top: 100px; /* 增加顶部padding让内容下移 */
 }
 
 /* 暗角滤镜效果 - 顶部和底部暗边 */
@@ -43,13 +45,21 @@ body::after {
     z-index: 0;
 }
 
-.container {
+.time-date {
     width: 90%;
     max-width: 600px;
     text-align: center;
     z-index: 10;
     position: relative;
-    top: -280px; /* 向上移动时间和搜索框位置 */
+    margin-bottom: 0 auto; /* 时间与搜索框之间的间距 */
+}
+
+.search-box {
+    width: 90%;
+    max-width: 1000px;
+    text-align: center;
+    z-index: 10;
+    position: relative;
 }
 
 .time-display {

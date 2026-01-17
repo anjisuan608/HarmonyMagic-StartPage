@@ -163,8 +163,8 @@ body {
     transition: all 0.3s ease;
 }
 
-/* 输入状态显示搜索按钮 */
-.search-box-circle.expanded.input-active .circle-search-btn {
+/* 展开状态始终显示搜索按钮 */
+.search-box-circle.expanded .circle-search-btn {
     opacity: 1;
     visibility: visible;
 }

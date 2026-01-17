@@ -275,6 +275,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         window.open(searchUrl, '_blank');
+
+        // 搜索发起后清空输入框内容
+        input.value = '';
+        box.classList.remove('input-active');
     }
     
     // 展开中间搜索框

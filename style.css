@@ -5,6 +5,12 @@
     user-select: none; /* 禁止拖拽选择 */
 }
 
+html, body {
+    touch-action: none; /* 禁止触摸操作 */
+    overscroll-behavior: none; /* 禁止橡皮筋滚动 */
+    -webkit-overflow-scrolling: none; /* 禁用iOS弹性滚动 */
+}
+
 body {
     font-family: inherit;
     background: url('https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg') no-repeat center center fixed;

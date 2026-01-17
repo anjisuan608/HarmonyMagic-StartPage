@@ -1,7 +1,8 @@
 // 主应用
 document.addEventListener('DOMContentLoaded', function() {
     const searchIcon = document.querySelector('.search-icon');
-    const container = document.querySelector('.container');
+    const timeDate = document.querySelector('.time-date');
+    const searchBox = document.querySelector('.search-box');
     const contextMenu = document.getElementById('context-menu');
     const searchBoxesContainer = document.querySelector('.search-boxes-container');
 
@@ -31,6 +32,197 @@ document.addEventListener('DOMContentLoaded', function() {
         return window.innerWidth <= 768;
     }
 
+    // 检测并处理遮挡逻辑：时间日期被搜索框遮挡时隐藏
+    function handleOcclusion() {
+        const timeDisplay = document.querySelector('.time-display');
+        const dateDisplay = document.querySelector('.date-display');
+        const searchBoxEl = document.querySelector('.search-box');
+
+        if (!timeDisplay || !dateDisplay || !searchBoxEl) return;
+
+        const timeRect = timeDisplay.getBoundingClientRect();
+        const dateRect = dateDisplay.getBoundingClientRect();
+        const searchRect = searchBoxEl.getBoundingClientRect();
+
+        // 检测日期是否被搜索框遮挡
+        const dateHidden = dateRect.bottom > searchRect.top;
+        // 检测时间是否被搜索框遮挡
+        const timeHidden = timeRect.bottom > searchRect.top;
+
+        if (dateHidden) {
+            dateDisplay.style.visibility = 'hidden';
+            dateDisplay.style.position = 'absolute';
+        } else {
+            dateDisplay.style.visibility = '';
+            dateDisplay.style.position = '';
+        }
+
+        if (timeHidden) {
+            timeDisplay.style.visibility = 'hidden';
+            timeDisplay.style.position = 'absolute';
+        } else {
+            timeDisplay.style.visibility = '';
+            timeDisplay.style.position = '';
+        }
+    }
+
+    // 恢复被隐藏的日期和时间
+    function restoreDateTime() {
+        const timeDisplay = document.querySelector('.time-display');
+        const dateDisplay = document.querySelector('.date-display');
+
+        if (timeDisplay) {
+            timeDisplay.style.visibility = '';
+            timeDisplay.style.position = '';
+        }
+        if (dateDisplay) {
+            dateDisplay.style.visibility = '';
+            dateDisplay.style.position = '';
+        }
+    }
+
+    // 移动端：设置容器位置
+    function setMobileContainerPosition() {
+        if (isMobile()) {
+            // 手机端：需要自适应输入法
+            const viewportHeight = window.innerHeight;
+            const timeDisplay = document.querySelector('.time-display');
+            const dateDisplay = document.querySelector('.date-display');
+            const searchBoxesContainer = document.querySelector('.search-boxes-container');
+
+            const timeHeight = timeDisplay.offsetHeight + (dateDisplay ? dateDisplay.offsetHeight : 0);
+            const searchHeight = searchBoxesContainer.offsetHeight;
+
+            // 检查是否有输入法键盘弹出
+            const isKeyboardOpen = viewportHeight < window.visualViewport?.height || window.innerHeight < screen.height * 0.6;
+
+            if (isKeyboardOpen) {
+                // 输入法弹出时，将时间日期上移到顶端
+                timeDate.style.position = 'absolute';
+                timeDate.style.top = '20px';
+                timeDate.style.left = '50%';
+                timeDate.style.transform = 'translateX(-50%)';
+                timeDate.style.marginBottom = '0';
+
+                searchBox.style.position = 'absolute';
+                searchBox.style.top = `${timeHeight + 40}px`;
+                searchBox.style.left = '50%';
+                searchBox.style.transform = 'translateX(-50%)';
+
+                // 检测遮挡并处理
+                setTimeout(() => handleOcclusion(), 100);
+            } else {
+                // 正常状态，居中显示
+                timeDate.style.position = 'relative';
+                timeDate.style.top = '';
+                timeDate.style.left = '';
+                timeDate.style.transform = '';
+                timeDate.style.marginBottom = '40px';
+
+                searchBox.style.position = 'relative';
+                searchBox.style.top = '';
+                searchBox.style.left = '';
+                searchBox.style.transform = '';
+
+                // 恢复日期和时间显示
+                restoreDateTime();
+            }
+        } else if (isTablet()) {
+            // 平板端：使用更大的布局，不使用绝对定位（输入法情况除外）
+            const viewportHeight = window.innerHeight;
+            const isKeyboardOpen = viewportHeight < (window.visualViewport?.height || Infinity) || 
+                                    viewportHeight < window.screen.height * 0.5;
+
+            if (isKeyboardOpen) {
+                // 输入法弹出时上移
+                timeDate.style.position = 'absolute';
+                timeDate.style.top = '30px';
+                timeDate.style.left = '50%';
+                timeDate.style.transform = 'translateX(-50%)';
+                timeDate.style.marginBottom = '0';
+
+                searchBox.style.position = 'absolute';
+                searchBox.style.top = '';
+                searchBox.style.bottom = '';
+                searchBox.style.left = '50%';
+                searchBox.style.transform = 'translateX(-50%)';
+
+                // 检测遮挡并处理
+                setTimeout(() => handleOcclusion(), 100);
+            } else {
+                // 正常状态
+                timeDate.style.position = 'relative';
+                timeDate.style.top = '';
+                timeDate.style.left = '';
+                timeDate.style.transform = '';
+                timeDate.style.marginBottom = '60px';
+
+                searchBox.style.position = 'relative';
+                searchBox.style.top = '';
+                searchBox.style.left = '';
+                searchBox.style.transform = '';
+
+                // 恢复日期和时间显示
+                restoreDateTime();
+            }
+        } else {
+            // 桌面端和大屏平板：使用输入法自适应
+            setDesktopInputMethodPosition();
+        }
+    }
+
+    // 监听输入框焦点事件，处理输入法弹出
+    function setupInputMethodHandlers() {
+        const allInputs = document.querySelectorAll('input[type="text"]');
+
+        allInputs.forEach(input => {
+            // 输入框聚焦时（输入法弹出）
+            input.addEventListener('focus', function() {
+                setTimeout(() => {
+                    if (isMobile()) {
+                        setMobileContainerPosition();
+                    } else {
+                        setDesktopInputMethodPosition();
+                    }
+                }, 300);
+            });
+
+            // 输入框失焦时（输入法收起）
+            input.addEventListener('blur', function() {
+                setTimeout(() => {
+                    if (isMobile()) {
+                        setMobileContainerPosition();
+                    } else {
+                        // 桌面端直接还原页面位置
+                        resetPagePosition();
+                    }
+                }, 100);
+            });
+        });
+    }
+
+    // 监听视口变化（输入法弹出/收起）
+    function setupViewportHandler() {
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', function() {
+                if (isMobile()) {
+                    setMobileContainerPosition();
+                } else {
+                    setDesktopInputMethodPosition();
+                }
+            });
+        }
+
+        // 备用方案：监听window resize
+        window.addEventListener('resize', function() {
+            if (isMobile()) {
+                setMobileContainerPosition();
+            } else {
+                setDesktopInputMethodPosition();
+            }
+        });
+    }
+
     // 移动端：设置布局类
     function setMobileLayout(expandedBox) {
         if (!isMobile()) return;
@@ -50,11 +242,97 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 移动端：设置搜索框宽度
+    function setMobileSearchWidth() {
+        if (!isMobile()) return;
+
+        // 获取实际视口宽度，减去40px（左右各20px边距）
+        const viewportWidth = window.innerWidth;
+        const searchWidth = Math.min(viewportWidth - 40, 350);
+
+        // 设置CSS变量
+        document.documentElement.style.setProperty('--mobile-search-width', `${searchWidth}px`);
+    }
+
+    // 桌面端和大屏平板：输入法抬升页面
+    function setDesktopInputMethodPosition() {
+        // 仅在非手机端执行
+        if (isMobile()) return;
+
+        const viewportHeight = window.innerHeight;
+        const visualViewportHeight = window.visualViewport?.height || viewportHeight;
+
+        // 检测输入法是否弹出的更准确方法
+        // 当输入法弹出时，innerHeight 会小于 visualViewport.height（某些浏览器）
+        // 或者 innerHeight 会明显小于屏幕高度的一半
+        const isKeyboardOpen = viewportHeight < visualViewportHeight * 0.9 || 
+                                viewportHeight < window.screen.height * 0.5;
+
+        if (isKeyboardOpen) {
+            // 输入法弹出时，将时间日期上移到顶端
+            timeDate.style.position = 'absolute';
+            timeDate.style.top = '30px';
+            timeDate.style.left = '50%';
+            timeDate.style.transform = 'translateX(-50%)';
+            timeDate.style.marginBottom = '0';
+
+            // 搜索框跟随移动
+            searchBox.style.position = 'absolute';
+            searchBox.style.top = '';
+            searchBox.style.bottom = '';
+            searchBox.style.left = '50%';
+            searchBox.style.transform = 'translateX(-50%)';
+
+            // 检测遮挡并处理
+            setTimeout(() => handleOcclusion(), 100);
+        } else {
+            // 正常状态，恢复默认样式
+            timeDate.style.position = '';
+            timeDate.style.top = '';
+            timeDate.style.left = '';
+            timeDate.style.transform = '';
+            timeDate.style.marginBottom = '';
+
+            searchBox.style.position = '';
+            searchBox.style.top = '';
+            searchBox.style.bottom = '';
+            searchBox.style.left = '';
+            searchBox.style.transform = '';
+
+            // 恢复日期和时间显示
+            restoreDateTime();
+        }
+    }
+
+    // 强制还原页面位置到默认状态
+    function resetPagePosition() {
+        timeDate.style.position = '';
+        timeDate.style.top = '';
+        timeDate.style.left = '';
+        timeDate.style.transform = '';
+        timeDate.style.marginBottom = '';
+
+        searchBox.style.position = '';
+        searchBox.style.top = '';
+        searchBox.style.bottom = '';
+        searchBox.style.left = '';
+        searchBox.style.transform = '';
+
+        // 恢复日期和时间显示
+        restoreDateTime();
+    }
+
     // 窗口大小变化时处理
     window.addEventListener('resize', function() {
-        if (!isMobile()) {
-            // 恢复桌面布局
+        if (isMobile()) {
+            // 移动端自适应位置
+            setMobileContainerPosition();
+            // 重新计算搜索框宽度
+            setMobileSearchWidth();
+        } else {
+            // 桌面端和大屏平板：恢复布局类并设置输入法位置
             searchBoxesContainer.classList.remove('left-expanded', 'center-expanded', 'right-expanded');
+            setDesktopInputMethodPosition();
         }
     });
     
@@ -65,6 +343,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 点击圆形搜索框展开
         box.addEventListener('click', function(e) {
+            // 桌面端使用快速切换逻辑
+            if (!isMobile()) {
+                // 如果是同一个搜索框，直接聚焦
+                if (currentExpandedBox === box || currentUninputExpandedBox === box) {
+                    circleInput.focus();
+                    return;
+                }
+                // 快速切换到新搜索框
+                switchToBoxDesktop(box);
+                return;
+            }
+
+            // 移动端逻辑保持原样
             // 如果当前已经有展开的搜索框且不是当前点击的，则先关闭它
             if (currentExpandedBox && currentExpandedBox !== box) {
                 collapseSearchBox(currentExpandedBox);
@@ -116,6 +407,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 圆形搜索框输入框聚焦事件
         circleInput.addEventListener('focus', function() {
+            // 桌面端使用快速切换逻辑
+            if (!isMobile()) {
+                // 如果搜索框未展开，快速展开并切换
+                if (!box.classList.contains('expanded')) {
+                    switchToBoxDesktop(box);
+                } else {
+                    // 已展开则确保状态正确
+                    box.classList.add('input-active');
+                    currentExpandedBox = box;
+                    currentUninputExpandedBox = box;
+                }
+                return;
+            }
+
+            // 移动端逻辑保持原样
             // 确保当前搜索框处于正确的展开状态和布局中
             if (!box.classList.contains('expanded')) {
                 // 如果点击的是输入框且搜索框未展开，则展开它
@@ -193,21 +499,32 @@ document.addEventListener('DOMContentLoaded', function() {
         // 圆形搜索框按钮点击事件
         circleBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            
-            // 确保当前搜索框保持展开状态
-            if (!box.classList.contains('expanded')) {
-                expandSearchBox(box);
+
+            // 桌面端使用独立方法
+            if (!isMobile()) {
+                if (!box.classList.contains('expanded')) {
+                    expandSearchBoxDesktop(box);
+                } else {
+                    box.classList.add('input-active');
+                    currentExpandedBox = box;
+                    currentUninputExpandedBox = box;
+                }
+            } else {
+                // 移动端保持原有逻辑
+                // 确保当前搜索框保持展开状态
+                if (!box.classList.contains('expanded')) {
+                    expandSearchBox(box);
+                }
+                // 确保状态正确
+                box.classList.add('input-active');
+                currentExpandedBox = box;
+                currentUninputExpandedBox = box;
             }
-            
-            // 确保状态正确
-            box.classList.add('input-active');
-            currentExpandedBox = box;
-            currentUninputExpandedBox = box;
-            
+
             // 聚焦到输入框
             const input = box.querySelector('.circle-search-input');
             input.focus();
-            
+
             // 执行搜索逻辑
             const query = input.value.trim();
             let searchUrl = '';
@@ -232,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 搜索后清空输入框，但保持展开状态
             input.value = '';
             box.classList.remove('input-active');
-            
+
             // 打开搜索页面
             window.open(searchUrl, '_blank');
         });
@@ -248,7 +565,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // 展开圆形搜索框
     function expandSearchBox(box) {
         box.classList.add('expanded');
+        // 移动端直接进入输入展开状态
+        if (isMobile()) {
+            box.classList.add('input-active');
+            // 设置搜索框宽度
+            setMobileSearchWidth();
+        }
         currentUninputExpandedBox = box;
+        // 移动端重新计算位置
+        setMobileContainerPosition();
         // 聚焦到输入框
         const input = box.querySelector('.circle-search-input');
         setTimeout(() => {
@@ -262,9 +587,48 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentUninputExpandedBox === box) {
             currentUninputExpandedBox = null;
         }
+        // 移动端重新计算位置
+        setMobileContainerPosition();
         // 不再清空输入框，保留用户输入的文字
     }
-    
+
+    // 桌面端：展开圆形搜索框（不调用移动端位置计算）
+    function expandSearchBoxDesktop(box) {
+        box.classList.add('expanded');
+        box.classList.add('input-active');
+        currentUninputExpandedBox = box;
+        currentExpandedBox = box;
+        // 聚焦到输入框
+        const input = box.querySelector('.circle-search-input');
+        setTimeout(() => {
+            input.focus();
+        }, 100);
+    }
+
+    // 桌面端：收缩圆形搜索框（不调用移动端位置计算）
+    function collapseSearchBoxDesktop(box) {
+        box.classList.remove('expanded', 'input-active');
+        if (currentUninputExpandedBox === box) {
+            currentUninputExpandedBox = null;
+        }
+        if (currentExpandedBox === box) {
+            currentExpandedBox = null;
+        }
+    }
+
+    // 桌面端：快速切换到新的搜索框（直接展开新框，不等待旧框收缩）
+    function switchToBoxDesktop(newBox) {
+        // 先直接关闭之前展开的搜索框（不等待动画）
+        if (currentExpandedBox && currentExpandedBox !== newBox) {
+            collapseSearchBoxDesktop(currentExpandedBox);
+        }
+        if (currentUninputExpandedBox && currentUninputExpandedBox !== newBox) {
+            collapseSearchBoxDesktop(currentUninputExpandedBox);
+        }
+        // 直接展开新搜索框
+        expandSearchBoxDesktop(newBox);
+    }
+
     // 执行圆形搜索框的搜索
     function performCircleSearch(box) {
         const input = box.querySelector('.circle-search-input');
@@ -305,12 +669,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // 展开中间搜索框
     function expandCenterSearchBox() {
         centerSearchBox.classList.add('expanded');
+        // 移动端重新计算位置
+        setMobileContainerPosition();
         // 聚焦到输入框
         setTimeout(() => {
             centerSearchBox.querySelector('.circle-search-input').focus();
         }, 300);
     }
-    
+
     // 收缩中间搜索框
     function collapseCenterSearchBox() {
         collapseSearchBox(centerSearchBox);
@@ -320,38 +686,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 时间日期模块点击事件 - 打开快捷访问菜单
     const timeDisplay = document.querySelector('.time-display');
+    const dateDisplay = document.querySelector('.date-display');
 
-    timeDisplay.addEventListener('click', function(e) {
-        // 阻止事件冒泡，防止干扰其他点击逻辑
+    function openContextMenu(e) {
         e.stopPropagation();
 
-        // 隐藏搜索框部分，但保留时间日期
-        const searchBox = document.querySelector('.search-boxes-container');
-        searchBox.style.opacity = '0';
-        searchBox.style.visibility = 'hidden';
+        const searchBoxContainer = document.querySelector('.search-boxes-container');
+        searchBoxContainer.style.opacity = '0';
+        searchBoxContainer.style.visibility = 'hidden';
 
-        // 设置菜单位置
         contextMenu.style.top = '0';
         contextMenu.style.left = '0';
         contextMenu.style.width = '100%';
         contextMenu.style.height = '100%';
 
-        // 显示菜单
         contextMenu.classList.add('active');
 
-        // 为菜单项添加点击事件（重新获取菜单项以确保包含所有动态添加的项）
         const menuItems = document.querySelectorAll('.menu-item');
         menuItems.forEach(item => {
             const url = item.getAttribute('data-url');
             item.onclick = function() {
                 window.open(url, '_blank');
                 contextMenu.classList.remove('active');
-                // 重新显示搜索框
-                searchBox.style.opacity = '1';
-                searchBox.style.visibility = 'visible';
+                searchBoxContainer.style.opacity = '1';
+                searchBoxContainer.style.visibility = 'visible';
             };
         });
-    });
+    }
+
+    timeDisplay.addEventListener('click', openContextMenu);
+    if (dateDisplay) {
+        dateDisplay.addEventListener('click', openContextMenu);
+    }
 
     // 添加时钟功能
     function updateClock() {
@@ -472,4 +838,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 更新菜单以包含自定义书签
     updateContextMenu();
+
+    // 初始化移动端位置和搜索框宽度
+    setMobileContainerPosition();
+    setMobileSearchWidth();
+
+    // 设置输入法自适应处理
+    setupInputMethodHandlers();
+    setupViewportHandler();
 });

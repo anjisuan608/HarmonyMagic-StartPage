@@ -5,17 +5,25 @@
     user-select: none; /* 禁止拖拽选择 */
 }
 
+html, body {
+    touch-action: none; /* 禁止触摸操作 */
+    overscroll-behavior: none; /* 禁止橡皮筋滚动 */
+    -webkit-overflow-scrolling: none; /* 禁用iOS弹性滚动 */
+}
+
 body {
     font-family: inherit;
     background: url('https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg') no-repeat center center fixed;
     background-size: cover;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     color: #333;
     transition: background 0.5s ease;
     overflow: hidden;
+    padding-top: 100px; /* 增加顶部padding让内容下移 */
 }
 
 /* 暗角滤镜效果 - 顶部和底部暗边 */
@@ -37,25 +45,35 @@ body::after {
     z-index: 0;
 }
 
-.container {
+.time-date {
     width: 90%;
     max-width: 600px;
     text-align: center;
     z-index: 10;
     position: relative;
-    top: -280px; /* 向上移动时间和搜索框位置 */
+    margin-bottom: 0 auto; /* 时间与搜索框之间的间距 */
 }
 
-.time-display {
-    margin-bottom: 0.5rem; /* 进一步减少时间显示的底部边距 */
+.search-box {
+    width: 90%;
+    max-width: 1000px;
+    text-align: center;
+    z-index: 10;
     position: relative;
-    z-index: 3000 !important; /* 确保时间日期始终在最顶层 */
-    cursor: pointer; /* 添加可点击指针 */
-    transition: transform 0.2s ease; /* 添加过渡效果 */
 }
 
-.time-display:hover {
-    transform: scale(1.02); /* 悬停时轻微放大 */
+.time-display,
+.date-display {
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 3000 !important;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.time-display:hover,
+.date-display:hover {
+    transform: scale(1.02);
 }
 
 #time {
@@ -87,7 +105,7 @@ body::after {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.45);
     backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.5);
     display: flex;
@@ -111,6 +129,26 @@ body::after {
 /* 圆形搜索框展开状态 - 输入状态 */
 .search-box-circle.expanded.input-active {
     width: 300px; /* 与中间搜索框的展开宽度相同 */
+    background: rgba(255, 255, 255, 0.75);
+}
+
+/* 移动端圆形搜索框直接展开到输入状态 */
+@media (max-width: 768px) {
+    :root {
+        --mobile-search-width: calc(100vw - 40px);
+    }
+
+    .search-box-circle.expanded,
+    .search-box-circle.expanded.input-active {
+        width: var(--mobile-search-width);
+        max-width: 350px;
+    }
+
+    .search-container-shortened.expanded,
+    .search-container-shortened.expanded.input-active {
+        width: var(--mobile-search-width);
+        max-width: 350px;
+    }
 }
 
 
@@ -369,8 +407,9 @@ body::after {
     display: flex;
 }
 
-.context-menu.active .time-display {
-    z-index: 3001 !important; /* 确保在快捷访问打开时时间日期显示在最顶层 */
+.context-menu.active .time-display,
+.context-menu.active .date-display {
+    z-index: 3001 !important;
 }
 
 .context-menu.active .search-boxes-container {
@@ -430,16 +469,15 @@ body::after {
 
 @media (max-width: 768px) {
     #time {
-        font-size: 2.3rem;
+        font-size: 2.5rem;
+        font-weight: bold;
     }
 
     #date {
         font-size: 1rem;
     }
 
-    .container {
-        top: -80px;
-    }
+    /* 移动端container的top值由JS动态设置 */
 
     /* 移动端搜索框容器 - 默认横向排列 */
     .search-boxes-container {
@@ -465,14 +503,19 @@ body::after {
         min-width: 50px;
     }
 
+    /* 移动端搜索框直接展开到输入状态 */
     .search-container-shortened.expanded {
-        width: 220px;
-        min-width: 180px;
+        width: var(--mobile-search-width);
+        min-width: auto;
     }
 
     .search-container-shortened.expanded.input-active {
-        width: 280px;
-        min-width: 240px;
+        width: var(--mobile-search-width);
+        min-width: auto;
+    }
+
+    .search-box-circle.expanded {
+        width: var(--mobile-search-width);
     }
 
     /* 搜索框展开时的3排布局 - 使用flex-wrap实现真正的三排 */
@@ -566,20 +609,10 @@ body::after {
 }
 
 .footer-text {
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    border-radius: 15px;
     padding: 4px 20px;
     text-align: center;
     font-family: inherit;
     font-size: 13px;
-    color: #333;
+    color: #f8f8f866;
     cursor: default;
-    transition: all 0.3s ease;
-}
-
-.footer-text:hover {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: #4CAF50;
 }

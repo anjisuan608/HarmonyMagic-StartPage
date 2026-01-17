@@ -95,23 +95,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentUninputExpandedBox = box;
                     circleInput.focus(); // 聚焦到输入框，继续输入
                 } else {
-                    // 记录当前搜索框
-                    const wasCurrentBox = (box === currentUninputExpandedBox);
-
-                    collapseSearchBox(box);
-                    currentExpandedBox = null;
-                    currentUninputExpandedBox = null;
-                    setMobileLayout(null);
-
-                    // 如果是在移动端，需要确保其他搜索框也正确处理
-                    if (isMobile() && wasCurrentBox) {
-                        // 强制重新计算布局
-                        setTimeout(() => {
-                            if (!currentUninputExpandedBox) {
-                                searchBoxesContainer.classList.remove('left-expanded', 'center-expanded', 'right-expanded');
-                            }
-                        }, 50);
-                    }
+                    // 如果输入框为空且处于展开状态，保持展开状态不变
+                    // 不收缩搜索框，让用户可以继续输入
+                    // 只聚焦到输入框
+                    circleInput.focus();
                 }
             } else {
                 // 检查中间搜索框是否展开，如果是则收缩它

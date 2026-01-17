@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return window.innerWidth <= 768;
     }
 
+    // 检查是否为平板端
+    function isTablet() {
+        return window.innerWidth > 768 && window.innerWidth <= 1024;
+    }
+
     // 检测并处理遮挡逻辑：时间日期被搜索框遮挡时隐藏
     function handleOcclusion() {
         const timeDisplay = document.querySelector('.time-display');

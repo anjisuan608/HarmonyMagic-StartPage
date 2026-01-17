@@ -24,7 +24,7 @@ body {
     text-align: center;
     z-index: 10;
     position: relative;
-    top: -180px; /* 进一步提升搜索框位置，更接近页面顶端 */
+    top: -280px; /* 向上移动时间和搜索框位置 */
 }
 
 .time-display {
@@ -419,7 +419,7 @@ body {
     }
 
     .container {
-        top: -150px;
+        top: -220px;
     }
 
     /* 移动端搜索框容器 - 默认横向排列 */

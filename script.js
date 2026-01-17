@@ -38,9 +38,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // 手机端：需要自适应输入法
             const viewportHeight = window.innerHeight;
             const timeDisplay = document.querySelector('.time-display');
+            const dateDisplay = document.querySelector('.date-display');
             const searchBoxesContainer = document.querySelector('.search-boxes-container');
 
-            const timeHeight = timeDisplay.offsetHeight;
+            const timeHeight = timeDisplay.offsetHeight + (dateDisplay ? dateDisplay.offsetHeight : 0);
             const searchHeight = searchBoxesContainer.offsetHeight;
 
             // 检查是否有输入法键盘弹出
@@ -539,38 +540,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 时间日期模块点击事件 - 打开快捷访问菜单
     const timeDisplay = document.querySelector('.time-display');
+    const dateDisplay = document.querySelector('.date-display');
 
-    timeDisplay.addEventListener('click', function(e) {
-        // 阻止事件冒泡，防止干扰其他点击逻辑
+    function openContextMenu(e) {
         e.stopPropagation();
 
-        // 隐藏搜索框部分，但保留时间日期
-        const searchBox = document.querySelector('.search-boxes-container');
-        searchBox.style.opacity = '0';
-        searchBox.style.visibility = 'hidden';
+        const searchBoxContainer = document.querySelector('.search-boxes-container');
+        searchBoxContainer.style.opacity = '0';
+        searchBoxContainer.style.visibility = 'hidden';
 
-        // 设置菜单位置
         contextMenu.style.top = '0';
         contextMenu.style.left = '0';
         contextMenu.style.width = '100%';
         contextMenu.style.height = '100%';
 
-        // 显示菜单
         contextMenu.classList.add('active');
 
-        // 为菜单项添加点击事件（重新获取菜单项以确保包含所有动态添加的项）
         const menuItems = document.querySelectorAll('.menu-item');
         menuItems.forEach(item => {
             const url = item.getAttribute('data-url');
             item.onclick = function() {
                 window.open(url, '_blank');
                 contextMenu.classList.remove('active');
-                // 重新显示搜索框
-                searchBox.style.opacity = '1';
-                searchBox.style.visibility = 'visible';
+                searchBoxContainer.style.opacity = '1';
+                searchBoxContainer.style.visibility = 'visible';
             };
         });
-    });
+    }
+
+    timeDisplay.addEventListener('click', openContextMenu);
+    if (dateDisplay) {
+        dateDisplay.addEventListener('click', openContextMenu);
+    }
 
     // 添加时钟功能
     function updateClock() {

@@ -62,16 +62,18 @@ body::after {
     position: relative;
 }
 
-.time-display {
-    margin-bottom: 0.5rem; /* 进一步减少时间显示的底部边距 */
+.time-display,
+.date-display {
+    margin-bottom: 0.5rem;
     position: relative;
-    z-index: 3000 !important; /* 确保时间日期始终在最顶层 */
-    cursor: pointer; /* 添加可点击指针 */
-    transition: transform 0.2s ease; /* 添加过渡效果 */
+    z-index: 3000 !important;
+    cursor: pointer;
+    transition: transform 0.2s ease;
 }
 
-.time-display:hover {
-    transform: scale(1.02); /* 悬停时轻微放大 */
+.time-display:hover,
+.date-display:hover {
+    transform: scale(1.02);
 }
 
 #time {
@@ -404,8 +406,9 @@ body::after {
     display: flex;
 }
 
-.context-menu.active .time-display {
-    z-index: 3001 !important; /* 确保在快捷访问打开时时间日期显示在最顶层 */
+.context-menu.active .time-display,
+.context-menu.active .date-display {
+    z-index: 3001 !important;
 }
 
 .context-menu.active .search-boxes-container {

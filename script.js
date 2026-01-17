@@ -343,6 +343,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 点击圆形搜索框展开
         box.addEventListener('click', function(e) {
+            // 桌面端使用快速切换逻辑
+            if (!isMobile()) {
+                // 如果是同一个搜索框，直接聚焦
+                if (currentExpandedBox === box || currentUninputExpandedBox === box) {
+                    circleInput.focus();
+                    return;
+                }
+                // 快速切换到新搜索框
+                switchToBoxDesktop(box);
+                return;
+            }
+
+            // 移动端逻辑保持原样
             // 如果当前已经有展开的搜索框且不是当前点击的，则先关闭它
             if (currentExpandedBox && currentExpandedBox !== box) {
                 collapseSearchBox(currentExpandedBox);
@@ -394,6 +407,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 圆形搜索框输入框聚焦事件
         circleInput.addEventListener('focus', function() {
+            // 桌面端使用快速切换逻辑
+            if (!isMobile()) {
+                // 如果搜索框未展开，快速展开并切换
+                if (!box.classList.contains('expanded')) {
+                    switchToBoxDesktop(box);
+                } else {
+                    // 已展开则确保状态正确
+                    box.classList.add('input-active');
+                    currentExpandedBox = box;
+                    currentUninputExpandedBox = box;
+                }
+                return;
+            }
+
+            // 移动端逻辑保持原样
             // 确保当前搜索框处于正确的展开状态和布局中
             if (!box.classList.contains('expanded')) {
                 // 如果点击的是输入框且搜索框未展开，则展开它
@@ -471,21 +499,32 @@ document.addEventListener('DOMContentLoaded', function() {
         // 圆形搜索框按钮点击事件
         circleBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            
-            // 确保当前搜索框保持展开状态
-            if (!box.classList.contains('expanded')) {
-                expandSearchBox(box);
+
+            // 桌面端使用独立方法
+            if (!isMobile()) {
+                if (!box.classList.contains('expanded')) {
+                    expandSearchBoxDesktop(box);
+                } else {
+                    box.classList.add('input-active');
+                    currentExpandedBox = box;
+                    currentUninputExpandedBox = box;
+                }
+            } else {
+                // 移动端保持原有逻辑
+                // 确保当前搜索框保持展开状态
+                if (!box.classList.contains('expanded')) {
+                    expandSearchBox(box);
+                }
+                // 确保状态正确
+                box.classList.add('input-active');
+                currentExpandedBox = box;
+                currentUninputExpandedBox = box;
             }
-            
-            // 确保状态正确
-            box.classList.add('input-active');
-            currentExpandedBox = box;
-            currentUninputExpandedBox = box;
-            
+
             // 聚焦到输入框
             const input = box.querySelector('.circle-search-input');
             input.focus();
-            
+
             // 执行搜索逻辑
             const query = input.value.trim();
             let searchUrl = '';
@@ -510,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 搜索后清空输入框，但保持展开状态
             input.value = '';
             box.classList.remove('input-active');
-            
+
             // 打开搜索页面
             window.open(searchUrl, '_blank');
         });
@@ -552,7 +591,44 @@ document.addEventListener('DOMContentLoaded', function() {
         setMobileContainerPosition();
         // 不再清空输入框，保留用户输入的文字
     }
-    
+
+    // 桌面端：展开圆形搜索框（不调用移动端位置计算）
+    function expandSearchBoxDesktop(box) {
+        box.classList.add('expanded');
+        box.classList.add('input-active');
+        currentUninputExpandedBox = box;
+        currentExpandedBox = box;
+        // 聚焦到输入框
+        const input = box.querySelector('.circle-search-input');
+        setTimeout(() => {
+            input.focus();
+        }, 100);
+    }
+
+    // 桌面端：收缩圆形搜索框（不调用移动端位置计算）
+    function collapseSearchBoxDesktop(box) {
+        box.classList.remove('expanded', 'input-active');
+        if (currentUninputExpandedBox === box) {
+            currentUninputExpandedBox = null;
+        }
+        if (currentExpandedBox === box) {
+            currentExpandedBox = null;
+        }
+    }
+
+    // 桌面端：快速切换到新的搜索框（直接展开新框，不等待旧框收缩）
+    function switchToBoxDesktop(newBox) {
+        // 先直接关闭之前展开的搜索框（不等待动画）
+        if (currentExpandedBox && currentExpandedBox !== newBox) {
+            collapseSearchBoxDesktop(currentExpandedBox);
+        }
+        if (currentUninputExpandedBox && currentUninputExpandedBox !== newBox) {
+            collapseSearchBoxDesktop(currentUninputExpandedBox);
+        }
+        // 直接展开新搜索框
+        expandSearchBoxDesktop(newBox);
+    }
+
     // 执行圆形搜索框的搜索
     function performCircleSearch(box) {
         const input = box.querySelector('.circle-search-input');

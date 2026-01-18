@@ -622,13 +622,13 @@ body::after {
     position: fixed;
     top: 20px;
     right: 20px;
-    background-color: #F57C00;
+    background-color: #2196F3;
     color: white;
     padding: 12px 16px;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     z-index: 10000;
-    font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+    font-family: inherit;
     font-size: 14px;
     line-height: 1.5;
     opacity: 0;

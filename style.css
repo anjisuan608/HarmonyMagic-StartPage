@@ -14,14 +14,17 @@ html, body {
 body {
     font-family: inherit;
     background: #333;
+    background-image: var(--wallpaper-url, none);
     background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     color: #333;
-    transition: background 0.5s ease;
+    transition: background-image 0.5s ease;
     overflow: hidden;
     padding-top: 100px; /* 增加顶部padding让内容下移 */
 }

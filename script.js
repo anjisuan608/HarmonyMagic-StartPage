@@ -915,15 +915,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadWallpaper() {
         const wallpaperUrl = 'https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg';
         const img = new Image();
-        
+
         img.onload = function() {
-            document.body.style.backgroundImage = `url('${wallpaperUrl}')`;
+            // 使用CSS变量设置背景图片，CSS负责渲染
+            document.documentElement.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
         };
-        
+
         img.onerror = function() {
             networkTimeoutNotice('壁纸加载失败');
         };
-        
+
         img.src = wallpaperUrl;
     }
     

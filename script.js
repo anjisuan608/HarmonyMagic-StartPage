@@ -862,6 +862,25 @@ document.addEventListener('DOMContentLoaded', function() {
     setupInputMethodHandlers();
     setupViewportHandler();
 
+    // 动态加载壁纸
+    function loadWallpaper() {
+        const wallpaperUrl = 'https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg';
+        const img = new Image();
+        
+        img.onload = function() {
+            document.body.style.backgroundImage = `url('${wallpaperUrl}')`;
+        };
+        
+        img.onerror = function() {
+            networkTimeoutNotice('壁纸加载失败');
+        };
+        
+        img.src = wallpaperUrl;
+    }
+    
+    // 启动壁纸加载
+    loadWallpaper();
+
     // 通知呈现器
     const noticesContainer = document.getElementById('notices');
 
@@ -869,7 +888,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const NOTICE_LEVELS = {
         fatal: { color: '#f7a699', duration: 60000 },
         error: { color: '#ffccbb', duration: 50000 },
-        warns: { color: '#ffeecc', duration: 40000 },
+        warn: { color: '#ffeecc', duration: 40000 },
         info: { color: '#2196F3', duration: 11000 },
         debug: { color: '#eee9e0', duration: 20000 }
     };
@@ -932,6 +951,75 @@ document.addEventListener('DOMContentLoaded', function() {
         sendNotice('检测到按下开发工具热键<br>请遵守<strong>GPLv3</strong>许可协议', 'info', { customDuration: 8000 });
     }
 
+    // 壁纸/网络连接超时通知（error级别）
+    function networkTimeoutNotice(message = '网络连接超时') {
+        sendNotice(message, 'error');
+    }
+
+    // 用户手动停止页面加载通知（warn级别）
+    function pageLoadStoppedNotice() {
+        sendNotice('页面加载已手动停止', 'warn');
+    }
+
+    // JS/CSS资源被阻止加载通知（fatal级别）
+    function resourceBlockedNotice(resourceUrl, type) {
+        sendNotice(`资源加载被阻止: <em>${resourceUrl}</em> (${type})`, 'fatal');
+    }
+
+    // 为资源标签添加onerror检测
+    function attachResourceErrorHandler(element) {
+        element.onerror = function() {
+            const type = element.tagName === 'SCRIPT' ? 'JS' : 'CSS';
+            const src = element.src || element.href;
+            if (src && !src.includes('chromecookie')) {
+                resourceBlockedNotice(src, type);
+            }
+        };
+    }
+
+    // 为已存在的script和link标签添加错误处理
+    document.querySelectorAll('script, link[rel="stylesheet"]').forEach(attachResourceErrorHandler);
+
+    // 监听动态添加的script和link标签
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.tagName === 'SCRIPT') {
+                    attachResourceErrorHandler(node);
+                } else if (node.tagName === 'LINK' && node.rel === 'stylesheet') {
+                    attachResourceErrorHandler(node);
+                }
+            });
+        });
+    });
+
+    observer.observe(document.head, { childList: true, subtree: true });
+
+    // 监听页面加载停止事件（用户按ESC或点击停止按钮）
+    document.addEventListener('readystatechange', function() {
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            // 监听停止加载事件
+        }
+    });
+
+    // 监听用户停止页面加载（通过performance timing判断）
+    window.addEventListener('beforeunload', function(e) {
+        // 用户手动停止页面加载时会触发
+    });
+
+    // 监听ESC键停止页面加载
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // ESC键通常用于停止页面加载
+            setTimeout(() => {
+                // 检测页面是否还在加载中
+                if (document.readyState === 'loading') {
+                    pageLoadStoppedNotice();
+                }
+            }, 100);
+        }
+    });
+
     // 监听F12和Ctrl+Shift+I
     document.addEventListener('keydown', function(e) {
         // F12键
@@ -952,6 +1040,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 暴露sendNotice到全局，以便其他地方使用
+    // 暴露通知相关方法到全局，以便其他地方使用
     window.sendNotice = sendNotice;
+    window.networkTimeoutNotice = networkTimeoutNotice;
+    window.pageLoadStoppedNotice = pageLoadStoppedNotice;
+    window.resourceBlockedNotice = resourceBlockedNotice;
 });

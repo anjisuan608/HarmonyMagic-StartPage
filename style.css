@@ -13,7 +13,7 @@ html, body {
 
 body {
     font-family: inherit;
-    background: url('https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg') no-repeat center center fixed;
+    background: #333;
     background-size: cover;
     height: 100vh;
     display: flex;

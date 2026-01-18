@@ -861,4 +861,188 @@ document.addEventListener('DOMContentLoaded', function() {
     // 设置输入法自适应处理
     setupInputMethodHandlers();
     setupViewportHandler();
+
+    // 动态加载壁纸
+    function loadWallpaper() {
+        const wallpaperUrl = 'https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg';
+        const img = new Image();
+        
+        img.onload = function() {
+            document.body.style.backgroundImage = `url('${wallpaperUrl}')`;
+        };
+        
+        img.onerror = function() {
+            networkTimeoutNotice('壁纸加载失败');
+        };
+        
+        img.src = wallpaperUrl;
+    }
+    
+    // 启动壁纸加载
+    loadWallpaper();
+
+    // 通知呈现器
+    const noticesContainer = document.getElementById('notices');
+
+    // 通知等级配置
+    const NOTICE_LEVELS = {
+        fatal: { color: '#f7a699', duration: 60000 },
+        error: { color: '#ffccbb', duration: 50000 },
+        warn: { color: '#ffeecc', duration: 40000 },
+        info: { color: '#2196F3', duration: 11000 },
+        debug: { color: '#eee9e0', duration: 20000 }
+    };
+
+    // 移除通知（带淡出动画）
+    function removeNotice(notice) {
+        notice.classList.add('removing');
+        setTimeout(() => {
+            notice.remove();
+        }, 300);
+    }
+
+    // 获取格式化时间
+    function getTimeString() {
+        const now = new Date();
+        return now.toLocaleTimeString('zh-CN', { hour12: false });
+    }
+
+    /**
+     * 发送通知
+     * @param {string} content - 通知内容
+     * @param {string} level - 通知等级: fatal, error, warns, info, debug
+     * @param {Object} options - 可选配置: customColor(自定义颜色), customDuration(自定义持续时间ms)
+     */
+    function sendNotice(content, level = 'info', options = {}) {
+        const config = NOTICE_LEVELS[level] || NOTICE_LEVELS.info;
+        const color = options.customColor || config.color;
+        const duration = options.customDuration !== undefined ? options.customDuration : config.duration;
+
+        // 过滤HTML标签用于控制台输出
+        const plainText = content.replace(/<[^>]*>/g, '');
+        console.log(`[${getTimeString()}][${level.toUpperCase()}]${plainText}`);
+
+        // 创建通知元素
+        const notice = document.createElement('div');
+        notice.className = 'notice-item';
+        notice.style.backgroundColor = color;
+        notice.innerHTML = `
+            <div class="notice-title">${level.toUpperCase()}</div>
+            <div class="notice-content">${content}</div>
+        `;
+
+        // 点击移除通知
+        notice.addEventListener('click', function() {
+            removeNotice(notice);
+        });
+
+        noticesContainer.appendChild(notice);
+
+        // 自动移除
+        setTimeout(() => {
+            if (notice.parentNode) {
+                removeNotice(notice);
+            }
+        }, duration);
+    }
+
+    // GPLv3许可证提示
+    function gplNotice() {
+        sendNotice('检测到按下开发工具热键<br>请遵守<strong>GPLv3</strong>许可协议', 'info', { customDuration: 8000 });
+    }
+
+    // 壁纸/网络连接超时通知（error级别）
+    function networkTimeoutNotice(message = '网络连接超时') {
+        sendNotice(message, 'error');
+    }
+
+    // 用户手动停止页面加载通知（warn级别）
+    function pageLoadStoppedNotice() {
+        sendNotice('页面加载已手动停止', 'warn');
+    }
+
+    // JS/CSS资源被阻止加载通知（fatal级别）
+    function resourceBlockedNotice(resourceUrl, type) {
+        sendNotice(`资源加载被阻止: <em>${resourceUrl}</em> (${type})`, 'fatal');
+    }
+
+    // 为资源标签添加onerror检测
+    function attachResourceErrorHandler(element) {
+        element.onerror = function() {
+            const type = element.tagName === 'SCRIPT' ? 'JS' : 'CSS';
+            const src = element.src || element.href;
+            if (src && !src.includes('chromecookie')) {
+                resourceBlockedNotice(src, type);
+            }
+        };
+    }
+
+    // 为已存在的script和link标签添加错误处理
+    document.querySelectorAll('script, link[rel="stylesheet"]').forEach(attachResourceErrorHandler);
+
+    // 监听动态添加的script和link标签
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.tagName === 'SCRIPT') {
+                    attachResourceErrorHandler(node);
+                } else if (node.tagName === 'LINK' && node.rel === 'stylesheet') {
+                    attachResourceErrorHandler(node);
+                }
+            });
+        });
+    });
+
+    observer.observe(document.head, { childList: true, subtree: true });
+
+    // 监听页面加载停止事件（用户按ESC或点击停止按钮）
+    document.addEventListener('readystatechange', function() {
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            // 监听停止加载事件
+        }
+    });
+
+    // 监听用户停止页面加载（通过performance timing判断）
+    window.addEventListener('beforeunload', function(e) {
+        // 用户手动停止页面加载时会触发
+    });
+
+    // 监听ESC键停止页面加载
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // ESC键通常用于停止页面加载
+            setTimeout(() => {
+                // 检测页面是否还在加载中
+                if (document.readyState === 'loading') {
+                    pageLoadStoppedNotice();
+                }
+            }, 100);
+        }
+    });
+
+    // 监听F12和Ctrl+Shift+I
+    document.addEventListener('keydown', function(e) {
+        // F12键
+        if (e.key === 'F12') {
+            gplNotice();
+        }
+        // Ctrl+Shift+I 组合键
+        if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+            gplNotice();
+        }
+        // Ctrl+Shift+J 组合键 (Chrome开发者工具另一种打开方式)
+        if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+            gplNotice();
+        }
+        // Ctrl+Shift+C 组合键 (Chrome开发者工具Elements面板)
+        if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+            gplNotice();
+        }
+    });
+
+    // 暴露通知相关方法到全局，以便其他地方使用
+    window.sendNotice = sendNotice;
+    window.networkTimeoutNotice = networkTimeoutNotice;
+    window.pageLoadStoppedNotice = pageLoadStoppedNotice;
+    window.resourceBlockedNotice = resourceBlockedNotice;
 });

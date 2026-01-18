@@ -13,7 +13,7 @@ html, body {
 
 body {
     font-family: inherit;
-    background: url('https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg') no-repeat center center fixed;
+    background: #333;
     background-size: cover;
     height: 100vh;
     display: flex;
@@ -615,4 +615,136 @@ body::after {
     font-size: 13px;
     color: #f8f8f866;
     cursor: default;
+}
+
+/* 通知容器样式 */
+.notices {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+/* 单条通知样式 */
+.notice-item {
+    padding: 12px 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    pointer-events: auto;
+    animation: slideIn 0.3s ease;
+    color: white;
+}
+
+.notice-item .notice-title {
+    margin: 0 0 4px 0;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.notice-item .notice-content {
+    margin: 0;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+.notice-item.removing {
+    animation: fadeOut 0.3s ease forwards;
+}
+
+/* ==================== 移动端通知适配 ==================== */
+@media (max-width: 768px) {
+    .notices {
+        position: fixed;
+        top: auto !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: none !important;
+        flex-direction: row !important;
+        justify-content: flex-start;
+        gap: 0;
+        padding: 10px 20px 20px 20px;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .notice-item {
+        flex-shrink: 0;
+        padding: 8px 14px;
+        font-size: 12px;
+        border-radius: 4px;
+        margin-right: 8px;
+        max-width: none;
+        white-space: nowrap;
+    }
+
+    .notice-item .notice-title {
+        font-size: 12px;
+        margin-bottom: 2px;
+        margin-right: 0;
+        display: block;
+    }
+
+    .notice-item .notice-content {
+        display: block;
+    }
+
+    @keyframes slideInMobile {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeOutMobile {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+    }
+
+    .notice-item {
+        animation: slideInMobile 0.3s ease;
+    }
+
+    .notice-item.removing {
+        animation: fadeOutMobile 0.3s ease forwards;
+    }
 }

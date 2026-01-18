@@ -677,3 +677,74 @@ body::after {
 .notice-item.removing {
     animation: fadeOut 0.3s ease forwards;
 }
+
+/* ==================== 移动端通知适配 ==================== */
+@media (max-width: 768px) {
+    .notices {
+        position: fixed;
+        top: auto !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: none !important;
+        flex-direction: row !important;
+        justify-content: flex-start;
+        gap: 0;
+        padding: 10px 20px 20px 20px;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .notice-item {
+        flex-shrink: 0;
+        padding: 8px 14px;
+        font-size: 12px;
+        border-radius: 4px;
+        margin-right: 8px;
+        max-width: none;
+        white-space: nowrap;
+    }
+
+    .notice-item .notice-title {
+        font-size: 12px;
+        margin-bottom: 2px;
+        margin-right: 0;
+        display: block;
+    }
+
+    .notice-item .notice-content {
+        display: block;
+    }
+
+    @keyframes slideInMobile {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeOutMobile {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+    }
+
+    .notice-item {
+        animation: slideInMobile 0.3s ease;
+    }
+
+    .notice-item.removing {
+        animation: fadeOutMobile 0.3s ease forwards;
+    }
+}

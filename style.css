@@ -490,11 +490,18 @@ body::after {
     height: 80px;
 }
 
-.menu-item:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+/* 点击背景板 */
+.menu-item-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 12px;
+    z-index: 1;
 }
 
+/* 图标不响应点击 */
 .menu-icon {
     font-size: 1.5rem;
     margin-bottom: 6px;
@@ -503,6 +510,9 @@ body::after {
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none; /* 图标不响应点击 */
+    z-index: 2;
+    position: relative;
 }
 
 .menu-item img {
@@ -510,12 +520,18 @@ body::after {
     height: 32px;
     border-radius: 3px;
     margin-bottom: 6px;
+    pointer-events: none; /* 图片不响应点击 */
+    z-index: 2;
+    position: relative;
 }
 
 .menu-item span {
     text-shadow: none; /* 移除文字阴影以解决重影问题 */
     color: #333; /* 文字颜色改为深色以在浅灰背景上显示 */
     font-size: 0.85rem; /* 稍微减小字体 */
+    z-index: 2;
+    position: relative;
+    pointer-events: auto; /* 文字可以点击 */
 }
 
 @media (max-width: 768px) {

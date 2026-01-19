@@ -38,12 +38,19 @@ document.addEventListener('DOMContentLoaded', async function() {
                 menuItem.className = 'menu-item';
                 menuItem.setAttribute('data-url', item.url);
                 menuItem.innerHTML = `
+                    <div class="menu-item-bg"></div>
                     <div class="menu-icon">${item.icon}</div>
                     <span>${item.title}</span>
                 `;
 
-                // 添加点击事件
-                menuItem.addEventListener('click', function() {
+                // 获取点击区域元素
+                const menuBg = menuItem.querySelector('.menu-item-bg');
+                const menuText = menuItem.querySelector('span');
+                
+                // 点击背景板或文字跳转
+                function handleItemClick(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     window.open(item.url, '_blank');
                     // 点击后关闭菜单
                     contextMenu.classList.remove('active');
@@ -51,7 +58,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                     setBackgroundBlur(false);
                     searchBoxesContainer.style.opacity = '1';
                     searchBoxesContainer.style.visibility = 'visible';
-                });
+                }
+                
+                menuBg.addEventListener('click', handleItemClick);
+                menuText.addEventListener('click', handleItemClick);
 
                 menuItemsContainer.appendChild(menuItem);
             });
@@ -946,9 +956,30 @@ document.addEventListener('DOMContentLoaded', async function() {
             customItem.className = 'menu-item';
             customItem.setAttribute('data-url', bookmark.url);
             customItem.innerHTML = `
+                <div class="menu-item-bg"></div>
                 <img src="${bookmark.url}/favicon.ico" alt="${bookmark.name}" onerror="this.style.display='none';">
                 <span>${bookmark.name}</span>
             `;
+            
+            // 获取点击区域元素
+            const menuBg = customItem.querySelector('.menu-item-bg');
+            const menuText = customItem.querySelector('span');
+            
+            // 点击背景板或文字跳转
+            function handleCustomItemClick(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(bookmark.url, '_blank');
+                contextMenu.classList.remove('active');
+                document.documentElement.style.removeProperty('--search-box-top');
+                setBackgroundBlur(false);
+                searchBoxesContainer.style.opacity = '1';
+                searchBoxesContainer.style.visibility = 'visible';
+            }
+            
+            menuBg.addEventListener('click', handleCustomItemClick);
+            menuText.addEventListener('click', handleCustomItemClick);
+            
             menuItemsContainer.appendChild(customItem);
         });
     }

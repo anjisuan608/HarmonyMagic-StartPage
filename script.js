@@ -38,14 +38,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 menuItem.className = 'menu-item';
                 menuItem.setAttribute('data-url', item.url);
                 menuItem.innerHTML = `
-                    <div class="menu-item-bg"></div>
-                    <div class="menu-icon">${item.icon}</div>
-                    <span>${item.title}</span>
+                    <div class="menu-icon-wrapper">
+                        <div class="menu-item-bg"></div>
+                        <div class="menu-icon">${item.icon}</div>
+                    </div>
+                    <div class="menu-text">${item.title}</div>
                 `;
 
                 // 获取点击区域元素
                 const menuBg = menuItem.querySelector('.menu-item-bg');
-                const menuText = menuItem.querySelector('span');
+                const menuText = menuItem.querySelector('.menu-text');
                 
                 // 点击背景板或文字跳转
                 function handleItemClick(e) {
@@ -956,14 +958,17 @@ document.addEventListener('DOMContentLoaded', async function() {
             customItem.className = 'menu-item';
             customItem.setAttribute('data-url', bookmark.url);
             customItem.innerHTML = `
-                <div class="menu-item-bg"></div>
-                <img src="${bookmark.url}/favicon.ico" alt="${bookmark.name}" onerror="this.style.display='none';">
-                <span>${bookmark.name}</span>
+                <div class="menu-item-area">
+                    <div class="menu-icon-wrapper">
+                        <div class="menu-item-bg"></div>
+                    </div>
+                    <div class="menu-text">${bookmark.name}</div>
+                </div>
             `;
             
             // 获取点击区域元素
             const menuBg = customItem.querySelector('.menu-item-bg');
-            const menuText = customItem.querySelector('span');
+            const menuText = customItem.querySelector('.menu-text');
             
             // 点击背景板或文字跳转
             function handleCustomItemClick(e) {

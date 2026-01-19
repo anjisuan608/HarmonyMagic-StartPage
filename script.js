@@ -759,10 +759,14 @@ document.addEventListener('DOMContentLoaded', function() {
         searchBoxContainer.style.opacity = '0';
         searchBoxContainer.style.visibility = 'hidden';
 
-        contextMenu.style.top = '0';
-        contextMenu.style.left = '0';
-        contextMenu.style.width = '100%';
-        contextMenu.style.height = '100%';
+        // 获取搜索框容器位置
+        const searchBoxRect = searchBoxContainer.getBoundingClientRect();
+
+        // 设置菜单位置在搜索框区域
+        contextMenu.style.top = `${searchBoxRect.top}px`;
+        contextMenu.style.left = `${searchBoxRect.left}px`;
+        contextMenu.style.width = `${searchBoxRect.width}px`;
+        contextMenu.style.height = `${searchBoxRect.height}px`;
 
         contextMenu.classList.add('active');
 
@@ -820,7 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 右键菜单功能 - 快捷访问
     
-    // 显示右键菜单（快捷访问）
+    // 显示右键菜单（快捷访问）- 在搜索框区域显示
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
         
@@ -829,11 +833,14 @@ document.addEventListener('DOMContentLoaded', function() {
         searchBox.style.opacity = '0';
         searchBox.style.visibility = 'hidden';
         
-        // 设置菜单位置
-        contextMenu.style.top = '0';
-        contextMenu.style.left = '0';
-        contextMenu.style.width = '100%';
-        contextMenu.style.height = '100%';
+        // 获取搜索框容器位置
+        const searchBoxRect = searchBox.getBoundingClientRect();
+        
+        // 设置菜单位置在搜索框区域
+        contextMenu.style.top = `${searchBoxRect.top}px`;
+        contextMenu.style.left = `${searchBoxRect.left}px`;
+        contextMenu.style.width = `${searchBoxRect.width}px`;
+        contextMenu.style.height = `${searchBoxRect.height}px`;
         
         // 显示菜单
         contextMenu.classList.add('active');
@@ -852,18 +859,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // 点击模糊背景关闭菜单并显示搜索框
-    contextMenu.addEventListener('click', function() {
-        contextMenu.classList.remove('active');
-        // 重新显示搜索框
-        const searchBox = document.querySelector('.search-boxes-container');
-        searchBox.style.opacity = '1';
-        searchBox.style.visibility = 'visible';
-    });
-    
-    // 阻止菜单内的点击事件冒泡
-    document.querySelector('.menu-items').addEventListener('click', function(e) {
-        e.stopPropagation();
+    // 点击快捷访问面板外空白区域关闭菜单
+    document.addEventListener('click', function(e) {
+        if (contextMenu.classList.contains('active') && 
+            !e.target.closest('.menu-items')) {
+            contextMenu.classList.remove('active');
+            // 重新显示搜索框
+            const searchBox = document.querySelector('.search-boxes-container');
+            searchBox.style.opacity = '1';
+            searchBox.style.visibility = 'visible';
+        }
     });
     
     // 添加自定义书签功能

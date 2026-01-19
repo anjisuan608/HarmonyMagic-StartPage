@@ -434,15 +434,14 @@ body::after {
 
 /* 右键菜单样式 */
 .context-menu {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.3); /* 添加半透明背景 */
-    backdrop-filter: blur(5px); /* 添加模糊效果 */
+    background: transparent; /* 无背景 */
     display: none;
-    z-index: 2000; /* 降低context-menu的z-index，但仍高于其他元素 */
+    z-index: 2000;
     align-items: center;
     justify-content: center;
 }
@@ -463,24 +462,27 @@ body::after {
 
 .menu-items {
     display: grid;
-    grid-template-columns: repeat(8, 1fr); /* 8列布局 */
-    grid-template-rows: repeat(3, 1fr); /* 3行布局 */
-    gap: 15px;
+    grid-template-columns: repeat(6, 1fr); /* 6列布局 */
+    grid-template-rows: repeat(4, 1fr); /* 4行布局 */
+    gap: 10px;
     max-width: 90%;
     max-height: 80%;
     overflow: auto;
-    padding: 20px;
-    z-index: 2001; /* 确保菜单项目在context-menu之上 */
+    padding: 15px;
+    z-index: 2001;
+    background: rgba(255, 255, 255, 0.15); /* 半透明背景 */
+    backdrop-filter: blur(5px); /* 菜单项区域轻微模糊 */
+    border-radius: 12px;
 }
 
 .menu-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px 10px;
+    padding: 10px 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 80px;
+    min-width: 70px;
     color: white; /* 将字体设置为白色 */
     position: relative;
 }
@@ -490,8 +492,8 @@ body::after {
 }
 
 .menu-icon {
-    font-size: 1.8rem;
-    margin-bottom: 8px;
+    font-size: 1.5rem;
+    margin-bottom: 6px;
     width: 24px;
     height: 24px;
     display: flex;
@@ -503,12 +505,13 @@ body::after {
     width: 24px;
     height: 24px;
     border-radius: 3px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .menu-item span {
     text-shadow: none; /* 移除文字阴影以解决重影问题 */
     color: white; /* 确保文字为白色 */
+    font-size: 0.85rem; /* 稍微减小字体 */
 }
 
 @media (max-width: 768px) {

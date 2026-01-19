@@ -762,12 +762,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // 获取搜索框容器位置
         const searchBoxRect = searchBoxContainer.getBoundingClientRect();
 
-        // 设置菜单位置在搜索框区域
-        contextMenu.style.top = `${searchBoxRect.top}px`;
-        contextMenu.style.left = `${searchBoxRect.left}px`;
-        contextMenu.style.width = `${searchBoxRect.width}px`;
-        contextMenu.style.height = `${searchBoxRect.height}px`;
+        // 设置菜单项的margin-top与搜索框顶端对齐
+        document.documentElement.style.setProperty('--search-box-top', `${searchBoxRect.top}px`);
 
+        // contextMenu覆盖整个页面，menu-items通过margin-top向下偏移
         contextMenu.classList.add('active');
 
         const menuItems = document.querySelectorAll('.menu-item');
@@ -776,6 +774,7 @@ document.addEventListener('DOMContentLoaded', function() {
             item.onclick = function() {
                 window.open(url, '_blank');
                 contextMenu.classList.remove('active');
+                document.documentElement.style.removeProperty('--search-box-top');
                 searchBoxContainer.style.opacity = '1';
                 searchBoxContainer.style.visibility = 'visible';
             };
@@ -787,6 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (contextMenu.classList.contains('active')) {
             // 如果菜单已打开，关闭它
             contextMenu.classList.remove('active');
+            document.documentElement.style.removeProperty('--search-box-top');
             const searchBox = document.querySelector('.search-boxes-container');
             searchBox.style.opacity = '1';
             searchBox.style.visibility = 'visible';
@@ -845,11 +845,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // 获取搜索框容器位置
         const searchBoxRect = searchBox.getBoundingClientRect();
         
-        // 设置菜单位置在搜索框区域
-        contextMenu.style.top = `${searchBoxRect.top}px`;
-        contextMenu.style.left = `${searchBoxRect.left}px`;
-        contextMenu.style.width = `${searchBoxRect.width}px`;
-        contextMenu.style.height = `${searchBoxRect.height}px`;
+        // 设置菜单项的margin-top与搜索框顶端对齐
+        document.documentElement.style.setProperty('--search-box-top', `${searchBoxRect.top}px`);
         
         // 显示菜单
         contextMenu.classList.add('active');
@@ -861,6 +858,7 @@ document.addEventListener('DOMContentLoaded', function() {
             item.onclick = function() {
                 window.open(url, '_blank');
                 contextMenu.classList.remove('active');
+                document.documentElement.style.removeProperty('--search-box-top');
                 // 重新显示搜索框
                 searchBox.style.opacity = '1';
                 searchBox.style.visibility = 'visible';
@@ -873,6 +871,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (contextMenu.classList.contains('active') && 
             !e.target.closest('.menu-items')) {
             contextMenu.classList.remove('active');
+            document.documentElement.style.removeProperty('--search-box-top');
             // 重新显示搜索框
             const searchBox = document.querySelector('.search-boxes-container');
             searchBox.style.opacity = '1';

@@ -433,12 +433,13 @@ body::after {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 100vh; /* 覆盖整个视口 */
     background: transparent; /* 无背景 */
     display: none;
     z-index: 2000;
-    align-items: center;
+    align-items: flex-start; /* 顶部对齐 */
     justify-content: center;
+    padding-top: 0;
 }
 
 .context-menu.active {
@@ -457,16 +458,16 @@ body::after {
 
 .menu-items {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* 6列布局 */
-    grid-template-rows: repeat(4, 1fr); /* 4行布局 */
-    gap: 10px;
-    max-width: 90%;
-    max-height: 80%;
-    overflow: auto;
-    padding: 15px;
+    grid-template-columns: repeat(5, 1fr); /* 5列布局 */
+    grid-template-rows: repeat(3, 1fr); /* 3行布局 */
+    gap: 12px;
+    width: 100%;
+    max-width: 700px;
+    padding: 20px;
+    margin-top: var(--search-box-top, 120px); /* 向下偏移到搜索框位置 */
     z-index: 2001;
-    background: rgba(255, 255, 255, 0.15); /* 半透明背景 */
-    backdrop-filter: blur(5px); /* 菜单项区域轻微模糊 */
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(5px);
     border-radius: 12px;
 }
 

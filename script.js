@@ -9,12 +9,59 @@ Licensed under GPLv3
 `);
 
 // 主应用
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const searchIcon = document.querySelector('.search-icon');
     const timeDate = document.querySelector('.time-date');
     const searchBox = document.querySelector('.search-box');
     const contextMenu = document.getElementById('context-menu');
     const searchBoxesContainer = document.querySelector('.search-boxes-container');
+    const menuItemsContainer = document.querySelector('.menu-items');
+
+    // 读取快捷访问数据并动态生成菜单
+    async function loadQuickAccessMenu() {
+        try {
+            const response = await fetch('quick-access.json');
+            if (!response.ok) {
+                throw new Error('Failed to load quick-access.json');
+            }
+            const quickAccessData = await response.json();
+
+            // 按 id 排序
+            quickAccessData.sort((a, b) => a.id - b.id);
+
+            // 清空现有菜单项
+            menuItemsContainer.innerHTML = '';
+
+            // 动态生成菜单项
+            quickAccessData.forEach(item => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.setAttribute('data-url', item.url);
+                menuItem.innerHTML = `
+                    <div class="menu-icon">${item.icon}</div>
+                    <span>${item.title}</span>
+                `;
+
+                // 添加点击事件
+                menuItem.addEventListener('click', function() {
+                    window.open(item.url, '_blank');
+                    // 点击后关闭菜单
+                    contextMenu.classList.remove('active');
+                    document.documentElement.style.removeProperty('--search-box-top');
+                    setBackgroundBlur(false);
+                    searchBoxesContainer.style.opacity = '1';
+                    searchBoxesContainer.style.visibility = 'visible';
+                });
+
+                menuItemsContainer.appendChild(menuItem);
+            });
+        } catch (error) {
+            console.error('Error loading quick access data:', error);
+        }
+    }
+
+    // 初始化快捷访问菜单
+    await loadQuickAccessMenu();
 
     // 获取所有圆形搜索框
     const circleSearchBoxes = document.querySelectorAll('.search-box-circle');
@@ -768,19 +815,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // contextMenu覆盖整个页面，menu-items通过margin-top向下偏移
         contextMenu.classList.add('active');
         setBackgroundBlur(true); // 启用背景模糊
-
-        const menuItems = document.querySelectorAll('.menu-item');
-        menuItems.forEach(item => {
-            const url = item.getAttribute('data-url');
-            item.onclick = function() {
-                window.open(url, '_blank');
-                contextMenu.classList.remove('active');
-                document.documentElement.style.removeProperty('--search-box-top');
-                setBackgroundBlur(false); // 移除背景模糊
-                searchBoxContainer.style.opacity = '1';
-                searchBoxContainer.style.visibility = 'visible';
-            };
-        });
     }
 
     // timeDate 点击打开/关闭快捷访问

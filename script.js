@@ -65,8 +65,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                     contextMenu.classList.remove('active');
                     document.documentElement.style.removeProperty('--search-box-top');
                     setBackgroundBlur(false);
-                    searchBoxesContainer.style.opacity = '1';
-                    searchBoxesContainer.style.visibility = 'visible';
                     if (settings) settings.style.display = 'none';
                     // 恢复通知位置
                     const notices = document.getElementById('notices');
@@ -104,8 +102,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             contextMenu.classList.remove('active');
             document.documentElement.style.removeProperty('--search-box-top');
             setBackgroundBlur(false);
-            searchBoxesContainer.style.opacity = '1';
-            searchBoxesContainer.style.visibility = 'visible';
             if (settings) settings.style.display = 'none';
             // 恢复通知位置
             const notices = document.getElementById('notices');
@@ -1049,8 +1045,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 contextMenu.classList.remove('active');
                 document.documentElement.style.removeProperty('--search-box-top');
                 setBackgroundBlur(false);
-                searchBoxesContainer.style.opacity = '1';
-                searchBoxesContainer.style.visibility = 'visible';
                 if (settings) settings.style.display = 'none';
                 // 恢复通知位置
                 const notices = document.getElementById('notices');

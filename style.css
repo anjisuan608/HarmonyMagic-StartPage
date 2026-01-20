@@ -435,15 +435,19 @@ body::after {
     width: 100%;
     height: 100vh; /* 覆盖整个视口 */
     background: transparent; /* 无背景 */
-    display: none;
+    display: flex;
     z-index: 2000;
     align-items: flex-start; /* 顶部对齐 */
     justify-content: center;
     padding-top: 0;
+    opacity: 0;
+    visibility: hidden;
 }
 
 .context-menu.active {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .context-menu.active .time-display,
@@ -454,6 +458,7 @@ body::after {
 .context-menu.active .search-boxes-container {
     opacity: 0;
     visibility: hidden; /* 打开快捷访问时隐藏搜索框 */
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .menu-items {
@@ -470,6 +475,14 @@ body::after {
     background: transparent;
     backdrop-filter: none;
     border-radius: 0;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.context-menu.active .menu-items {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
 }
 
 .menu-item {

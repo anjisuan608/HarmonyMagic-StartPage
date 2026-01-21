@@ -1335,6 +1335,70 @@ body::after {
     color: #333;
 }
 
+/* 编辑面板隐藏按钮样式 */
+.edit-shortcut-hide-btn {
+    background: none;
+    border: none;
+    color: #2196F3;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.edit-shortcut-hide-btn:hover {
+    background: rgba(33, 150, 243, 0.15);
+}
+
+.edit-shortcut-hide-btn:active {
+    transform: scale(0.95);
+}
+
+/* 已隐藏的H按钮保持蓝色常亮 */
+.edit-shortcut-hide-btn-active {
+    color: #2196F3 !important;
+    background: rgba(33, 150, 243, 0.2) !important;
+}
+
+.edit-shortcut-hide-btn-active:hover {
+    background: rgba(33, 150, 243, 0.3) !important;
+}
+
+/* 隐藏项目的样式 */
+.edit-shortcut-item.hidden-item {
+    opacity: 0.5;
+    background: rgba(245, 245, 245, 0.8);
+}
+
+.edit-shortcut-item.hidden-item .edit-shortcut-item-icon {
+    opacity: 0.6;
+}
+
+.edit-shortcut-item.hidden-item .edit-shortcut-item-text {
+    color: #999;
+}
+
+/* 快捷访问菜单中隐藏项目的样式 */
+.menu-item.preset-item.is-hidden {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+.menu-item.preset-item.is-hidden .menu-icon {
+    opacity: 0.5;
+}
+
+.menu-item.preset-item.is-hidden .menu-text {
+    color: #aaa;
+}
+
 .edit-shortcut-list {
     max-height: 400px;
     overflow-y: auto;

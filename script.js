@@ -1307,6 +1307,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // 获取设置面板内容容器，阻止事件冒泡避免关闭快捷访问菜单
+    const settingsModalContent = document.querySelector('.settings-modal-content');
+    if (settingsModalContent) {
+        settingsModalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
     // SVG 图标定义
     const svgOff = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0zM514.460823 921.606867a409.618313 409.618313 0 1 1 409.595422-409.595421A409.595422 409.595422 0 0 1 514.460823 921.606867z" fill="#CCCCCC" p-id="7318"></path>';
     const svgOn = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0z m0 921.606867a409.618313 409.618313 0 1 1 409.595421-409.595421A409.595422 409.595422 0 0 1 1536.011446 921.606867z" fill="#4CAF50" p-id="7474"></path>';
@@ -1328,7 +1336,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 点击设置项切换状态
     settingItems.forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
             const indicator = this.querySelector('.status-indicator');
             const icon = this.querySelector('.status-icon');
             if (indicator && icon) {

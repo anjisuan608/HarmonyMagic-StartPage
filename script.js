@@ -1481,6 +1481,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 执行重置壁纸逻辑
                 sendNotice('壁纸已重置为默认', 'info');
             }
+        },
+        'reset-shortcuts': {
+            title: '重置快捷访问',
+            message: '确定要重置快捷访问吗？这将删除所有自定义快捷方式。',
+            onOk: function() {
+                // 删除快捷访问cookie
+                setCookie('custom_shortcuts', []);
+                // 重新加载菜单
+                loadQuickAccessMenu();
+                sendNotice('快捷访问已重置', 'info');
+            }
         }
     };
 
@@ -1835,13 +1846,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 点击操作项显示确认对话框
     settingItems.forEach(item => {
-        if (item.classList.contains('setting-item-action')) {
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const actionId = this.dataset.setting;
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // 支持 data-setting 和 data-action
+            const actionId = this.dataset.setting || this.dataset.action;
+            if (actionId && confirmActions[actionId]) {
                 openConfirmDialog(actionId);
-            });
-        }
+            }
+        });
     });
 
     // 初始化设置项状态图标

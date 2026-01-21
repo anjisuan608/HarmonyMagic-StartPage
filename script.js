@@ -1971,11 +1971,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 按id正序排序隐藏的预设
         hiddenPresetItems.sort((a, b) => a.presetId - b.presetId);
         
-        // 先添加可见的预设，再添加隐藏的预设（置底）
+        // 先添加可见的预设
         items.push(...visiblePresets);
-        items.push(...hiddenPresetItems);
         
-        // 加载自定义快捷方式
+        // 加载自定义快捷方式（在隐藏预设之前）
         const customShortcuts = getCookie('custom_shortcuts') || [];
         customShortcuts.forEach(item => {
             items.push({
@@ -1988,6 +1987,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 isHidden: false
             });
         });
+        
+        // 最后添加隐藏的预设（置底，包括所有自定义快捷访问之后）
+        items.push(...hiddenPresetItems);
+        
         return items;
     }
 
@@ -2040,12 +2043,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                     ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
                 </div>
                 <div class="edit-shortcut-item-actions">
-                    <button class="edit-shortcut-move-btn edit-shortcut-move-up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>
+                    <button class="edit-shortcut-move-btn edit-shortcut-move-up" data-index="${index}" ${index === 0 || (index > 0 && editShortcutItems[index - 1].isHidden !== item.isHidden) ? 'disabled' : ''}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 15L12 9L6 15"/>
                         </svg>
                     </button>
-                    <button class="edit-shortcut-move-btn edit-shortcut-move-down" data-index="${index}" ${index === editShortcutItems.length - 1 ? 'disabled' : ''}>
+                    <button class="edit-shortcut-move-btn edit-shortcut-move-down" data-index="${index}" ${index === editShortcutItems.length - 1 || (index < editShortcutItems.length - 1 && editShortcutItems[index + 1].isHidden !== item.isHidden) ? 'disabled' : ''}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M6 9L12 15L18 9"/>
                         </svg>
@@ -2061,7 +2064,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const index = parseInt(this.dataset.index);
-                if (index > 0) {
+                const currentItem = editShortcutItems[index];
+                // 检查前一项是否与当前项类型相同（都隐藏或都不隐藏）
+                if (index > 0 && editShortcutItems[index - 1].isHidden === currentItem.isHidden) {
                     const temp = editShortcutItems[index];
                     editShortcutItems[index] = editShortcutItems[index - 1];
                     editShortcutItems[index - 1] = temp;
@@ -2075,7 +2080,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const index = parseInt(this.dataset.index);
-                if (index < editShortcutItems.length - 1) {
+                const currentItem = editShortcutItems[index];
+                // 检查后一项是否与当前项类型相同（都隐藏或都不隐藏）
+                if (index < editShortcutItems.length - 1 && editShortcutItems[index + 1].isHidden === currentItem.isHidden) {
                     const temp = editShortcutItems[index];
                     editShortcutItems[index] = editShortcutItems[index + 1];
                     editShortcutItems[index + 1] = temp;

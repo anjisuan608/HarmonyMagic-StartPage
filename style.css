@@ -1364,6 +1364,12 @@ body::after {
 .edit-shortcut-item-icon img {
     width: 32px;
     height: 32px;
+    border-radius: 3px;
+}
+
+.edit-shortcut-item-icon .icon {
+    width: 32px;
+    height: 32px;
 }
 
 .edit-shortcut-item-text {

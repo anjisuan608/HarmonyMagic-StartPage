@@ -1468,8 +1468,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         },
         'delete-preset-shortcut': {
-            title: '删除预制快捷访问',
-            message: '这是预制快捷访问，确定要删除吗？删除后可通过还原按钮恢复。',
+            title: '删除预设快捷访问',
+            message: '这是预设快捷访问，确定要删除吗？删除后可通过还原按钮恢复。',
             onOk: function() {
                 const index = parseInt(confirmDialog.dataset.targetIndex);
                 const item = editShortcutItems[index];
@@ -1496,12 +1496,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         },
         'restore-deleted-presets': {
-            title: '还原预制快捷访问',
-            message: '确定要还原所有被删除的预制快捷访问吗？',
+            title: '还原预设快捷访问',
+            message: '确定要还原所有被删除的预设快捷访问吗？',
             onOk: function() {
                 const deletedPresets = JSON.parse(getCookie('deleted_presets') || '[]');
                 if (deletedPresets.length === 0) {
-                    sendNotice('没有需要还原的预制快捷访问', 'info');
+                    sendNotice('没有需要还原的预设快捷访问', 'info');
                     return;
                 }
                 // 重新加载预设并过滤掉被删除的
@@ -1517,7 +1517,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 setCookie('deleted_presets', []);
                 editShortcutHasChanges = true;
                 renderEditShortcutList();
-                sendNotice(`已还原 ${presetsToRestore.length} 个预制快捷访问`, 'info');
+                sendNotice(`已还原 ${presetsToRestore.length} 个预设快捷访问`, 'info');
             }
         }
     };
@@ -1931,17 +1931,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             div.className = 'edit-shortcut-item';
             div.dataset.index = index;
             
-            // 图标
+            // 图标 - 预设项目直接使用图标HTML，自定义项目使用favicon图片
             let iconContent;
-            if (item.icon && item.icon.trim()) {
-                                    iconContent = '<img src="' + encodeURI(item.icon.trim()) + '" class="favicon-img" width="32" height="32" onerror="this.classList.add(\'favicon-error\')">';
-                                    } else {                iconContent = defaultIconSVG;
+            if (item.isPreset) {
+                // 预设项目直接渲染SVG图标
+                iconContent = item.icon;
+            } else if (item.icon && item.icon.trim()) {
+                // 自定义项目使用favicon图片
+                iconContent = '<img src="' + encodeURI(item.icon.trim()) + '" class="favicon-img" width="32" height="32" onerror="this.classList.add(\'favicon-error\')">';
+            } else {
+                iconContent = defaultIconSVG;
             }
             
             div.innerHTML = `
                 <div class="edit-shortcut-item-icon">${iconContent}</div>
                 <div class="edit-shortcut-item-text" title="${item.title}">
-                    ${item.isPreset ? '<span class="preset-tag">预制</span>' : ''}${item.title}
+                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
                 </div>
                 <div class="edit-shortcut-item-actions">
                     <button class="edit-shortcut-move-btn edit-shortcut-move-up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>
@@ -2058,7 +2063,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.stopPropagation();
             const deletedPresets = JSON.parse(getCookie('deleted_presets') || '[]');
             if (deletedPresets.length === 0) {
-                sendNotice('没有需要还原的预制快捷访问', 'info');
+                sendNotice('没有需要还原的预设快捷访问', 'info');
                 return;
             }
             openConfirmDialog('restore-deleted-presets');

@@ -2119,22 +2119,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                         .filter(i => i.isPreset && i.isHidden)
                         .map(i => i.presetId);
                     
-                    console.log('toggleHide - item:', item.title);
-                    console.log('toggleHide - presetId:', item.presetId, 'type:', typeof item.presetId);
-                    console.log('toggleHide - newHiddenState:', newHiddenState);
-                    console.log('toggleHide - hiddenPresets before save:', hiddenPresets);
-                    console.log('toggleHide - hiddenPresets type:', typeof hiddenPresets, 'isArray:', Array.isArray(hiddenPresets));
-                    
                     // 使用逗号分隔的字符串格式，避免JSON数组的[]字符被过滤
                     const cookieValue = hiddenPresets.join(',');
                     const encodedValue = encodeURIComponent(cookieValue);
-                    console.log('toggleHide - cookieValue:', cookieValue);
-                    console.log('toggleHide - encodedValue:', encodedValue);
                     
                     document.cookie = 'hidden_presets=' + encodedValue + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
-                    
-                    console.log('toggleHide - document.cookie set:', 'hidden_presets=' + encodedValue);
-                    console.log('toggleHide - verify getCookie:', decodeURIComponent(getCookieRaw('hidden_presets') || ''));
                     
                     renderEditShortcutList();
                 }
@@ -2155,9 +2144,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         const presetItems = editShortcutItems.filter(item => item.isPreset);
         const customItems = editShortcutItems.filter(item => !item.isPreset);
         
-        console.log('saveShortcutOrder - editShortcutItems:', editShortcutItems);
-        console.log('saveShortcutOrder - editShortcutItems[0].isHidden:', editShortcutItems[0]?.isHidden);
-        
         // 保存预设顺序 - 直接操作cookie
         const presetOrder = presetItems.map(item => item.presetId);
         document.cookie = 'quick_access_order=' + encodeURIComponent(JSON.stringify(presetOrder)) + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
@@ -2167,15 +2153,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             .filter(item => item.isPreset && item.isHidden)
             .map(item => item.presetId);
         
-        console.log('saveShortcutOrder - hiddenPresets:', hiddenPresets);
-        
         // 直接操作document.cookie - 使用逗号分隔格式
         const hiddenPresetsValue = hiddenPresets.join(',');
         const encodedHiddenPresets = encodeURIComponent(hiddenPresetsValue);
         document.cookie = 'hidden_presets=' + encodedHiddenPresets + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
-        
-        console.log('saveShortcutOrder - saved cookie:', 'hidden_presets=' + encodedHiddenPresets);
-        console.log('saveShortcutOrder - verify getCookie:', decodeURIComponent(getCookieRaw('hidden_presets') || ''));
         
         // 保存自定义快捷方式
         const newCustomShortcuts = customItems.map(item => ({

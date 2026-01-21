@@ -84,8 +84,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 清空现有菜单项
             menuItemsContainer.innerHTML = '';
 
-            // 动态生成菜单项
+            // 动态生成菜单项（过滤掉已删除的预设）
+            const deletedPresets = JSON.parse(getCookie('deleted_presets') || '[]');
             quickAccessData.forEach(item => {
+                if (deletedPresets.includes(item.id)) return;
                 const menuItem = document.createElement('div');
                 menuItem.className = 'menu-item';
                 menuItem.setAttribute('data-url', item.url);
@@ -1492,6 +1494,59 @@ document.addEventListener('DOMContentLoaded', async function() {
             onOk: function() {
                 closeEditShortcutPanel();
             }
+        },
+        'delete-preset-shortcut': {
+            title: '删除预制快捷访问',
+            message: '这是预制快捷访问，确定要删除吗？删除后可通过还原按钮恢复。',
+            onOk: function() {
+                const index = parseInt(confirmDialog.dataset.targetIndex);
+                const item = editShortcutItems[index];
+                // 记录被删除的预设
+                const deletedPresets = JSON.parse(getCookie('deleted_presets') || '[]');
+                if (!deletedPresets.includes(item.presetId)) {
+                    deletedPresets.push(item.presetId);
+                    setCookie('deleted_presets', deletedPresets);
+                }
+                // 从列表中移除
+                editShortcutItems.splice(index, 1);
+                editShortcutHasChanges = true;
+                renderEditShortcutList();
+            }
+        },
+        'delete-custom-shortcut': {
+            title: '删除快捷访问',
+            message: '确定要删除该快捷访问吗？',
+            onOk: function() {
+                const index = parseInt(confirmDialog.dataset.targetIndex);
+                editShortcutItems.splice(index, 1);
+                editShortcutHasChanges = true;
+                renderEditShortcutList();
+            }
+        },
+        'restore-deleted-presets': {
+            title: '还原预制快捷访问',
+            message: '确定要还原所有被删除的预制快捷访问吗？',
+            onOk: function() {
+                const deletedPresets = JSON.parse(getCookie('deleted_presets') || '[]');
+                if (deletedPresets.length === 0) {
+                    sendNotice('没有需要还原的预制快捷访问', 'info');
+                    return;
+                }
+                // 重新加载预设并过滤掉被删除的
+                const allPresets = loadPresetShortcuts();
+                const presetsToRestore = allPresets.filter(p => deletedPresets.includes(p.presetId));
+                // 按id正序排序
+                presetsToRestore.sort((a, b) => a.presetId.localeCompare(b.presetId, undefined, {numeric: true}));
+                // 添加到列表最下面
+                presetsToRestore.forEach(preset => {
+                    editShortcutItems.push(preset);
+                });
+                // 清空已删除记录
+                setCookie('deleted_presets', []);
+                editShortcutHasChanges = true;
+                renderEditShortcutList();
+                sendNotice(`已还原 ${presetsToRestore.length} 个预制快捷访问`, 'info');
+            }
         }
     };
 
@@ -1831,6 +1886,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const editShortcutPanel = document.getElementById('edit-shortcut-panel');
     const editShortcutClose = document.getElementById('edit-shortcut-close');
     const editShortcutReset = document.getElementById('edit-shortcut-reset');
+    const editShortcutRestore = document.getElementById('edit-shortcut-restore');
     const editShortcutList = document.getElementById('edit-shortcut-list');
     const editShortcutCancel = document.getElementById('edit-shortcut-cancel');
     const editShortcutApply = document.getElementById('edit-shortcut-apply');
@@ -1865,8 +1921,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 加载所有快捷方式（预设 + 自定义）
     function loadAllShortcuts() {
         const items = [];
-        // 加载预设快捷方式
+        const deletedPresets = JSON.parse(getCookie('deleted_presets') || '[]');
+        // 加载预设快捷方式（过滤掉已删除的）
         quickAccessData.forEach(item => {
+            if (deletedPresets.includes(item.id)) return;
             items.push({
                 id: 'preset_' + item.id,
                 presetId: item.id,
@@ -1925,7 +1983,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <path d="M6 9L12 15L18 9"/>
                         </svg>
                     </button>
-                    <button class="edit-shortcut-move-btn edit-shortcut-delete" data-index="${index}" ${item.isPreset ? 'disabled' : ''} title="删除">
+                    <button class="edit-shortcut-move-btn edit-shortcut-delete" data-index="${index}" title="删除">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6L6 18M6 6l12 12"/>
                         </svg>
@@ -1969,11 +2027,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 e.stopPropagation();
                 const index = parseInt(this.dataset.index);
                 const item = editShortcutItems[index];
-                if (item.isPreset) return; // 预设项目不能删除
-                if (confirm('确定要删除"' + item.title + '"吗？')) {
-                    editShortcutItems.splice(index, 1);
-                    editShortcutHasChanges = true;
-                    renderEditShortcutList();
+                confirmDialog.dataset.targetIndex = index;
+                if (item.isPreset) {
+                    openConfirmDialog('delete-preset-shortcut');
+                } else {
+                    openConfirmDialog('delete-custom-shortcut');
                 }
             });
         });
@@ -2020,6 +2078,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.stopPropagation();
             // 使用确认对话框
             openConfirmDialog('reset-shortcuts');
+        });
+    }
+
+    // 点击还原按钮
+    if (editShortcutRestore) {
+        editShortcutRestore.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const deletedPresets = JSON.parse(getCookie('deleted_presets') || '[]');
+            if (deletedPresets.length === 0) {
+                sendNotice('没有需要还原的预制快捷访问', 'info');
+                return;
+            }
+            openConfirmDialog('restore-deleted-presets');
         });
     }
 

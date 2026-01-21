@@ -90,12 +90,7 @@ body::after {
     position: relative;
     z-index: 3000 !important;
     cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.time-display:hover,
-.date-display:hover {
-    transform: scale(1.02);
+    transition: none;
 }
 
 #time {
@@ -434,21 +429,25 @@ body::after {
 
 /* 右键菜单样式 */
 .context-menu {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3); /* 添加半透明背景 */
-    backdrop-filter: blur(5px); /* 添加模糊效果 */
-    display: none;
-    z-index: 2000; /* 降低context-menu的z-index，但仍高于其他元素 */
-    align-items: center;
+    height: 100vh; /* 覆盖整个视口 */
+    background: transparent; /* 无背景 */
+    display: flex;
+    z-index: 2000;
+    align-items: flex-start; /* 顶部对齐 */
     justify-content: center;
+    padding-top: 0;
+    opacity: 0;
+    visibility: hidden;
 }
 
 .context-menu.active {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .context-menu.active .time-display,
@@ -459,56 +458,108 @@ body::after {
 .context-menu.active .search-boxes-container {
     opacity: 0;
     visibility: hidden; /* 打开快捷访问时隐藏搜索框 */
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .menu-items {
     display: grid;
-    grid-template-columns: repeat(8, 1fr); /* 8列布局 */
+    grid-template-columns: repeat(5, 1fr); /* 5列布局 */
     grid-template-rows: repeat(3, 1fr); /* 3行布局 */
-    gap: 15px;
-    max-width: 90%;
-    max-height: 80%;
-    overflow: auto;
+    gap: 12px;
+    width: 100%;
+    max-width: 660px;
+    max-height: 880px;
     padding: 20px;
-    z-index: 2001; /* 确保菜单项目在context-menu之上 */
+    margin-top: var(--search-box-top, 120px); /* 向下偏移到搜索框位置 */
+    z-index: 2001;
+    /* 移除背景板 */
+    background: transparent;
+    backdrop-filter: none;
+    border-radius: 0;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.context-menu.active .menu-items {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
 }
 
 .menu-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px 10px;
+    justify-content: center;
+    padding: 8px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 80px;
+    transition: all 0.2s ease;
     color: white; /* 将字体设置为白色 */
     position: relative;
 }
 
-.menu-item:hover {
-    transform: translateY(-5px);
+/* 点击背景板 - 方形 */
+.menu-item-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    z-index: 1;
+    background: #F5F5F5;
 }
 
-.menu-icon {
-    font-size: 1.8rem;
-    margin-bottom: 8px;
-    width: 24px;
-    height: 24px;
+/* 图标容器 */
+.menu-icon-wrapper {
+    position: relative;
+    width: 100%;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: 4px;
+}
+
+/* 图标不响应点击 */
+.menu-icon {
+    font-size: 1.5rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* 图标不响应点击 */
+    z-index: 2;
+}
+
+.menu-icon svg {
+    width: 100%;
+    height: 100%;
 }
 
 .menu-item img {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: 3px;
-    margin-bottom: 8px;
+    pointer-events: none;
+    z-index: 2;
 }
 
-.menu-item span {
-    text-shadow: none; /* 移除文字阴影以解决重影问题 */
-    color: white; /* 确保文字为白色 */
+.menu-text {
+    text-shadow: none;
+    color: #FFFFFF;
+    font-size: 0.85rem;
+    z-index: 2;
+    position: relative;
+    pointer-events: auto; /* 文字可以点击 */
+    width: 80px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
 }
 
 @media (max-width: 768px) {
@@ -655,6 +706,92 @@ body::after {
         height: 20px;
         font-size: 1.2rem;
     }
+
+    /* 壁纸面板移动端适配 */
+    #wallpaper-panel .settings-modal-content {
+        width: 95%;
+        max-width: 95%;
+        max-height: 85vh;
+        padding: 16px;
+    }
+
+    .wallpaper-body {
+        gap: 16px;
+        padding: 12px 0;
+    }
+
+    .wallpaper-custom-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .wallpaper-preview {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        align-self: center;
+        cursor: pointer;
+    }
+
+    .wallpaper-preview-img {
+        border-width: 2px;
+    }
+
+    .wallpaper-preview-img.selected {
+        box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.3);
+    }
+
+    .wallpaper-custom-options {
+        gap: 10px;
+    }
+
+    .wallpaper-tab-btn {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .wallpaper-input {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+
+    .wallpaper-browse-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+
+    .wallpaper-presets {
+        gap: 10px;
+    }
+
+    .wallpaper-preset-item {
+        width: calc((95% - 20px) / 3);
+        max-width: none;
+        aspect-ratio: 16 / 9;
+        border-radius: 8px;
+    }
+
+    .wallpaper-preset-img {
+        border-width: 2px;
+        border-radius: 8px;
+    }
+
+    .wallpaper-preset-item.selected .wallpaper-preset-img {
+        box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.3);
+    }
+
+    .wallpaper-preset-checkmark {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+    }
+
+    .wallpaper-preset-name {
+        font-size: 11px;
+        padding: 6px 8px;
+        border-radius: 0 0 8px 8px;
+    }
 }
 
 /* 页脚版权信息样式 */
@@ -688,6 +825,1046 @@ body::after {
     flex-direction: column;
     gap: 10px;
     pointer-events: none;
+}
+
+/* 设置面板样式 - 定位在右上角，仅在快捷访问打开时显示 */
+#settings, .settings {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: none;
+}
+
+.context-menu.active ~ #settings,
+.context-menu.active ~ .settings {
+    display: block;
+}
+
+/* 设置按钮样式 */
+.settings-button {
+    position: relative;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.setting-button:hover::before {
+    opacity: 1;
+}
+
+.setting-button:active {
+    transform: scale(0.9);
+}
+
+/* 设置下拉菜单样式 */
+.settings-dropdown {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 160px;
+    padding: 8px 0;
+    display: none;
+    z-index: 10002;
+}
+
+.settings-dropdown.active {
+    display: block;
+    animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.settings-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    gap: 12px;
+}
+
+.settings-menu-item:hover {
+    background-color: #f5f5f5;
+}
+
+.settings-menu-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.settings-menu-item span {
+    font-size: 14px;
+    color: #333;
+}
+
+/* 设置菜单弹窗样式 */
+.settings-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-modal.active {
+    display: flex;
+}
+
+.settings-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.settings-modal.active .settings-modal-overlay {
+    opacity: 1;
+}
+
+.settings-modal-content {
+    position: relative;
+    width: 400px;
+    max-width: 90%;
+    max-height: 80vh;
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    overflow: hidden;
+}
+
+/* 壁纸面板使用更宽的布局 */
+#wallpaper-panel .settings-modal-content {
+    width: 720px;
+    max-width: min(720px, 95%);
+    max-height: 900px;
+}
+
+.settings-modal.active .settings-modal-content {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #EEEEEE;
+}
+
+.settings-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333333;
+}
+
+.settings-close {
+    position: relative;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.settings-close::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(128, 128, 128, 0.4) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.settings-close:hover::before {
+    opacity: 1;
+}
+
+.settings-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.settings-close:active {
+    transform: scale(0.9);
+}
+
+.settings-close svg {
+    display: block;
+}
+
+.settings-body {
+    max-height: calc(80vh - 60px);
+    /* 只有内容溢出时才显示滚动条 */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 隐藏滚动条直到悬停 */
+.settings-body::-webkit-scrollbar {
+    width: 6px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.settings-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.settings-body::-webkit-scrollbar-thumb {
+    background: #CCCCCC;
+    border-radius: 3px;
+}
+
+.settings-body:hover::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar:hover,
+.settings-body:active::-webkit-scrollbar {
+    opacity: 1;
+}
+
+.settings-body::-webkit-scrollbar-thumb:hover {
+    background: #AAAAAA;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 48px;
+    padding: 0;
+    border-bottom: 1px solid #F5F5F5;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.setting-item:hover {
+    background: #FAFAFA;
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-item-text {
+    font-size: 14px;
+    color: #333333;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* 纯文本操作项样式（无开关） */
+.setting-item-action {
+    justify-content: flex-start !important;
+}
+
+.setting-item-action .setting-item-text {
+    text-align: left;
+}
+
+.status-indicator {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.status-indicator:active {
+    transform: scale(0.9);
+}
+
+.status-icon {
+    width: 100%;
+    height: 100%;
+}
+
+.action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 壁纸设置面板样式 */
+.wallpaper-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px 0;
+}
+
+.wallpaper-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wallpaper-section-label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.wallpaper-custom-row {
+    display: flex;
+    gap: 16px;
+}
+
+.wallpaper-preview {
+    width: 120px;
+    height: 80px;
+    flex-shrink: 0;
+}
+
+.wallpaper-preview-img {
+    width: 100%;
+    height: 100%;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.wallpaper-preview-img.selected {
+    border-color: #007AFF;
+}
+
+.wallpaper-placeholder-icon {
+    opacity: 0.5;
+}
+
+.wallpaper-custom-options {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wallpaper-option-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.wallpaper-tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: #F5F5F5;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wallpaper-tab-btn.active {
+    background: #E0E0E0;
+    color: #333;
+    font-weight: 500;
+}
+
+.wallpaper-tab-content {
+    display: none;
+    gap: 8px;
+    align-items: center;
+}
+
+.wallpaper-tab-content.active {
+    display: flex;
+}
+
+.wallpaper-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #DDD;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fafafa;
+}
+
+.wallpaper-input:focus {
+    outline: none;
+    border-color: #007AFF;
+}
+
+.wallpaper-file-input {
+    display: none;
+}
+
+.wallpaper-browse-btn {
+    padding: 8px 16px;
+    border: none;
+    background: #F5F5F5;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.wallpaper-browse-btn:hover {
+    background: #E0E0E0;
+}
+
+.wallpaper-presets {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 0;
+}
+
+.wallpaper-preset-item {
+    position: relative;
+    width: 120px;
+    height: 80px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.wallpaper-preset-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wallpaper-preset-item.selected .wallpaper-preset-img {
+    border-color: #007AFF;
+}
+
+.wallpaper-preset-placeholder {
+    opacity: 0.5;
+}
+
+.wallpaper-preset-checkmark {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #007AFF;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.wallpaper-preset-item.selected .wallpaper-preset-checkmark {
+    display: flex;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .settings-modal-content {
+        width: 90%;
+        max-height: 70vh;
+        padding: 16px;
+    }
+
+    .settings-title {
+        font-size: 15px;
+    }
+
+    .setting-item {
+        padding: 10px 0;
+    }
+
+    .setting-item-text {
+        font-size: 13px;
+    }
+}
+
+/* 可复用关闭按钮样式 */
+.icon-close {
+    position: relative;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.icon-close::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(128, 128, 128, 0.4) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.icon-close:hover::before {
+    opacity: 1;
+}
+
+.icon-close:hover {
+    background: #F5F5F5;
+}
+
+.icon-close:active {
+    transform: scale(0.95);
+}
+
+.icon-close svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+/* 确认对话框样式 */
+.confirm-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10002;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-dialog.active {
+    display: flex;
+}
+
+.confirm-dialog-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.confirm-dialog.active .confirm-dialog-overlay {
+    opacity: 1;
+}
+
+.confirm-dialog-content {
+    position: relative;
+    width: 320px;
+    max-width: 90%;
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.confirm-dialog.active .confirm-dialog-content {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+.confirm-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.confirm-dialog-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333333;
+}
+
+.confirm-dialog-message {
+    font-size: 14px;
+    color: #666666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.confirm-dialog-btn {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.confirm-dialog-cancel {
+    background: #F5F5F5;
+    color: #666666;
+}
+
+.confirm-dialog-cancel:hover {
+    background: #EEEEEE;
+}
+
+.confirm-dialog-ok {
+    background: #4CAF50;
+    color: white;
+}
+
+.confirm-dialog-ok:hover {
+    background: #43A047;
+}
+
+/* 添加快捷方式面板样式 */
+#add-shortcut-panel {
+    display: none;
+}
+
+#add-shortcut-panel.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#add-shortcut-panel .settings-modal-content {
+    width: 380px;
+    max-width: 90vw;
+    position: relative;
+    transform: none;
+    opacity: 1;
+}
+
+#add-shortcut-panel .settings-body {
+    padding: 20px;
+}
+
+.add-shortcut-field {
+    margin-bottom: 16px;
+}
+
+.add-shortcut-label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.add-shortcut-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.add-shortcut-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.add-shortcut-input::placeholder {
+    color: #aaa;
+}
+
+.add-shortcut-preview {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.add-shortcut-preview-label {
+    font-size: 13px;
+    color: #666;
+    margin-right: 12px;
+}
+
+.add-shortcut-preview-box {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9f9f9;
+}
+
+.add-shortcut-preview-box .icon {
+    width: 32px;
+    height: 32px;
+}
+
+.add-shortcut-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.add-shortcut-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.add-shortcut-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.add-shortcut-cancel:hover {
+    background: #e0e0e0;
+}
+
+.add-shortcut-save {
+    background: #4CAF50;
+    color: white;
+}
+
+.add-shortcut-save:hover {
+    background: #43A047;
+}
+
+/* 编辑快捷访问面板 */
+.edit-shortcut-header-btns {
+    display: flex;
+    align-items: center;
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.edit-shortcut-header-btns .settings-reset-btn {
+    border: none;
+    background: transparent;
+    border-radius: 0;
+    padding: 6px 10px;
+    margin: 0;
+}
+
+.edit-shortcut-header-btns .settings-reset-btn:first-child {
+    border-radius: 3px 0 0 3px;
+}
+
+.edit-shortcut-header-btns .settings-reset-btn:last-of-type {
+    border-right: none;
+    border-radius: 0;
+}
+
+.edit-shortcut-header-btns .settings-reset-btn:hover {
+    background: #e8e8e8;
+}
+
+.edit-shortcut-header-btns .settings-close {
+    padding: 6px 8px;
+    margin: 0;
+    border-radius: 0 3px 3px 0;
+}
+
+.edit-shortcut-header-btns .settings-close:hover {
+    background: #e8e8e8 !important;
+}
+
+.settings-reset-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.settings-reset-btn:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+/* 编辑面板隐藏按钮样式 */
+.edit-shortcut-hide-btn {
+    background: none;
+    border: none;
+    color: #2196F3;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.edit-shortcut-hide-btn:hover {
+    background: rgba(33, 150, 243, 0.15);
+}
+
+.edit-shortcut-hide-btn:active {
+    transform: scale(0.95);
+}
+
+/* 已隐藏的H按钮保持蓝色常亮 */
+.edit-shortcut-hide-btn-active {
+    color: #2196F3 !important;
+    background: rgba(33, 150, 243, 0.2) !important;
+}
+
+.edit-shortcut-hide-btn-active:hover {
+    background: rgba(33, 150, 243, 0.3) !important;
+}
+
+/* 隐藏项目的样式 */
+.edit-shortcut-item.hidden-item {
+    opacity: 0.5;
+    background: rgba(245, 245, 245, 0.8);
+}
+
+.edit-shortcut-item.hidden-item .edit-shortcut-item-icon {
+    opacity: 0.6;
+}
+
+.edit-shortcut-item.hidden-item .edit-shortcut-item-text {
+    color: #999;
+}
+
+/* 快捷访问菜单中隐藏项目的样式 */
+.menu-item.preset-item.is-hidden {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+.menu-item.preset-item.is-hidden .menu-icon {
+    opacity: 0.5;
+}
+
+.menu-item.preset-item.is-hidden .menu-text {
+    color: #aaa;
+}
+
+.edit-shortcut-list {
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.edit-shortcut-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    gap: 10px;
+}
+
+.edit-shortcut-item:last-child {
+    border-bottom: none;
+}
+
+.edit-shortcut-item-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-shortcut-item-icon img {
+    width: 32px;
+    height: 32px;
+    border-radius: 3px;
+}
+
+.edit-shortcut-item-icon .icon {
+    width: 32px;
+    height: 32px;
+}
+
+.edit-shortcut-item-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.preset-tag {
+    background: #F0F0F0;
+    color: #333333;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.edit-shortcut-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-shortcut-move-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.edit-shortcut-move-btn:hover {
+    background: #e0e0e0;
+}
+
+.edit-shortcut-move-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.edit-shortcut-delete {
+    color: #e53935;
+}
+
+.edit-shortcut-delete:hover:not(:disabled) {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.edit-shortcut-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.edit-shortcut-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.edit-shortcut-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.edit-shortcut-cancel:hover {
+    background: #e0e0e0;
+}
+
+.edit-shortcut-apply {
+    background: #2196F3;
+    color: white;
+}
+
+.edit-shortcut-apply:hover {
+    background: #1976D2;
+}
+
+.edit-shortcut-ok {
+    background: #4CAF50;
+    color: white;
+}
+
+.edit-shortcut-ok:hover {
+    background: #43A047;
 }
 
 /* 单条通知样式 */
@@ -741,6 +1918,30 @@ body::after {
 
 /* ==================== 移动端通知适配 ==================== */
 @media (max-width: 768px) {
+    /* 编辑快捷访问面板移动端适配 */
+    #edit-shortcut-panel .settings-modal-content {
+        width: 95%;
+        max-height: 85vh;
+        padding: 15px;
+    }
+
+    #edit-shortcut-panel .edit-shortcut-list {
+        max-height: 50vh;
+    }
+
+    .edit-shortcut-item {
+        padding: 8px 10px;
+    }
+
+    .edit-shortcut-buttons {
+        padding: 12px 0 5px 0;
+    }
+
+    .edit-shortcut-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
     .notices {
         position: fixed;
         top: auto !important;
@@ -808,4 +2009,372 @@ body::after {
     .notice-item.removing {
         animation: fadeOutMobile 0.3s ease forwards;
     }
+}
+
+/* ==================== 壁纸设置面板样式 ==================== */
+#wallpaper-panel {
+    display: none;
+}
+
+#wallpaper-panel.active {
+    display: flex;
+}
+
+.wallpaper-body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 20px 0;
+    max-height: calc(900px - 80px); /* 减去头部高度 */
+    overflow-y: auto;
+}
+
+.wallpaper-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+}
+
+.wallpaper-section-label {
+    font-size: 15px;
+    color: #666;
+    font-weight: 500;
+}
+
+.wallpaper-custom-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.wallpaper-preview {
+    width: 200px;
+    height: 112px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f5f5f5;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.wallpaper-preview-img {
+    width: 100%;
+    height: 100%;
+    background-color: #f5f5f5;
+    background-size: cover;
+    background-position: center;
+    border: 3px solid transparent;
+    border-radius: 10px;
+    transition: all 0.3s;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.wallpaper-preview-img.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3), 0 4px 20px rgba(76, 175, 80, 0.3);
+}
+
+.wallpaper-custom-options {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0; /* 防止flex子元素溢出 */
+}
+
+.wallpaper-option-tabs {
+    display: flex;
+    gap: 10px;
+}
+
+.wallpaper-tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: #F5F5F5;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    transition: all 0.3s;
+}
+
+.wallpaper-tab-btn:hover {
+    background: #E8E8E8;
+}
+
+.wallpaper-tab-btn.active {
+    background: #4CAF50;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.wallpaper-tab-content {
+    display: none;
+    gap: 10px;
+    align-items: center;
+}
+
+.wallpaper-tab-content.active {
+    display: flex;
+}
+
+.wallpaper-input {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.wallpaper-input:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+}
+
+.wallpaper-file-input {
+    display: none;
+}
+
+.wallpaper-browse-btn {
+    padding: 14px 20px;
+    border: none;
+    background: #F5F5F5;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    white-space: nowrap;
+    transition: all 0.3s;
+}
+
+.wallpaper-browse-btn:hover {
+    background: #E8E8E8;
+    transform: translateY(-1px);
+}
+
+.wallpaper-presets {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.wallpaper-preset-item {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #f5f5f5;
+    transition: all 0.3s;
+}
+
+.wallpaper-preset-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.wallpaper-preset-img {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.wallpaper-preset-item.selected .wallpaper-preset-img {
+    border-color: #4CAF50;
+}
+
+.wallpaper-preset-checkmark {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    background: #4CAF50;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.wallpaper-preset-item.selected .wallpaper-preset-checkmark {
+    display: flex;
+}
+
+.wallpaper-preset-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 10px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    color: white;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 0 0 10px 10px;
+}
+
+/* 关于面板样式 */
+.about-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+#edit-shortcut-panel .settings-modal-content {
+    width: 380px;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#edit-shortcut-panel .settings-header {
+    flex-shrink: 0;
+}
+
+#edit-shortcut-panel .edit-shortcut-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 100px;
+    max-height: 60vh;
+    padding: 10px 0;
+}
+
+#edit-shortcut-panel .edit-shortcut-buttons {
+    flex-shrink: 0;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+#about-panel .settings-modal-content {
+    width: 500px;
+}
+
+.about-title {
+    text-align: center;
+}
+
+.about-title p {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.about-copyright,
+.about-license,
+.about-icons,
+.about-links {
+    text-align: center;
+}
+
+.about-copyright p {
+    font-size: 16px;
+    color: #333;
+    margin: 0;
+}
+
+.about-license p,
+.about-icons p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+
+.about-license a,
+.about-icons a {
+    color: #007AFF;
+    text-decoration: none;
+}
+
+.about-license a:hover,
+.about-icons a:hover {
+    text-decoration: underline;
+}
+
+.about-links {
+    margin-top: 8px;
+}
+
+.about-links > p {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 12px 0;
+}
+
+.about-link-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.about-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid #DDD;
+    border-radius: 6px;
+    background: #5AC8FA;
+    color: #FFF;
+    font-size: 13px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.about-link-btn:hover {
+    background: #8fd7f8;
+    border-color: #CCC;
+}
+
+.about-link-btn.primary {
+    background: #4CAF50;
+    border-color: #4CAF50;
+    color: white;
+}
+
+.about-link-btn.primary:hover {
+    background: #45a049;
+    border-color: #45a049;
+}
+
+.about-link-btn svg {
+    flex-shrink: 0;
+}
+
+.main-badge {
+    font-size: 10px;
+    padding: 2px 5px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    margin-left: 4px;
+}
+
+.mirror-badge {
+    font-size: 10px;
+    padding: 2px 5px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    margin-left: 4px;
 }

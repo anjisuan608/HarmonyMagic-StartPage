@@ -8,13 +8,209 @@ Harmony Magic Start Page
 Licensed under GPLv3
 `);
 
+// 全局变量
+let quickAccessData = [];
+
 // 主应用
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const searchIcon = document.querySelector('.search-icon');
     const timeDate = document.querySelector('.time-date');
     const searchBox = document.querySelector('.search-box');
     const contextMenu = document.getElementById('context-menu');
     const searchBoxesContainer = document.querySelector('.search-boxes-container');
+    const menuItemsContainer = document.querySelector('.menu-items');
+    const settings = document.getElementById('settings');
+
+    // Cookie工具函数
+    function setCookie(name, value, days = 365) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = name + '=' + encodeURIComponent(JSON.stringify(value)) + ';expires=' + expires.toUTCString() + ';path=/';
+    }
+
+    function getCookie(name) {
+        const nameEQ = name + '=';
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) {
+                try {
+                    return JSON.parse(decodeURIComponent(c.substring(nameEQ.length)));
+                } catch (e) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+    
+    // 获取原始cookie字符串值（不解码）
+    function getCookieRaw(name) {
+        const nameEQ = name + '=';
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) {
+                return c.substring(nameEQ.length);
+            }
+        }
+        return null;
+    }
+
+    // 默认图标SVG
+    const defaultIconSVG = '<svg t="1768974157218" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8714" width="32" height="32"><path d="M512.704787 1022.681895c-6.566636 0-12.885487-0.746767-19.370211-0.997965l223.522968-358.091907c32.011327-42.692008 51.675057-95.154106 51.675057-152.604663 0-88.961536-45.561669-167.195974-114.530461-213.091436l322.88327 0c29.969663 65.017888 47.096842 137.184673 47.096842 213.424546C1023.98157 793.752715 795.095394 1022.681895 512.704787 1022.681895zM512.205805 256.491303c-134.523205 0-243.604451 102.347371-254.246906 233.876682L96.997133 214.338551C189.740287 84.72121 341.184526 0 512.704787 0c189.230383 0 354.100731 103.095504 442.520963 255.992321C955.22575 255.992321 302.108946 256.491303 512.205805 256.491303zM511.416716 298.145073c118.142111 0 213.88189 95.36503 213.88189 213.051163 0 117.68545-95.739779 213.093484-213.88189 213.093484-118.103885 0-213.882572-95.408034-213.882572-213.093484C297.534144 393.510103 393.312831 298.145073 511.416716 298.145073zM269.683279 590.222492c33.504179 102.303002 128.784566 176.716231 242.522526 176.716231 38.828478 0 75.283547-9.269059 108.292157-24.733419L448.229568 1018.192418c-251.87691-31.759447-446.887571-246.346465-446.887571-506.872631 0-94.739084 26.233779-183.159316 71.129911-259.235365L269.683279 590.222492z" fill="#515151" p-id="8715"></path></svg>';
+
+    // 读取快捷访问数据并动态生成菜单
+    async function loadQuickAccessMenu() {
+        try {
+            const response = await fetch('quick-access.json');
+            if (!response.ok) {
+                throw new Error('Failed to load quick-access.json');
+            }
+            quickAccessData = await response.json();
+
+            // 按 id 排序
+            quickAccessData.sort((a, b) => a.id - b.id);
+
+            // 系统图标的HTML模板（硬编码）
+            const addIconHTML = `<div class="menu-item" data-action="add">
+                <div class="menu-icon-wrapper">
+                    <div class="menu-item-bg"></div>
+                    <div class="menu-icon"><svg t="1768967144636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9794" width="32" height="32"><path d="M831.6 639.6h-63.9v127.9H639.9v63.9h127.8v127.9h63.9V831.4h127.9v-63.9H831.6z" p-id="9795" fill="#2c2c2c"></path><path d="M564.3 925.2c0-18.5-15-33.6-33.6-33.6H287.3c-86.2 0-156.4-70.2-156.4-156.4V286.9c0-86.2 70.1-156.4 156.4-156.4h448.4c86.2 0 156.4 70.2 156.4 156.4v238.8c0 18.5 15 33.6 33.6 33.6s33.6-15 33.6-33.6V286.9C959.2 163.6 859 63.3 735.7 63.3H287.3C164 63.3 63.7 163.6 63.7 286.8v448.3c0 123.2 100.3 223.5 223.6 223.5h243.4c18.6 0.1 33.6-14.9 33.6-33.4z" p-id="9796" fill="#2c2c2c"></path></svg></div>
+                </div>
+                <div class="menu-text">添加</div>
+            </div>`;
+
+            const editIconHTML = `<!-- 系统图标：编辑（始终显示在最后） -->
+            <div class="menu-item" data-action="edit">
+                <div class="menu-icon-wrapper">
+                    <div class="menu-item-bg"></div>
+                    <div class="menu-icon"><svg t="1768898892387" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4731" width="32" height="32"><path d="M474.58679343 587.16868738c-11.45302241 0-22.90604486-4.37057868-31.6472022-13.11173601-17.48231469-17.48231469-17.48231469-45.83841849 0-63.29440437l487.24053555-487.24053552c17.48231469-17.48231469 45.81208967-17.48231469 63.29440431 0 17.48231469 17.48231469 17.48231469 45.83841849 0 63.29440441L506.23399561 574.05695137a44.61676276 44.61676276 0 0 1-31.64720218 13.11173601z" fill="#2c2c2c" p-id="4732"></path><path d="M904.16728498 1017.19676833h-781.96497912c-62.68884228 0-113.68770304-50.99886074-113.68770305-113.71403181v-781.96497913c0-62.71517108 50.99886074-113.71403182 113.66137425-113.71403185l457.51533479 0.0263288c24.72273117 0 44.75893818 20.03620706 44.75893819 44.7589382s-20.03620706 44.75893818-44.75893819 44.7589382l-457.51533479-0.02632877c-13.2960375 0-24.14349786 10.84746035-24.14349785 24.16982661v781.96497915c0 13.32236631 10.84746035 24.1698266 24.16982665 24.16982664h781.96497912c13.32236631 0 24.1698266-10.84746035 24.16982668-24.16982664V403.42008173c0-24.72273117 20.06253583-44.75893818 44.75893815-44.75893828 24.72273117 0 44.75893818 20.03620706 44.7589382 44.75893828V903.50906532c0 62.68884228-50.99886074 113.68770304-113.68770303 113.68770301z" fill="#2c2c2c" p-id="4733"></path></svg></div>
+                </div>
+                <div class="menu-text">编辑</div>
+            </div>`;
+
+            // 清空现有菜单项
+            menuItemsContainer.innerHTML = '';
+
+            // 动态生成菜单项（过滤掉已隐藏的预设）
+            let hiddenPresets = [];
+            try {
+                const cookieValue = decodeURIComponent(getCookieRaw('hidden_presets') || '');
+                hiddenPresets = (cookieValue || '').split(',').filter(Boolean).map(Number);
+                // 确保是数组
+                if (!Array.isArray(hiddenPresets)) {
+                    hiddenPresets = [];
+                }
+            } catch (e) {
+                hiddenPresets = [];
+            }
+            quickAccessData.forEach(item => {
+                const isHidden = hiddenPresets.includes(item.id);
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item preset-item' + (isHidden ? ' is-hidden' : '');
+                menuItem.setAttribute('data-url', item.url);
+                menuItem.setAttribute('data-preset-id', item.id);
+                menuItem.style.display = isHidden ? 'none' : '';
+                menuItem.innerHTML = `
+                    <div class="menu-icon-wrapper">
+                        <div class="menu-item-bg"></div>
+                        <div class="menu-icon">${item.icon}</div>
+                    </div>
+                    <div class="menu-text" title="${item.title}">${item.title}</div>
+                `;
+                menuItemsContainer.appendChild(menuItem);
+            });
+
+            // 从Cookie加载自定义快捷方式
+            const customShortcuts = getCookie('custom_shortcuts') || [];
+            if (customShortcuts.length > 0) {
+                customShortcuts.forEach(item => {
+                    const menuItem = document.createElement('div');
+                    menuItem.className = 'menu-item custom-item';
+                    menuItem.setAttribute('data-url', item.url);
+                    menuItem.setAttribute('data-custom-id', item.id);
+                    
+                    // 确定图标HTML
+                    let iconContent;
+                    if (item.icon && item.icon.trim()) {
+                        const escapedIcon = encodeURI(item.icon.trim());
+                        iconContent = '<img src="' + escapedIcon + '" class="favicon-img" width="32" height="32" onerror="this.classList.add(\'favicon-error\')">';
+                    } else {
+                        iconContent = defaultIconSVG;
+                    }
+                    
+                    menuItem.innerHTML = `
+                        <div class="menu-icon-wrapper">
+                            <div class="menu-item-bg"></div>
+                            <div class="menu-icon">${iconContent}</div>
+                        </div>
+                        <div class="menu-text" title="${item.title}">${item.title}</div>
+                    `;
+                    menuItemsContainer.appendChild(menuItem);
+                });
+            }
+
+            // 恢复"添加"和"编辑"按钮
+            menuItemsContainer.insertAdjacentHTML('beforeend', addIconHTML);
+            menuItemsContainer.insertAdjacentHTML('beforeend', editIconHTML);
+
+        } catch (error) {
+            console.error('Error loading quick access data:', error);
+        }
+    }
+
+    // 事件委托 - 在容器上统一处理点击事件（只绑定一次）
+    function setupMenuItemDelegation() {
+        menuItemsContainer.addEventListener('click', function(e) {
+            const menuItem = e.target.closest('.menu-item');
+            if (!menuItem) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+
+            // 处理"添加"按钮
+            if (menuItem.dataset.action === 'add') {
+                openAddShortcutPanel();
+                return;
+            }
+
+            // 处理"编辑"按钮
+            if (menuItem.dataset.action === 'edit') {
+                openEditShortcutPanel();
+                return;
+            }
+
+            // 获取URL并跳转
+            const url = menuItem.dataset.url;
+            if (url && url !== '#') {
+                window.open(url, '_blank');
+            }
+
+            // 点击后关闭菜单
+            contextMenu.classList.remove('active');
+            document.documentElement.style.removeProperty('--search-box-top');
+            setBackgroundBlur(false);
+            // 直接恢复搜索框显示（确保立即生效，添加 !important）
+            const searchBoxForClose = document.querySelector('.search-boxes-container');
+            if (searchBoxForClose) {
+                searchBoxForClose.style.setProperty('opacity', '1', 'important');
+                searchBoxForClose.style.setProperty('visibility', 'visible', 'important');
+            }
+            if (settings) settings.style.display = 'none';
+            // 恢复通知位置
+            const notices = document.getElementById('notices');
+            if (notices) notices.style.top = '20px';
+        });
+    }
+
+    // 初始化快捷访问菜单
+    await loadQuickAccessMenu();
+    
+    // 设置事件委托（只绑定一次）
+    setupMenuItemDelegation();
 
     // 获取所有圆形搜索框
     const circleSearchBoxes = document.querySelectorAll('.search-box-circle');
@@ -45,10 +241,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         allInputs.forEach(input => {
             input.addEventListener('focus', function() {
-                setBackgroundBlur(true);
+                // 如果添加面板是激活状态，不改变背景模糊
+                if (!addShortcutPanel || !addShortcutPanel.classList.contains('active')) {
+                    setBackgroundBlur(true);
+                }
             });
 
             input.addEventListener('blur', function() {
+                // 如果添加面板是激活状态，不关闭背景模糊
+                if (addShortcutPanel && addShortcutPanel.classList.contains('active')) {
+                    return;
+                }
+
                 setTimeout(() => {
                     // 检查是否还有其他输入框有焦点
                     const hasFocusedInput = Array.from(allInputs).some(inp =>
@@ -759,29 +963,45 @@ document.addEventListener('DOMContentLoaded', function() {
         searchBoxContainer.style.opacity = '0';
         searchBoxContainer.style.visibility = 'hidden';
 
-        contextMenu.style.top = '0';
-        contextMenu.style.left = '0';
-        contextMenu.style.width = '100%';
-        contextMenu.style.height = '100%';
+        // 获取搜索框容器位置
+        const searchBoxRect = searchBoxContainer.getBoundingClientRect();
 
+        // 设置菜单项的margin-top与搜索框顶端对齐
+        document.documentElement.style.setProperty('--search-box-top', `${searchBoxRect.top}px`);
+
+        // contextMenu覆盖整个页面，menu-items通过margin-top向下偏移
         contextMenu.classList.add('active');
-
-        const menuItems = document.querySelectorAll('.menu-item');
-        menuItems.forEach(item => {
-            const url = item.getAttribute('data-url');
-            item.onclick = function() {
-                window.open(url, '_blank');
-                contextMenu.classList.remove('active');
-                searchBoxContainer.style.opacity = '1';
-                searchBoxContainer.style.visibility = 'visible';
-            };
-        });
+        setBackgroundBlur(true); // 启用背景模糊
+        if (settings) {
+            settings.style.display = 'block';
+            // 调整通知位置，避让settings
+            const notices = document.getElementById('notices');
+            if (notices && window.innerWidth > 768) {
+                const settingsHeight = settings.offsetHeight;
+                notices.style.top = (20 + settingsHeight + 10) + 'px'; // 20px + settings高度 + 10px间距
+            }
+        }
     }
 
-    timeDisplay.addEventListener('click', openContextMenu);
-    if (dateDisplay) {
-        dateDisplay.addEventListener('click', openContextMenu);
-    }
+    // timeDate 点击打开/关闭快捷访问
+    timeDate.addEventListener('click', function(e) {
+        if (contextMenu.classList.contains('active')) {
+            // 如果菜单已打开，关闭它
+            contextMenu.classList.remove('active');
+            document.documentElement.style.removeProperty('--search-box-top');
+            setBackgroundBlur(false); // 移除背景模糊
+            const searchBox = document.querySelector('.search-boxes-container');
+            searchBox.style.opacity = '1';
+            searchBox.style.visibility = 'visible';
+            if (settings) settings.style.display = 'none';
+            // 恢复通知位置
+            const notices = document.getElementById('notices');
+            if (notices) notices.style.top = '20px';
+        } else {
+            // 如果菜单未打开，打开它
+            openContextMenu(e);
+        }
+    });
 
     // 添加时钟功能
     function updateClock() {
@@ -820,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 右键菜单功能 - 快捷访问
     
-    // 显示右键菜单（快捷访问）
+    // 显示右键菜单（快捷访问）- 在搜索框区域显示
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
         
@@ -829,41 +1049,86 @@ document.addEventListener('DOMContentLoaded', function() {
         searchBox.style.opacity = '0';
         searchBox.style.visibility = 'hidden';
         
-        // 设置菜单位置
-        contextMenu.style.top = '0';
-        contextMenu.style.left = '0';
-        contextMenu.style.width = '100%';
-        contextMenu.style.height = '100%';
+        // 获取搜索框容器位置
+        const searchBoxRect = searchBox.getBoundingClientRect();
+        
+        // 设置菜单项的margin-top与搜索框顶端对齐
+        document.documentElement.style.setProperty('--search-box-top', `${searchBoxRect.top}px`);
         
         // 显示菜单
         contextMenu.classList.add('active');
+        setBackgroundBlur(true); // 启用背景模糊
+        if (settings) {
+            settings.style.display = 'block';
+            // 调整通知位置，避让settings
+            const notices = document.getElementById('notices');
+            if (notices && window.innerWidth > 768) {
+                const settingsHeight = settings.offsetHeight;
+                notices.style.top = (20 + settingsHeight + 10) + 'px';
+            }
+        }
         
         // 为菜单项添加点击事件（重新获取菜单项以确保包含所有动态添加的项）
         const menuItems = document.querySelectorAll('.menu-item');
         menuItems.forEach(item => {
+            // 处理"添加"和"编辑"按钮
+            if (item.hasAttribute('data-action')) {
+                const action = item.getAttribute('data-action');
+                item.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (action === 'add') {
+                        // 打开添加快捷方式面板
+                        openAddShortcutPanel();
+                    } else if (action === 'edit') {
+                        // 打开编辑快捷访问面板
+                        openEditShortcutPanel();
+                    }
+                };
+                return;
+            }
+
             const url = item.getAttribute('data-url');
             item.onclick = function() {
                 window.open(url, '_blank');
                 contextMenu.classList.remove('active');
+                document.documentElement.style.removeProperty('--search-box-top');
+                setBackgroundBlur(false); // 移除背景模糊
                 // 重新显示搜索框
                 searchBox.style.opacity = '1';
                 searchBox.style.visibility = 'visible';
+                if (settings) settings.style.display = 'none';
+                // 恢复通知位置
+                const notices = document.getElementById('notices');
+                if (notices) notices.style.top = '20px';
             };
         });
     });
     
-    // 点击模糊背景关闭菜单并显示搜索框
-    contextMenu.addEventListener('click', function() {
-        contextMenu.classList.remove('active');
-        // 重新显示搜索框
-        const searchBox = document.querySelector('.search-boxes-container');
-        searchBox.style.opacity = '1';
-        searchBox.style.visibility = 'visible';
-    });
-    
-    // 阻止菜单内的点击事件冒泡
-    document.querySelector('.menu-items').addEventListener('click', function(e) {
-        e.stopPropagation();
+    // 点击快捷访问面板外空白区域关闭菜单
+    document.addEventListener('click', function(e) {
+        if (contextMenu.classList.contains('active') && 
+            !e.target.closest('.menu-items') &&
+            !e.target.closest('.settings-modal') &&
+            !e.target.closest('.settings-button') &&
+            !e.target.closest('.settings-dropdown') &&
+            !e.target.closest('#settings-close') &&
+            !e.target.closest('#add-shortcut-panel') &&
+            !e.target.closest('.confirm-dialog') &&
+            !e.target.closest('.confirm-dialog-overlay')) {
+            contextMenu.classList.remove('active');
+            document.documentElement.style.removeProperty('--search-box-top');
+            setBackgroundBlur(false); // 移除背景模糊
+            // 重新显示搜索框
+            const searchBox = document.querySelector('.search-boxes-container');
+            searchBox.style.opacity = '1';
+            searchBox.style.visibility = 'visible';
+            if (settings) settings.style.display = 'none';
+            closeSettingsDropdown();
+            // 恢复通知位置
+            const notices = document.getElementById('notices');
+            if (notices) notices.style.top = '20px';
+        }
     });
     
     // 添加自定义书签功能
@@ -893,9 +1158,35 @@ document.addEventListener('DOMContentLoaded', function() {
             customItem.className = 'menu-item';
             customItem.setAttribute('data-url', bookmark.url);
             customItem.innerHTML = `
-                <img src="${bookmark.url}/favicon.ico" alt="${bookmark.name}" onerror="this.style.display='none';">
-                <span>${bookmark.name}</span>
+                <div class="menu-item-area">
+                    <div class="menu-icon-wrapper">
+                        <div class="menu-item-bg"></div>
+                    </div>
+                    <div class="menu-text">${bookmark.name}</div>
+                </div>
             `;
+            
+            // 获取点击区域元素
+            const menuBg = customItem.querySelector('.menu-item-bg');
+            const menuText = customItem.querySelector('.menu-text');
+            
+            // 点击背景板或文字跳转
+            function handleCustomItemClick(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(bookmark.url, '_blank');
+                contextMenu.classList.remove('active');
+                document.documentElement.style.removeProperty('--search-box-top');
+                setBackgroundBlur(false);
+                if (settings) settings.style.display = 'none';
+                // 恢复通知位置
+                const notices = document.getElementById('notices');
+                if (notices) notices.style.top = '20px';
+            }
+            
+            menuBg.addEventListener('click', handleCustomItemClick);
+            menuText.addEventListener('click', handleCustomItemClick);
+            
             menuItemsContainer.appendChild(customItem);
         });
     }
@@ -913,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 动态加载壁纸
     function loadWallpaper() {
-        const wallpaperUrl = 'https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg';
+        const wallpaperUrl = 'https://www.bing.com/th?id=OHR.BubblesAbraham_ZH-CN7203734882_1920x1080.jpg';
         const img = new Image();
 
         img.onload = function() {
@@ -1095,4 +1386,1308 @@ document.addEventListener('DOMContentLoaded', function() {
     window.networkTimeoutNotice = networkTimeoutNotice;
     window.pageLoadStoppedNotice = pageLoadStoppedNotice;
     window.resourceBlockedNotice = resourceBlockedNotice;
+
+    // ==================== 设置菜单功能 ====================
+    const settingsButton = document.getElementById('settings-button');
+    const settingsDropdown = document.getElementById('settings-dropdown');
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsClose = document.getElementById('settings-close');
+    const settingsModalOverlay = document.querySelector('.settings-modal-overlay');
+    const settingItems = document.querySelectorAll('.setting-item');
+    const settingsMenuItems = document.querySelectorAll('.settings-menu-item');
+
+    // 打开设置菜单
+    function openSettingsModal() {
+        if (settingsModal) {
+            settingsModal.classList.add('active');
+            setBackgroundBlur(true);
+            // 初始化操作项图标
+            initActionItems();
+        }
+    }
+
+    // 关闭设置菜单
+    function closeSettingsModal() {
+        if (settingsModal) {
+            settingsModal.classList.remove('active');
+            // 如果快捷访问菜单没有打开，则移除背景模糊
+            if (!contextMenu.classList.contains('active')) {
+                setBackgroundBlur(false);
+            }
+        }
+    }
+
+    // 切换设置下拉菜单
+    function toggleSettingsDropdown() {
+        if (settingsDropdown) {
+            settingsDropdown.classList.toggle('active');
+        }
+    }
+
+    // 关闭设置下拉菜单
+    function closeSettingsDropdown() {
+        if (settingsDropdown) {
+            settingsDropdown.classList.remove('active');
+        }
+    }
+
+    // 点击设置按钮显示下拉菜单
+    if (settingsButton) {
+        settingsButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleSettingsDropdown();
+        });
+    }
+
+    // 设置菜单项点击事件
+    if (settingsMenuItems) {
+        settingsMenuItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.dataset.action;
+                closeSettingsDropdown();
+                
+                if (action === 'general') {
+                    // 常规设置 - 打开现有设置面板
+                    openSettingsModal();
+                } else if (action === 'appearance') {
+                    // 壁纸设置 - 打开壁纸面板
+                    openWallpaperPanel();
+                } else if (action === 'about') {
+                    // 关于 - 打开关于面板
+                    openAboutPanel();
+                }
+            });
+        });
+    }
+
+    // 点击关闭按钮关闭菜单
+    if (settingsClose) {
+        settingsClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeSettingsModal();
+        });
+    }
+
+    // 点击遮罩层关闭菜单
+    if (settingsModalOverlay) {
+        settingsModalOverlay.addEventListener('click', function() {
+            closeSettingsModal();
+        });
+    }
+
+    // 获取设置面板内容容器，阻止事件冒泡避免关闭快捷访问菜单
+    const settingsModalContent = document.querySelector('.settings-modal-content');
+    if (settingsModalContent) {
+        settingsModalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
+    // SVG 图标定义
+    const svgOff = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0zM514.460823 921.606867a409.618313 409.618313 0 1 1 409.595422-409.595421A409.595422 409.595422 0 0 1 514.460823 921.606867z" fill="#CCCCCC" p-id="7318"></path>';
+    const svgOn = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0z m0 921.606867a409.618313 409.618313 0 1 1 409.595421-409.595421A409.595422 409.595422 0 0 1 1536.011446 921.606867z" fill="#4CAF50" p-id="7474"></path>';
+
+    // 操作图标（用于需要确认的选项）
+    const svgAction = '<svg t="1768966199939" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8663" width="18" height="18"><path d="M892 928.1H134c-19.9 0-36-16.1-36-36v-758c0-19.9 16.1-36 36-36h314.1c19.9 0 36 16.1 36 36s-16.1 36-36 36H170v686h686V579.6c0-19.9 16.1-36 36-36s36 16.1 36 36v312.5c0 19.9-16.1 36-36 36z" fill="#888888" p-id="8664"></path><path d="M927.9 131.6v-0.5c-0.1-1.7-0.4-3.3-0.7-4.9 0-0.1 0-0.2-0.1-0.3-0.4-1.7-0.9-3.3-1.5-4.9v-0.1c-0.6-1.6-1.4-3.1-2.2-4.6 0-0.1-0.1-0.1-0.1-0.2-0.8-1.4-1.7-2.8-2.7-4.1-0.1-0.1-0.2-0.3-0.3-0.4-0.5-0.6-0.9-1.1-1.4-1.7 0-0.1-0.1-0.1-0.1-0.2-0.5-0.6-1-1.1-1.6-1.6l-0.4-0.4c-0.5-0.5-1.1-1-1.6-1.5l-0.1-0.1c-0.6-0.5-1.2-1-1.9-1.4-0.1-0.1-0.3-0.2-0.4-0.3-1.4-1-2.8-1.8-4.3-2.6l-0.1-0.1c-1.6-0.8-3.2-1.5-4.9-2-1.6-0.5-3.3-1-5-1.2-0.1 0-0.2 0-0.3-0.1l-2.4-0.3h-0.3c-0.7-0.1-1.3-0.1-2-0.1H640.1c-19.9 0-36 16.1-36 36s16.1 36 36 36h165L487.6 487.6c-14.1 14.1-14.1 36.9 0 50.9 7 7 16.2 10.5 25.5 10.5 9.2 0 18.4-3.5 25.5-10.5L856 221v162.8c0 19.9 16.1 36 36 36s36-16.1 36-36V134.1c0-0.8 0-1.7-0.1-2.5z" fill="#888888" p-id="8665"></path></svg>';
+
+    // 关闭按钮图标
+    const svgClose = '<svg t="1768962858078" class="icon" viewBox="0 0 1070 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5514" width="20" height="20"><path d="M50.368584 96.533526l30.769579 30.77162 82.037931 82.03793 117.900068 117.900068 138.353952 138.353953 143.399585 143.397544 133.036963 133.036963 107.268128 107.268129 66.091042 66.093081 13.582195 13.580155c12.576334 12.576334 33.589257 12.576334 46.165591 0s12.576334-33.589257 0-46.165591l-30.76958-30.769579-82.03793-82.039971-117.900068-117.898028-138.353953-138.353952-143.397544-143.399585-133.036963-133.036963-107.268128-107.268128L110.11433 63.950131l-13.582196-13.580156c-12.576334-12.578374-33.589257-12.578374-46.165591 0-12.576334 12.576334-12.576334 33.587217 0.002041 46.163551z" fill="" p-id="5515"></path><path d="M882.805987 50.369975l-30.76958 30.76958-82.03997 82.03793-117.898028 117.900068-138.353953 138.353953-143.399584 143.399584-133.036963 133.036963-107.268129 107.268129a2018478.867876 2018478.867876 0 0 1-66.093081 66.091041l-13.580156 13.582196c-12.578374 12.576334-12.578374 33.589257 0 46.165591 12.576334 12.576334 33.589257 12.576334 46.165591 0l30.77162-30.76958 82.037931-82.03793 117.900068-117.900068 138.353952-138.353953 143.397545-143.397544 133.036962-133.036963 107.268129-107.268129 66.093081-66.091041 13.580156-13.582196c12.576334-12.576334 12.576334-33.589257 0-46.16559-12.578374-12.580414-33.589257-12.580414-46.165591-0.002041z" fill="" p-id="5516"></path></svg>';
+
+    // ==================== 壁纸设置面板功能 ====================
+    const wallpaperPanel = document.getElementById('wallpaper-panel');
+    const wallpaperClose = document.getElementById('wallpaper-close');
+    const wallpaperPanelOverlay = document.querySelector('#wallpaper-panel .settings-modal-overlay');
+    const wallpaperPreviewImg = document.getElementById('wallpaper-preview-img');
+    const wallpaperTabBtns = document.querySelectorAll('.wallpaper-tab-btn');
+    const wallpaperTabContents = document.querySelectorAll('.wallpaper-tab-content');
+    const wallpaperLocalFile = document.getElementById('wallpaper-local-file');
+    const wallpaperLocalBrowse = document.getElementById('wallpaper-local-browse');
+    const wallpaperLocalUrl = document.getElementById('wallpaper-local-url');
+    const wallpaperOnlineUrl = document.getElementById('wallpaper-online-url');
+    const wallpaperPresetItems = document.querySelectorAll('.wallpaper-preset-item');
+
+    // 预设壁纸列表
+    const presetWallpapers = {
+        1: 'https://www.bing.com/th?id=OHR.BubblesAbraham_ZH-CN7203734882_1920x1080.jpg',
+        2: 'https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg',
+        3: 'https://www.bing.com/th?id=OHR.WhiteSandsNM_ZH-CN7070772772_1920x1080.jpg'
+    };
+
+    // 打开壁纸面板
+    function openWallpaperPanel() {
+        if (wallpaperPanel) {
+            loadWallpaperSettings();
+            wallpaperPanel.classList.add('active');
+            setBackgroundBlur(true);
+        }
+    }
+
+    // 关闭壁纸面板
+    function closeWallpaperPanel() {
+        if (wallpaperPanel) {
+            wallpaperPanel.classList.remove('active');
+            if (!contextMenu.classList.contains('active')) {
+                setBackgroundBlur(false);
+            }
+        }
+    }
+
+    // 加载壁纸设置
+    function loadWallpaperSettings() {
+        const cookieValue = getCookieRaw('wallpaper_settings') || '';
+        let settings = { id: 1, customUrl: '', customMode: 'local' };
+        
+        if (cookieValue) {
+            try {
+                const decoded = decodeURIComponent(cookieValue);
+                settings = JSON.parse(decoded);
+            } catch (e) {
+                console.error('解析壁纸设置失败:', e);
+            }
+        }
+
+        // 更新预览图
+        updateWallpaperPreview(settings);
+
+        // 更新选中状态
+        updateWallpaperSelection(settings.id);
+
+        // 更新自定义选项
+        if (settings.customMode === 'local') {
+            wallpaperLocalUrl.value = settings.customUrl || '';
+            switchTab('local');
+        } else {
+            wallpaperOnlineUrl.value = settings.customUrl || '';
+            switchTab('online');
+        }
+    }
+
+    // 更新壁纸预览
+    function updateWallpaperPreview(settings) {
+        if (settings.id === 0 && settings.customUrl) {
+            wallpaperPreviewImg.style.backgroundImage = `url('${settings.customUrl}')`;
+            wallpaperPreviewImg.classList.add('selected');
+        } else {
+            wallpaperPreviewImg.style.backgroundImage = 'none';
+            wallpaperPreviewImg.classList.remove('selected');
+        }
+    }
+
+    // 更新壁纸选中状态
+    function updateWallpaperSelection(selectedId) {
+        wallpaperPresetItems.forEach(item => {
+            const itemId = parseInt(item.dataset.id);
+            item.classList.remove('selected');
+            if (itemId === selectedId) {
+                item.classList.add('selected');
+            }
+        });
+    }
+
+    // ==================== 关于面板功能 ====================
+    const aboutPanel = document.getElementById('about-panel');
+    const aboutClose = document.getElementById('about-close');
+    const aboutPanelOverlay = document.querySelector('#about-panel .settings-modal-overlay');
+
+    // 初始化关闭按钮图标
+    if (aboutClose) {
+        aboutClose.innerHTML = svgClose;
+    }
+
+    // 打开关于面板
+    function openAboutPanel() {
+        if (aboutPanel) {
+            aboutPanel.classList.add('active');
+            setBackgroundBlur(true);
+        }
+    }
+
+    // 关闭关于面板
+    function closeAboutPanel() {
+        if (aboutPanel) {
+            aboutPanel.classList.remove('active');
+            if (!contextMenu.classList.contains('active')) {
+                setBackgroundBlur(false);
+            }
+        }
+    }
+
+    // 点击关闭按钮
+    if (aboutClose) {
+        aboutClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeAboutPanel();
+        });
+    }
+
+    // 点击遮罩层关闭
+    if (aboutPanelOverlay) {
+        aboutPanelOverlay.addEventListener('click', function() {
+            closeAboutPanel();
+        });
+    }
+
+    // 切换标签页
+    function switchTab(tabName) {
+        wallpaperTabBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        wallpaperTabContents.forEach(content => {
+            content.classList.toggle('active', content.id === `wallpaper-tab-${tabName}`);
+        });
+    }
+
+    // 保存壁纸设置
+    function saveWallpaperSettings(id, customUrl, customMode) {
+        const settings = { id, customUrl, customMode };
+        const encodedValue = encodeURIComponent(JSON.stringify(settings));
+        document.cookie = `wallpaper_settings=${encodedValue};path=/;expires=${new Date(Date.now() + 365*24*60*60*1000).toUTCString()}`;
+        
+        // 应用壁纸
+        applyWallpaper(settings);
+    }
+
+    // 应用壁纸
+    function applyWallpaper(settings) {
+        let wallpaperUrl = '';
+        
+        if (settings.id === 0) {
+            wallpaperUrl = settings.customUrl;
+        } else if (presetWallpapers[settings.id]) {
+            wallpaperUrl = presetWallpapers[settings.id];
+        } else {
+            // 默认使用 id 1
+            wallpaperUrl = presetWallpapers[1];
+        }
+
+        if (wallpaperUrl) {
+            document.body.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
+            setCookie('wallpaper_url', wallpaperUrl);
+        }
+    }
+
+    // 点击关闭按钮
+    if (wallpaperClose) {
+        wallpaperClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeWallpaperPanel();
+        });
+    }
+
+    // 点击遮罩层关闭
+    if (wallpaperPanelOverlay) {
+        wallpaperPanelOverlay.addEventListener('click', function() {
+            closeWallpaperPanel();
+        });
+    }
+
+    // 标签页切换
+    wallpaperTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            switchTab(this.dataset.tab);
+        });
+    });
+
+    // 浏览按钮点击
+    if (wallpaperLocalBrowse) {
+        wallpaperLocalBrowse.addEventListener('click', function() {
+            wallpaperLocalFile.click();
+        });
+    }
+
+    // 本地文件选择
+    if (wallpaperLocalFile) {
+        wallpaperLocalFile.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileUrl = `file:///${file.path}`;
+                wallpaperLocalUrl.value = fileUrl;
+                wallpaperPreviewImg.style.backgroundImage = `url('${fileUrl}')`;
+                wallpaperPreviewImg.classList.add('selected');
+                saveWallpaperSettings(0, fileUrl, 'local');
+            }
+        });
+    }
+
+    // 在线URL输入
+    if (wallpaperOnlineUrl) {
+        let timeout;
+        wallpaperOnlineUrl.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const url = this.value.trim();
+                if (url) {
+                    wallpaperPreviewImg.style.backgroundImage = `url('${url}')`;
+                    wallpaperPreviewImg.classList.add('selected');
+                    saveWallpaperSettings(0, url, 'online');
+                }
+            }, 500);
+        });
+    }
+
+    // 自定义缩略图点击 - 切换到自定义模式
+    if (wallpaperPreviewImg) {
+        wallpaperPreviewImg.addEventListener('click', function() {
+            // 取消预设的选择
+            wallpaperPresetItems.forEach(i => i.classList.remove('selected'));
+            
+            // 选中自定义预览
+            this.classList.add('selected');
+            
+            // 获取当前自定义URL
+            const isLocalTab = document.querySelector('.wallpaper-tab-btn[data-tab="local"]').classList.contains('active');
+            const customUrl = isLocalTab ? wallpaperLocalUrl.value : wallpaperOnlineUrl.value;
+            const customMode = isLocalTab ? 'local' : 'online';
+            
+            if (customUrl) {
+                saveWallpaperSettings(0, customUrl, customMode);
+            }
+        });
+    }
+
+    // 预设壁纸点击
+    wallpaperPresetItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id);
+            
+            // 取消之前的选择
+            wallpaperPresetItems.forEach(i => i.classList.remove('selected'));
+            
+            // 选中当前
+            this.classList.add('selected');
+            
+            // 更新预览
+            wallpaperPreviewImg.classList.remove('selected');
+            wallpaperPreviewImg.style.backgroundImage = 'none';
+            
+            // 保存设置
+            saveWallpaperSettings(id, '', 'local');
+        });
+    });
+
+    // 初始化关闭按钮图标
+    const confirmDialogClose = document.getElementById('confirm-dialog-close');
+    if (confirmDialogClose) {
+        confirmDialogClose.innerHTML = svgClose;
+    }
+
+    // 确认对话框相关元素
+    const confirmDialog = document.getElementById('confirm-dialog');
+    const confirmDialogTitle = document.getElementById('confirm-dialog-title');
+    const confirmDialogMessage = document.getElementById('confirm-dialog-message');
+    const confirmDialogOk = document.getElementById('confirm-dialog-ok');
+    const confirmDialogCancel = document.getElementById('confirm-dialog-cancel');
+    const confirmDialogOverlay = document.querySelector('.confirm-dialog-overlay');
+
+    // 确认操作映射表
+    const confirmActions = {
+        'reset-wallpaper': {
+            title: '重置壁纸',
+            message: '确定要重置为默认壁纸吗？',
+            onOk: function() {
+                // 清除壁纸设置cookie
+                document.cookie = 'wallpaper_settings=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                // 清除壁纸URL cookie
+                document.cookie = 'wallpaper_url=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                // 重置壁纸URL样式
+                document.body.style.setProperty('--wallpaper-url', 'none');
+                // 清除自定义壁纸缓存
+                localStorage.removeItem('custom_wallpaper');
+                // 清除自定义壁纸URL缓存
+                localStorage.removeItem('custom_wallpaper_url');
+                // 应用默认壁纸
+                const defaultSettings = { id: 1, customUrl: '', customMode: 'cover' };
+                applyWallpaper(defaultSettings);
+                sendNotice('壁纸已重置为默认', 'info');
+            }
+        },
+        'reset-shortcuts': {
+            title: '重置快捷访问',
+            message: '确定要重置快捷访问吗？这将删除所有自定义快捷方式。',
+            onOk: function() {
+                // 删除快捷访问cookie
+                setCookie('custom_shortcuts', []);
+                // 清空隐藏预设记录
+                setCookie('hidden_presets', []);
+                // 重新加载菜单（保持context-menu打开，搜索框保持隐藏）
+                loadQuickAccessMenu();
+                sendNotice('快捷访问已重置', 'info');
+            }
+        },
+        'discard-changes': {
+            title: '放弃更改',
+            message: '有未保存的更改，确定要放弃吗？',
+            onOk: function() {
+                // 回滚隐藏状态 - 使用原始值重新保存到cookie
+                const rollbackValue = originalHiddenPresets.join(',');
+                const encodedRollback = encodeURIComponent(rollbackValue);
+                document.cookie = 'hidden_presets=' + encodedRollback + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+                // 重新加载菜单
+                loadQuickAccessMenu();
+                closeEditShortcutPanel();
+            }
+        },
+        'hidden-preset-warn-apply': {
+            title: '隐藏预设快捷访问',
+            message: '已隐藏预设快捷访问，这些预设将在保存后被隐藏。确定要继续吗？',
+            onOk: function() {
+                // 继续保存（应用）
+                saveShortcutOrder();
+                editShortcutHasChanges = false;
+                editShortcutOriginalOrder = editShortcutItems.map(item => item.id);
+                loadQuickAccessMenu();
+                // 重置已隐藏预设列表
+                hiddenPresetIds = [];
+                sendNotice('设置已应用', 'info');
+            }
+        },
+        'hidden-preset-warn-ok': {
+            title: '隐藏预设快捷访问',
+            message: '已隐藏预设快捷访问，这些预设将在保存后被隐藏。确定要继续吗？',
+            onOk: function() {
+                // 继续保存（确定）
+                saveShortcutOrder();
+                loadQuickAccessMenu();
+                closeEditShortcutPanel();
+                // 重置已隐藏预设列表
+                hiddenPresetIds = [];
+                sendNotice('设置已保存', 'info');
+            }
+        },
+        'delete-custom-shortcut': {
+            title: '删除快捷访问',
+            message: '确定要删除该快捷访问吗？',
+            onOk: function() {
+                const index = parseInt(confirmDialog.dataset.targetIndex);
+                editShortcutItems.splice(index, 1);
+                editShortcutHasChanges = true;
+                renderEditShortcutList();
+            }
+        },
+        'restore-hidden-presets': {
+            title: '还原预设快捷访问',
+            message: '确定要还原所有被隐藏的预设快捷访问吗？',
+            onOk: function() {
+                // 只更新editShortcutItems中隐藏项目的状态，不立即保存
+                editShortcutItems.forEach(item => {
+                    if (item.isPreset && item.isHidden) {
+                        item.isHidden = false;
+                    }
+                });
+                editShortcutHasChanges = true;
+                renderEditShortcutList();
+                sendNotice('已还原所有隐藏的预设快捷访问', 'info');
+            }
+        }
+    };
+
+    // 打开确认对话框
+    function openConfirmDialog(actionId) {
+        const action = confirmActions[actionId];
+        if (!action) return;
+
+        if (confirmDialogTitle) confirmDialogTitle.textContent = action.title;
+        if (confirmDialogMessage) confirmDialogMessage.textContent = action.message;
+        
+        // 存储当前操作
+        confirmDialog.dataset.currentAction = actionId;
+        
+        if (confirmDialog) {
+            confirmDialog.classList.add('active');
+            setBackgroundBlur(true);
+        }
+    }
+
+    // 关闭确认对话框
+    function closeConfirmDialog() {
+        if (confirmDialog) {
+            confirmDialog.classList.remove('active');
+            // 如果设置面板没有打开，则移除背景模糊
+            if (!settingsModal || !settingsModal.classList.contains('active')) {
+                setBackgroundBlur(false);
+            }
+        }
+    }
+
+    // 点击确认按钮
+    if (confirmDialogOk) {
+        confirmDialogOk.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const actionId = confirmDialog.dataset.currentAction;
+            const action = confirmActions[actionId];
+            if (action && action.onOk) {
+                action.onOk();
+            }
+            closeConfirmDialog();
+        });
+    }
+
+    // 点击取消按钮
+    if (confirmDialogCancel) {
+        confirmDialogCancel.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeConfirmDialog();
+        });
+    }
+
+    // 点击关闭按钮
+    if (confirmDialogClose) {
+        confirmDialogClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeConfirmDialog();
+        });
+    }
+
+    // 点击遮罩层关闭
+    if (confirmDialogOverlay) {
+        confirmDialogOverlay.addEventListener('click', function() {
+            closeConfirmDialog();
+        });
+    }
+
+    // ESC键关闭关于面板
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && aboutPanel && aboutPanel.classList.contains('active')) {
+            closeAboutPanel();
+        }
+    });
+
+    // ESC键关闭确认对话框
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && confirmDialog && confirmDialog.classList.contains('active')) {
+            closeConfirmDialog();
+        }
+    });
+
+    // ==================== 添加快捷方式面板 ====================
+    
+    // 添加快捷方式面板元素
+    const addShortcutPanel = document.getElementById('add-shortcut-panel');
+    const addShortcutClose = document.getElementById('add-shortcut-close');
+    const addShortcutUrl = document.getElementById('add-shortcut-url');
+    const addShortcutName = document.getElementById('add-shortcut-name');
+    const addShortcutIcon = document.getElementById('add-shortcut-icon');
+    const addShortcutPreviewIcon = document.getElementById('add-shortcut-preview-icon');
+    const addShortcutCancel = document.getElementById('add-shortcut-cancel');
+    const addShortcutSave = document.getElementById('add-shortcut-save');
+    const addShortcutOverlay = document.querySelector('#add-shortcut-panel .settings-modal-overlay');
+
+    // 用于取消进行中的请求
+    let addPanelAbortController = null;
+
+    // 初始化关闭按钮图标
+    if (addShortcutClose) {
+        addShortcutClose.innerHTML = svgClose;
+    }
+
+    // 验证URL格式并补全协议
+    function normalizeUrl(url) {
+        url = url.trim();
+        if (!url) return '';
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'http://' + url;
+        }
+        return url;
+    }
+
+    // 验证图标URL格式（必须是ico/png/jpg）
+    function isValidIconUrl(url) {
+        if (!url || !url.trim()) return false;
+        url = url.trim().toLowerCase();
+        return /\.(ico|png|jpg|jpeg)(\?.*)?$/i.test(url);
+    }
+
+    // 从URL提取favicon地址
+    function getFaviconFromUrl(url) {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.origin + '/favicon.ico';
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 获取页面标题（使用多个代理服务）
+    async function fetchPageTitle(url, signal) {
+        const proxyServices = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
+        
+        for (const service of proxyServices) {
+            try {
+                const proxyUrl = service + encodeURIComponent(url);
+                const response = await fetch(proxyUrl, { signal });
+                if (!response.ok) continue;
+                const text = await response.text();
+                const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
+                if (titleMatch) return titleMatch[1].trim();
+            } catch (e) {
+                if (e.name === 'AbortError') throw e;
+                continue;
+            }
+        }
+        return null;
+    }
+
+    // 打开添加快捷方式面板
+    function openAddShortcutPanel() {
+        if (addShortcutPanel) {
+            // 取消之前进行中的请求
+            if (addPanelAbortController) {
+                addPanelAbortController.abort();
+                addPanelAbortController = null;
+            }
+            
+            addShortcutPanel.classList.add('active');
+            // 不改变背景模糊状态
+            // 清空表单
+            addShortcutUrl.value = '';
+            addShortcutName.value = '';
+            addShortcutIcon.value = '';
+            addShortcutPreviewIcon.innerHTML = defaultIconSVG;
+            addShortcutUrl.focus();
+        }
+    }
+
+    // 关闭添加快捷方式面板
+    function closeAddShortcutPanel() {
+        if (addShortcutPanel) {
+            addShortcutPanel.classList.remove('active');
+            // 取消进行中的请求
+            if (addPanelAbortController) {
+                addPanelAbortController.abort();
+                addPanelAbortController = null;
+            }
+            // 不关闭背景模糊，保留快捷访问菜单
+        }
+    }
+
+    // 更新图标预览
+    function updateIconPreview(iconUrl) {
+        if (!iconUrl || !iconUrl.trim()) {
+            addShortcutPreviewIcon.innerHTML = defaultIconSVG;
+            return;
+        }
+        
+        if (isValidIconUrl(iconUrl)) {
+            const img = new Image();
+            img.onload = function() {
+                addShortcutPreviewIcon.innerHTML = '<img src="' + iconUrl + '" style="width:32px;height:32px;">';
+            };
+            img.onerror = function() {
+                sendNotice('图标加载失败，将使用默认图标', 'warn');
+                addShortcutPreviewIcon.innerHTML = defaultIconSVG;
+            };
+            img.src = iconUrl;
+        } else {
+            sendNotice('图标格式不支持，请使用 ico/png/jpg 格式', 'warn');
+            addShortcutPreviewIcon.innerHTML = defaultIconSVG;
+        }
+    }
+
+    // URL失焦时自动获取信息
+    addShortcutUrl.addEventListener('blur', async function() {
+        const url = normalizeUrl(this.value);
+        if (!url) return;
+        
+        this.value = url;
+        
+        // 检查用户是否已手动输入标题或图标，如果是则不自动获取
+        const userHasEnteredTitle = addShortcutName.value.trim() !== '';
+        const userHasEnteredIcon = addShortcutIcon.value.trim() !== '';
+        
+        // 创建新的AbortController用于这次请求
+        if (addPanelAbortController) {
+            addPanelAbortController.abort();
+        }
+        addPanelAbortController = new AbortController();
+        
+        // 只有用户未手动输入图标时才获取favicon
+        if (!userHasEnteredIcon) {
+            const faviconUrl = getFaviconFromUrl(url);
+            const img = new Image();
+            img.onload = function() {
+                addShortcutPreviewIcon.innerHTML = '<img src="' + faviconUrl + '" style="width:32px;height:32px;">';
+                // 填充favicon URL到输入框
+                addShortcutIcon.value = faviconUrl;
+            };
+            img.onerror = function() {
+                addShortcutPreviewIcon.innerHTML = defaultIconSVG;
+                // favicon获取失败时不填充输入框
+            };
+            img.src = faviconUrl;
+        }
+        
+        // 只有用户未手动输入标题时才获取标题
+        if (!userHasEnteredTitle) {
+            try {
+                const title = await fetchPageTitle(url, addPanelAbortController.signal);
+                if (addPanelAbortController.signal.aborted) return;
+                if (title) {
+                    addShortcutName.value = title;
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.log('获取标题失败:', e);
+                }
+            }
+        }
+    });
+
+    // 图标输入失焦时验证
+    addShortcutIcon.addEventListener('blur', function() {
+        updateIconPreview(this.value);
+    });
+
+    // 点击关闭按钮
+    if (addShortcutClose) {
+        addShortcutClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeAddShortcutPanel();
+        });
+    }
+
+    // 点击取消按钮
+    if (addShortcutCancel) {
+        addShortcutCancel.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeAddShortcutPanel();
+        });
+    }
+
+    // 点击保存按钮
+    if (addShortcutSave) {
+        addShortcutSave.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const url = normalizeUrl(addShortcutUrl.value.trim());
+            if (!url) {
+                sendNotice('请输入URL', 'warn');
+                return;
+            }
+            
+            // 验证URL格式
+            try {
+                new URL(url);
+            } catch (e) {
+                sendNotice('URL格式不正确', 'warn');
+                return;
+            }
+            
+            const name = addShortcutName.value.trim() || addShortcutName.value.trim();
+            let icon = addShortcutIcon.value.trim();
+            
+            // 如果没有指定图标，使用默认图标（空字符串会显示默认图标）
+            if (!icon) {
+                icon = '';
+            } else if (!isValidIconUrl(icon)) {
+                sendNotice('图标格式不支持，将使用默认图标', 'warn');
+                icon = '';
+            }
+            
+            // 保存到Cookie
+            const customShortcuts = getCookie('custom_shortcuts') || [];
+            const newShortcut = {
+                id: Date.now(),
+                url: url,
+                title: name || url,
+                icon: icon || ''
+            };
+            customShortcuts.push(newShortcut);
+            setCookie('custom_shortcuts', customShortcuts);
+            
+            sendNotice('快捷方式已保存', 'info');
+            closeAddShortcutPanel();
+            
+            // 重新加载菜单
+            loadQuickAccessMenu();
+        });
+    }
+
+    // 点击遮罩层关闭
+    if (addShortcutOverlay) {
+        addShortcutOverlay.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeAddShortcutPanel();
+        });
+    }
+
+    // ESC键关闭添加面板
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && addShortcutPanel && addShortcutPanel.classList.contains('active')) {
+            closeAddShortcutPanel();
+        }
+    });
+
+    // 编辑快捷访问面板相关
+    const editShortcutPanel = document.getElementById('edit-shortcut-panel');
+    const editShortcutClose = document.getElementById('edit-shortcut-close');
+    const editShortcutReset = document.getElementById('edit-shortcut-reset');
+    const editShortcutRestore = document.getElementById('edit-shortcut-restore');
+    const editShortcutList = document.getElementById('edit-shortcut-list');
+    const editShortcutCancel = document.getElementById('edit-shortcut-cancel');
+    const editShortcutApply = document.getElementById('edit-shortcut-apply');
+    const editShortcutOk = document.getElementById('edit-shortcut-ok');
+    const editShortcutOverlay = editShortcutPanel ? editShortcutPanel.querySelector('.settings-modal-overlay') : null;
+
+    let editShortcutItems = []; // 当前编辑的项目列表
+    let editShortcutOriginalOrder = []; // 原始顺序，用于检测更改
+    let editShortcutHasChanges = false; // 是否有更改
+                let hiddenPresetIds = []; // 本次编辑会话中隐藏的预设ID列表
+                let originalHiddenPresets = []; // 打开面板时的原始隐藏状态
+    // 打开编辑快捷访问面板
+    function openEditShortcutPanel() {
+        if (editShortcutPanel) {
+            // 重置已隐藏预设列表
+            hiddenPresetIds = [];
+            // 加载所有快捷方式
+            editShortcutItems = loadAllShortcuts();
+            // 保存原始顺序
+            editShortcutOriginalOrder = editShortcutItems.map(item => item.id);
+            // 保存原始隐藏预设ID列表
+            const hiddenPresetsStr = decodeURIComponent(getCookieRaw('hidden_presets') || '');
+            originalHiddenPresets = hiddenPresetsStr ? hiddenPresetsStr.split(',').filter(Boolean).map(Number) : [];
+            editShortcutHasChanges = false;
+            // 渲染列表
+            renderEditShortcutList();
+            editShortcutPanel.classList.add('active');
+        }
+    }
+
+    // 关闭编辑快捷访问面板
+    function closeEditShortcutPanel() {
+        if (editShortcutPanel) {
+            editShortcutPanel.classList.remove('active');
+        }
+    }
+
+    // 加载所有快捷方式（预设 + 自定义）
+    function loadAllShortcuts() {
+        const items = [];
+        let hiddenPresets = [];
+        // 使用逗号分隔格式读取hidden_presets
+        const hiddenPresetsStr = decodeURIComponent(getCookieRaw('hidden_presets') || '');
+        hiddenPresets = hiddenPresetsStr ? hiddenPresetsStr.split(',').filter(Boolean).map(Number) : [];
+        
+        // 分离可见和隐藏的预设
+        const visiblePresets = [];
+        const hiddenPresetItems = [];
+        
+        quickAccessData.forEach(item => {
+            const isHidden = hiddenPresets.includes(item.id);
+            const shortcutItem = {
+                id: 'preset_' + item.id,
+                presetId: item.id,
+                url: item.url,
+                title: item.title,
+                icon: item.icon,
+                isPreset: true,
+                isHidden: isHidden
+            };
+            if (isHidden) {
+                hiddenPresetItems.push(shortcutItem);
+            } else {
+                visiblePresets.push(shortcutItem);
+            }
+        });
+        
+        // 按id正序排序隐藏的预设
+        hiddenPresetItems.sort((a, b) => a.presetId - b.presetId);
+        
+        // 先添加可见的预设
+        items.push(...visiblePresets);
+        
+        // 加载自定义快捷方式（在隐藏预设之前）
+        const customShortcuts = getCookie('custom_shortcuts') || [];
+        customShortcuts.forEach(item => {
+            items.push({
+                id: 'custom_' + item.id,
+                customId: item.id,
+                url: item.url,
+                title: item.title,
+                icon: item.icon,
+                isPreset: false,
+                isHidden: false
+            });
+        });
+        
+        // 最后添加隐藏的预设（置底，包括所有自定义快捷访问之后）
+        items.push(...hiddenPresetItems);
+        
+        return items;
+    }
+
+    // 渲染编辑列表
+    function renderEditShortcutList() {
+        if (!editShortcutList) return;
+        editShortcutList.innerHTML = '';
+        
+        editShortcutItems.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'edit-shortcut-item' + (item.isHidden ? ' hidden-item' : '');
+            div.dataset.index = index;
+            
+            // 图标 - 预设项目直接使用图标HTML，自定义项目使用favicon图片
+            let iconContent;
+            if (item.isPreset) {
+                // 预设项目直接渲染SVG图标
+                iconContent = item.icon;
+            } else if (item.icon && item.icon.trim()) {
+                // 自定义项目使用favicon图片
+                iconContent = '<img src="' + encodeURI(item.icon.trim()) + '" class="favicon-img" width="32" height="32" onerror="this.classList.add(\'favicon-error\')">';
+            } else {
+                iconContent = defaultIconSVG;
+            }
+            
+            // 预设项目使用隐藏按钮（H字母蓝色），自定义项目使用删除按钮
+            let actionButton;
+            if (item.isPreset) {
+                // H按钮：已隐藏时蓝色常亮，未隐藏时灰色
+                const hideBtnClass = item.isHidden ? 'edit-shortcut-hide-btn edit-shortcut-hide-btn-active' : 'edit-shortcut-hide-btn';
+                const hideBtnTitle = item.isHidden ? '取消隐藏' : '隐藏';
+                actionButton = `
+                    <button class="${hideBtnClass}" data-index="${index}" title="${hideBtnTitle}">
+                        H
+                    </button>
+                `;
+            } else {
+                actionButton = `
+                    <button class="edit-shortcut-move-btn edit-shortcut-delete" data-index="${index}" title="删除">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `;
+            }
+            
+            div.innerHTML = `
+                <div class="edit-shortcut-item-icon">${iconContent}</div>
+                <div class="edit-shortcut-item-text" title="${item.title}">
+                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
+                </div>
+                <div class="edit-shortcut-item-actions">
+                    <button class="edit-shortcut-move-btn edit-shortcut-move-up" data-index="${index}" ${index === 0 || (index > 0 && editShortcutItems[index - 1].isHidden !== item.isHidden) ? 'disabled' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 15L12 9L6 15"/>
+                        </svg>
+                    </button>
+                    <button class="edit-shortcut-move-btn edit-shortcut-move-down" data-index="${index}" ${index === editShortcutItems.length - 1 || (index < editShortcutItems.length - 1 && editShortcutItems[index + 1].isHidden !== item.isHidden) ? 'disabled' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9L12 15L18 9"/>
+                        </svg>
+                    </button>
+                    ${actionButton}
+                </div>
+            `;
+            editShortcutList.appendChild(div);
+        });
+        
+        // 绑定移动按钮事件
+        document.querySelectorAll('.edit-shortcut-move-up').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const index = parseInt(this.dataset.index);
+                const currentItem = editShortcutItems[index];
+                // 检查前一项是否与当前项类型相同（都隐藏或都不隐藏）
+                if (index > 0 && editShortcutItems[index - 1].isHidden === currentItem.isHidden) {
+                    const temp = editShortcutItems[index];
+                    editShortcutItems[index] = editShortcutItems[index - 1];
+                    editShortcutItems[index - 1] = temp;
+                    editShortcutHasChanges = true;
+                    renderEditShortcutList();
+                }
+            });
+        });
+        
+        document.querySelectorAll('.edit-shortcut-move-down').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const index = parseInt(this.dataset.index);
+                const currentItem = editShortcutItems[index];
+                // 检查后一项是否与当前项类型相同（都隐藏或都不隐藏）
+                if (index < editShortcutItems.length - 1 && editShortcutItems[index + 1].isHidden === currentItem.isHidden) {
+                    const temp = editShortcutItems[index];
+                    editShortcutItems[index] = editShortcutItems[index + 1];
+                    editShortcutItems[index + 1] = temp;
+                    editShortcutHasChanges = true;
+                    renderEditShortcutList();
+                }
+            });
+        });
+        
+        document.querySelectorAll('.edit-shortcut-delete').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const index = parseInt(this.dataset.index);
+                const item = editShortcutItems[index];
+                confirmDialog.dataset.targetIndex = index;
+                if (item.isPreset) {
+                    openConfirmDialog('hide-preset-shortcut');
+                } else {
+                    openConfirmDialog('delete-custom-shortcut');
+                }
+            });
+        });
+        
+        // 隐藏按钮事件监听器（预设项目）
+        document.querySelectorAll('.edit-shortcut-hide-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const index = parseInt(this.dataset.index);
+                const item = editShortcutItems[index];
+                
+                if (item.isPreset) {
+                    // 只切换内存中的状态，不立即保存
+                    editShortcutItems[index].isHidden = !item.isHidden;
+                    editShortcutHasChanges = true;
+                    renderEditShortcutList();
+                }
+            });
+        });
+        
+        // 阻止编辑面板内的点击事件冒泡
+        editShortcutList.querySelectorAll('.edit-shortcut-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+    }
+
+    // 保存快捷访问顺序
+    function saveShortcutOrder() {
+        // 获取预设项目（保持相对顺序）
+        const presetItems = editShortcutItems.filter(item => item.isPreset);
+        const customItems = editShortcutItems.filter(item => !item.isPreset);
+        
+        // 保存预设顺序 - 直接操作cookie
+        const presetOrder = presetItems.map(item => item.presetId);
+        document.cookie = 'quick_access_order=' + encodeURIComponent(JSON.stringify(presetOrder)) + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+        
+        // 保存隐藏预设列表 - 直接从editShortcutItems提取
+        const hiddenPresets = editShortcutItems
+            .filter(item => item.isPreset && item.isHidden)
+            .map(item => item.presetId);
+        
+        // 直接操作document.cookie - 使用逗号分隔格式
+        const hiddenPresetsValue = hiddenPresets.join(',');
+        const encodedHiddenPresets = encodeURIComponent(hiddenPresetsValue);
+        document.cookie = 'hidden_presets=' + encodedHiddenPresets + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+        
+        // 保存自定义快捷方式
+        const newCustomShortcuts = customItems.map(item => ({
+            id: item.customId,
+            url: item.url,
+            title: item.title,
+            icon: item.icon
+        }));
+        document.cookie = 'custom_shortcuts=' + encodeURIComponent(JSON.stringify(newCustomShortcuts)) + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+    }
+
+    // 点击关闭按钮
+    if (editShortcutClose) {
+        editShortcutClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeEditShortcutPanel();
+        });
+    }
+
+    // 点击重置按钮
+    if (editShortcutReset) {
+        editShortcutReset.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // 使用确认对话框
+            openConfirmDialog('reset-shortcuts');
+        });
+    }
+
+    // 点击还原按钮
+    if (editShortcutRestore) {
+        editShortcutRestore.addEventListener('click', function(e) {
+            e.stopPropagation();
+            let hiddenPresets = [];
+            // 使用逗号分隔格式读取hidden_presets
+            const hiddenPresetsStr = decodeURIComponent(getCookieRaw('hidden_presets') || '');
+            hiddenPresets = hiddenPresetsStr ? hiddenPresetsStr.split(',').filter(Boolean).map(Number) : [];
+            if (hiddenPresets.length === 0) {
+                sendNotice('没有需要还原的预设快捷访问', 'info');
+                return;
+            }
+            openConfirmDialog('restore-hidden-presets');
+        });
+    }
+
+    // 点击取消按钮
+    if (editShortcutCancel) {
+        editShortcutCancel.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (editShortcutHasChanges) {
+                openConfirmDialog('discard-changes');
+            } else {
+                closeEditShortcutPanel();
+            }
+        });
+    }
+
+    // 点击关闭按钮
+    if (editShortcutClose) {
+        editShortcutClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (editShortcutHasChanges) {
+                openConfirmDialog('discard-changes');
+            } else {
+                closeEditShortcutPanel();
+            }
+        });
+    }
+
+    // 点击应用按钮
+    if (editShortcutApply) {
+        editShortcutApply.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (editShortcutHasChanges) {
+                saveShortcutOrder();
+                editShortcutHasChanges = false;
+                editShortcutOriginalOrder = editShortcutItems.map(item => item.id);
+                loadQuickAccessMenu();
+                sendNotice('设置已应用', 'info');
+            } else {
+                sendNotice('未作任何更改', 'info');
+            }
+        });
+    }
+
+    // 点击确定按钮
+    if (editShortcutOk) {
+        editShortcutOk.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (editShortcutHasChanges) {
+                saveShortcutOrder();
+                loadQuickAccessMenu();
+                closeEditShortcutPanel();
+                sendNotice('设置已保存', 'info');
+            } else {
+                closeEditShortcutPanel();
+            }
+        });
+    }
+
+    // 点击遮罩层关闭
+    if (editShortcutOverlay) {
+        editShortcutOverlay.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (editShortcutHasChanges) {
+                if (confirm('有未保存的更改，确定要放弃吗？')) {
+                    closeEditShortcutPanel();
+                }
+            } else {
+                closeEditShortcutPanel();
+            }
+        });
+    }
+
+    // ESC键关闭编辑面板
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && editShortcutPanel && editShortcutPanel.classList.contains('active')) {
+            if (editShortcutHasChanges) {
+                if (confirm('有未保存的更改，确定要放弃吗？')) {
+                    closeEditShortcutPanel();
+                }
+            } else {
+                closeEditShortcutPanel();
+            }
+        }
+    });
+
+    // 初始化操作项图标
+    function initActionItems() {
+        const actionItems = document.querySelectorAll('.setting-item-action');
+        actionItems.forEach(item => {
+            const textSpan = item.querySelector('.setting-item-text');
+            if (textSpan && !item.querySelector('.action-icon')) {
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'action-icon';
+                iconSpan.innerHTML = svgAction;
+                iconSpan.style.marginLeft = '8px';
+                iconSpan.style.display = 'inline-flex';
+                iconSpan.style.alignItems = 'center';
+                textSpan.parentNode.insertBefore(iconSpan, textSpan.nextSibling);
+            }
+        });
+    }
+
+    // 点击操作项显示确认对话框
+    settingItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // 支持 data-setting 和 data-action
+            const actionId = this.dataset.setting || this.dataset.action;
+            if (actionId && confirmActions[actionId]) {
+                openConfirmDialog(actionId);
+            }
+        });
+    });
+
+    // 初始化设置项状态图标
+    function initSettingItems() {
+        settingItems.forEach(item => {
+            const indicator = item.querySelector('.status-indicator');
+            const icon = item.querySelector('.status-icon');
+            if (indicator && icon) {
+                if (indicator.classList.contains('enabled')) {
+                    icon.innerHTML = svgOn;
+                } else {
+                    icon.innerHTML = svgOff;
+                }
+            }
+        });
+    }
+
+    // 点击设置项切换状态
+    settingItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const indicator = this.querySelector('.status-indicator');
+            const icon = this.querySelector('.status-icon');
+            if (indicator && icon) {
+                indicator.classList.toggle('enabled');
+                if (indicator.classList.contains('enabled')) {
+                    icon.innerHTML = svgOn;
+                } else {
+                    icon.innerHTML = svgOff;
+                }
+            }
+        });
+    });
+
+    // ESC键关闭设置菜单
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && settingsModal && settingsModal.classList.contains('active')) {
+            closeSettingsModal();
+        }
+    });
+
+    // 打开设置菜单时初始化图标
+    const originalOpenSettingsModal = openSettingsModal;
+    openSettingsModal = function() {
+        originalOpenSettingsModal();
+        initSettingItems();
+    }
+
+    // 初始化壁纸设置
+    function initWallpaper() {
+        const cookieValue = getCookieRaw('wallpaper_settings') || '';
+        if (cookieValue) {
+            try {
+                const decoded = decodeURIComponent(cookieValue);
+                const settings = JSON.parse(decoded);
+                applyWallpaper(settings);
+            } catch (e) {
+                console.error('初始化壁纸失败:', e);
+            }
+        }
+    }
+    initWallpaper();
 });

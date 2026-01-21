@@ -2183,12 +2183,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 检查是否删除了预设项目
             if (deletedPresetIds.length > 0) {
                 openConfirmDialog('deleted-preset-warn-apply');
-            } else {
+            } else if (editShortcutHasChanges) {
                 saveShortcutOrder();
                 editShortcutHasChanges = false;
                 editShortcutOriginalOrder = editShortcutItems.map(item => item.id);
                 loadQuickAccessMenu();
                 sendNotice('设置已应用', 'info');
+            } else {
+                sendNotice('未作任何更改', 'info');
             }
         });
     }
@@ -2200,11 +2202,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 检查是否删除了预设项目
             if (deletedPresetIds.length > 0) {
                 openConfirmDialog('deleted-preset-warn-ok');
-            } else {
+            } else if (editShortcutHasChanges) {
                 saveShortcutOrder();
                 loadQuickAccessMenu();
                 closeEditShortcutPanel();
                 sendNotice('设置已保存', 'info');
+            } else {
+                closeEditShortcutPanel();
             }
         });
     }

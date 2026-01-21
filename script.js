@@ -1307,12 +1307,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // SVG 图标定义
+    const svgOff = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0zM514.460823 921.606867a409.618313 409.618313 0 1 1 409.595422-409.595421A409.595422 409.595422 0 0 1 514.460823 921.606867z" fill="#CCCCCC" p-id="7318"></path>';
+    const svgOn = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0z m0 921.606867a409.618313 409.618313 0 1 1 409.595421-409.595421A409.595422 409.595422 0 0 1 1536.011446 921.606867z" fill="#4CAF50" p-id="7474"></path>';
+
+    // 初始化设置项状态图标
+    function initSettingItems() {
+        settingItems.forEach(item => {
+            const indicator = item.querySelector('.status-indicator');
+            const icon = item.querySelector('.status-icon');
+            if (indicator && icon) {
+                if (indicator.classList.contains('enabled')) {
+                    icon.innerHTML = svgOn;
+                } else {
+                    icon.innerHTML = svgOff;
+                }
+            }
+        });
+    }
+
     // 点击设置项切换状态
     settingItems.forEach(item => {
         item.addEventListener('click', function() {
             const indicator = this.querySelector('.status-indicator');
-            if (indicator) {
+            const icon = this.querySelector('.status-icon');
+            if (indicator && icon) {
                 indicator.classList.toggle('enabled');
+                if (indicator.classList.contains('enabled')) {
+                    icon.innerHTML = svgOn;
+                } else {
+                    icon.innerHTML = svgOff;
+                }
             }
         });
     });
@@ -1323,4 +1348,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             closeSettingsModal();
         }
     });
+
+    // 打开设置菜单时初始化图标
+    const originalOpenSettingsModal = openSettingsModal;
+    openSettingsModal = function() {
+        originalOpenSettingsModal();
+        initSettingItems();
+    }
 });

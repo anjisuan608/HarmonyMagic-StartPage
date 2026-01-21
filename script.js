@@ -2217,11 +2217,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (editShortcutApply) {
         editShortcutApply.addEventListener('click', function(e) {
             e.stopPropagation();
-            // 检查是否隐藏了预设项目
-            const hasHiddenPresets = editShortcutItems.some(item => item.isPreset && item.isHidden);
-            if (hasHiddenPresets) {
-                openConfirmDialog('hidden-preset-warn-apply');
-            } else if (editShortcutHasChanges) {
+            if (editShortcutHasChanges) {
                 saveShortcutOrder();
                 editShortcutHasChanges = false;
                 editShortcutOriginalOrder = editShortcutItems.map(item => item.id);
@@ -2237,11 +2233,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (editShortcutOk) {
         editShortcutOk.addEventListener('click', function(e) {
             e.stopPropagation();
-            // 检查是否隐藏了预设项目
-            const hasHiddenPresets = editShortcutItems.some(item => item.isPreset && item.isHidden);
-            if (hasHiddenPresets) {
-                openConfirmDialog('hidden-preset-warn-ok');
-            } else if (editShortcutHasChanges) {
+            if (editShortcutHasChanges) {
                 saveShortcutOrder();
                 loadQuickAccessMenu();
                 closeEditShortcutPanel();

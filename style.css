@@ -554,7 +554,8 @@ body::after {
     z-index: 2;
     position: relative;
     pointer-events: auto; /* 文字可以点击 */
-    max-width: 100%;
+    width: 80px;
+    max-width: 80px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

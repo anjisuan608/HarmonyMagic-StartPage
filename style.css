@@ -751,14 +751,37 @@ body::after {
 
 /* 设置按钮样式 */
 .setting-button {
+    position: relative;
     cursor: pointer;
     padding: 8px;
     border-radius: 50%;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.setting-button:hover {
-    background: rgba(255, 255, 255, 0.2);
+.setting-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.setting-button:hover::before {
+    opacity: 1;
+}
+
+.setting-button:active {
+    transform: scale(0.9);
 }
 
 /* 设置菜单弹窗样式 */

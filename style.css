@@ -870,13 +870,17 @@ body::after {
 }
 
 .settings-body {
-    overflow-y: auto;
     max-height: calc(80vh - 60px);
+    /* 只有内容溢出时才显示滚动条 */
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-/* 自定义滚动条 */
+/* 隐藏滚动条直到悬停 */
 .settings-body::-webkit-scrollbar {
     width: 6px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .settings-body::-webkit-scrollbar-track {
@@ -886,6 +890,12 @@ body::after {
 .settings-body::-webkit-scrollbar-thumb {
     background: #CCCCCC;
     border-radius: 3px;
+}
+
+.settings-body:hover::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar:hover,
+.settings-body:active::-webkit-scrollbar {
+    opacity: 1;
 }
 
 .settings-body::-webkit-scrollbar-thumb:hover {

@@ -65,6 +65,12 @@ body::after {
         radial-gradient(circle at bottom left, transparent 40%, rgba(0, 0, 0, 0.15) 100%),
         radial-gradient(circle at bottom right, transparent 40%, rgba(0, 0, 0, 0.15) 100%);
     z-index: 0;
+    filter: var(--wallpaper-filter, none);
+}
+
+/* 禁用背景滤镜时完全隐藏暗角效果 */
+body[data-filter-disabled="true"]::after {
+    display: none !important;
 }
 
 .time-date {

@@ -32,6 +32,11 @@ Licensed under GPLv3
 let quickAccessData = [];
 let searchEngineData = null;
 let searchEngines = {};
+let searchEngineSettings = {
+    activeEngines: [1, 2, 3, 4, 5, 6, 7],
+    disabledPresets: [],
+    disabledCustoms: []
+};
 
 // 搜索按钮SVG图标（硬编码在JS中）
 const searchButtonSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -425,6 +430,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 });
             }
             
+            // 从localStorage加载搜索引擎设置
+            loadSearchEngineSettings();
+            
             // 渲染搜索引擎图标和搜索按钮
             renderSearchEngineIcons();
         } catch (error) {
@@ -432,17 +440,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // 渲染搜索引擎图标和搜索按钮
+    // 渲染搜索引擎图标和搜索按钮（根据activeEngines动态渲染）
     function renderSearchEngineIcons() {
         const searchBoxes = document.querySelectorAll('.search-box-circle');
+        const activeEngines = searchEngineSettings.activeEngines || [];
         
-        searchBoxes.forEach(box => {
-            const engineId = box.getAttribute('data-engine-id');
+        searchBoxes.forEach((box, index) => {
+            // 根据activeEngines顺序获取对应的引擎ID
+            const engineId = activeEngines[index];
             const contentDiv = box.querySelector('.search-circle-content');
             const btn = box.querySelector('.circle-search-btn');
             
             if (engineId && searchEngines[engineId]) {
                 const engine = searchEngines[engineId];
+                
+                // 更新data-engine-id
+                box.setAttribute('data-engine-id', engineId);
                 
                 // 渲染图标
                 if (contentDiv && engine.icon) {
@@ -2254,11 +2267,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const addSearchEngineSave = document.getElementById('add-search-engine-save');
 
     // 搜索引擎设置
-    let searchEngineSettings = {
-        activeEngines: [],
-        disabledPresets: [],
-        disabledCustoms: []
-    };
 
     // 初始化关闭按钮图标
     if (searchEngineClose) {
@@ -2335,17 +2343,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         const disabledPresetIds = searchEngineSettings.disabledPresets;
         const disabledCustomIds = searchEngineSettings.disabledCustoms;
         
-        // 渲染使用中的引擎
-        renderSearchEngineCategory(searchEngineActiveList, 
-            searchEngineData.engines.filter(e => activeIds.includes(e.id)), 'active');
+        // 按activeIds顺序渲染使用中的引擎
+        const activeEngines = activeIds.map(id => searchEngines[id]).filter(Boolean);
+        renderSearchEngineCategory(searchEngineActiveList, activeEngines, 'active');
         
         // 渲染未使用的预设
-        renderSearchEngineCategory(searchEnginePresetList,
-            searchEngineData.engines.filter(e => e.id <= 7 && disabledPresetIds.includes(e.id)), 'preset');
+        const presetEngines = disabledPresetIds.map(id => searchEngines[id]).filter(Boolean);
+        renderSearchEngineCategory(searchEnginePresetList, presetEngines, 'preset');
         
         // 渲染未使用的自定义
-        renderSearchEngineCategory(searchEngineCustomList,
-            searchEngineData.engines.filter(e => e.id > 7 && disabledCustomIds.includes(e.id)), 'custom');
+        const customEngines = disabledCustomIds.map(id => searchEngines[id]).filter(Boolean);
+        renderSearchEngineCategory(searchEngineCustomList, customEngines, 'custom');
     }
 
     // 渲染单个分类的搜索引擎列表
@@ -2409,7 +2417,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // 交换位置
         [list[index], list[newIndex]] = [list[newIndex], list[index]];
+        // 保存设置并重新渲染
+        saveSearchEngineSettings();
         renderSearchEngineLists();
+        renderSearchEngineIcons();
     }
 
     // 打开添加搜索引擎面板

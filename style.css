@@ -838,6 +838,10 @@ body[data-filter-disabled="true"]::after {
     cursor: default;
 }
 
+.footer-text:hover {
+    color: #f8f8f888;
+}
+
 /* 通知容器样式 */
 .notices {
     position: fixed;

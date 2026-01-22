@@ -1772,6 +1772,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const aboutPanel = document.getElementById('about-panel');
     const aboutClose = document.getElementById('about-close');
     const aboutPanelOverlay = document.querySelector('#about-panel .settings-modal-overlay');
+    const footerCopyright = document.querySelector('.footer-copyright');
 
     // 初始化关闭按钮图标
     if (aboutClose) {
@@ -1808,6 +1809,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (aboutPanelOverlay) {
         aboutPanelOverlay.addEventListener('click', function() {
             closeAboutPanel();
+        });
+    }
+
+    // 点击底部版权打开关于面板
+    if (footerCopyright) {
+        footerCopyright.addEventListener('click', function() {
+            openAboutPanel();
         });
     }
 

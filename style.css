@@ -2541,12 +2541,6 @@ body[data-filter-disabled="true"]::after {
 .search-engine-item-actions {
     display: flex;
     gap: 4px;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.search-engine-item:hover .search-engine-item-actions {
-    opacity: 1;
 }
 
 .search-engine-move-up,
@@ -2572,6 +2566,55 @@ body[data-filter-disabled="true"]::after {
 .search-engine-move-down:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.search-engine-disable,
+.search-engine-enable,
+.search-engine-delete {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.search-engine-disable svg,
+.search-engine-enable svg,
+.search-engine-delete svg {
+    width: 14px;
+    height: 14px;
+    fill: #666;
+}
+
+.search-engine-disable:hover,
+.search-engine-enable:hover {
+    background: #e0e0e0;
+}
+
+.search-engine-delete:hover {
+    background: #ffebee;
+}
+
+.search-engine-delete:hover svg {
+    fill: #e53935;
+}
+
+.search-engine-delete:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.search-engine-delete:disabled:hover {
+    background: #f0f0f0;
+}
+
+.search-engine-delete:disabled:hover svg {
+    fill: #666;
 }
 
 .search-engine-buttons {

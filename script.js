@@ -431,6 +431,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 });
             }
             
+            // 从localStorage加载自定义搜索引擎
+            loadCustomSearchEngines();
+            
             // 从localStorage加载搜索引擎设置
             loadSearchEngineSettings();
             
@@ -2312,6 +2315,33 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // 从localStorage加载自定义搜索引擎
+    function loadCustomSearchEngines() {
+        try {
+            const saved = localStorage.getItem('custom_search_engines');
+            if (saved) {
+                const customEngines = JSON.parse(saved);
+                customEngines.forEach(engine => {
+                    searchEngineData.engines.push(engine);
+                    searchEngines[engine.id] = engine;
+                });
+            }
+        } catch (e) {
+            console.error('加载自定义搜索引擎失败:', e);
+        }
+    }
+
+    // 保存自定义搜索引擎到localStorage
+    function saveCustomSearchEngines() {
+        try {
+            // 只保存id > 7的自定义引擎
+            const customEngines = searchEngineData.engines.filter(e => e.id > 7);
+            localStorage.setItem('custom_search_engines', JSON.stringify(customEngines));
+        } catch (e) {
+            console.error('保存自定义搜索引擎失败:', e);
+        }
+    }
+
     // 从localStorage加载搜索引擎设置
     function loadSearchEngineSettings() {
         try {
@@ -2553,6 +2583,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const engineIndex = searchEngineData.engines.findIndex(e => e.id === engineId);
         if (engineIndex !== -1) searchEngineData.engines.splice(engineIndex, 1);
         
+        // 同步更新localStorage
+        saveCustomSearchEngines();
+        
         renderSearchEngineLists();
     }
 
@@ -2611,6 +2644,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 添加到列表
         searchEngineData.engines.push(newEngine);
         searchEngines[newId] = newEngine;
+        
+        // 保存自定义搜索引擎到localStorage
+        saveCustomSearchEngines();
         
         // 设置为激活状态（添加到工作副本）
         const workingSettings = searchEngineSettingsWorking || searchEngineSettings;

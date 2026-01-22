@@ -1533,11 +1533,11 @@ body[data-filter-disabled="true"]::after {
 }
 
 #add-shortcut-panel .settings-modal-content {
-    width: 380px;
-    max-width: 90vw;
+    width: 720px !important;
+    max-width: min(720px, 95%) !important;
     position: relative;
-    transform: none;
-    opacity: 1;
+    transform: none !important;
+    opacity: 1 !important;
 }
 
 #add-shortcut-panel .settings-body {
@@ -2267,8 +2267,8 @@ body[data-filter-disabled="true"]::after {
 }
 
 #edit-shortcut-panel .settings-modal-content {
-    width: 380px;
-    max-width: 90vw;
+    width: 720px;
+    max-width: min(720px, 95%);
     max-height: 90vh;
     display: flex;
     flex-direction: column;

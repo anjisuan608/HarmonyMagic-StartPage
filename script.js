@@ -1,4 +1,4 @@
-// 控制台ASCII字符画输出
+// 控制台输出
 console.log(`
 \x1b[32m
 Harmony Magic Start Page
@@ -58,6 +58,177 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         return null;
     }
+
+    // ==================== 全局设置（global-settings） ====================
+    // 默认设置值
+    const defaultGlobalSettings = {
+        backgroundBlur: true,      // 背景模糊（默认开启）
+        backgroundFilter: true     // 背景滤镜（默认开启）
+    };
+
+    // 加载全局设置
+    function loadGlobalSettings() {
+        const cookieValue = getCookieRaw('global-settings') || '';
+        let settings = { ...defaultGlobalSettings };
+        
+        if (cookieValue) {
+            try {
+                const decoded = decodeURIComponent(cookieValue);
+                const parsed = JSON.parse(decoded);
+                settings = { ...settings, ...parsed };
+            } catch (e) {
+                console.error('解析全局设置失败:', e);
+            }
+        }
+        
+        return settings;
+    }
+
+    // 保存全局设置
+    function saveGlobalSettings(settings) {
+        const encodedValue = encodeURIComponent(JSON.stringify(settings));
+        document.cookie = `global-settings=${encodedValue};path=/;expires=${new Date(Date.now() + 365*24*60*60*1000).toUTCString()}`;
+    }
+
+    // 应用全局设置
+    function applyGlobalSettings() {
+        const settings = loadGlobalSettings();
+        
+        // 应用背景模糊设置
+        setBackgroundBlurEnabled(settings.backgroundBlur);
+        
+        // 应用背景滤镜设置
+        setBackgroundFilterEnabled(settings.backgroundFilter);
+        
+        // 更新设置面板中的开关状态
+        updateSettingsPanelStates();
+    }
+
+    // 控制背景模糊功能是否启用
+    function setBackgroundBlurEnabled(enabled) {
+        const bgBlurOverlay = document.querySelector('.bg-blur-overlay');
+        const allInputs = document.querySelectorAll('input[type="text"]');
+        
+        if (enabled) {
+            // 启用背景模糊
+            if (bgBlurOverlay) {
+                bgBlurOverlay.style.backdropFilter = 'blur(8px)';
+                bgBlurOverlay.style.webkitBackdropFilter = 'blur(8px)';
+            }
+            // 恢复输入框的焦点监听
+            allInputs.forEach(input => {
+                input.addEventListener('focus', inputBlurHandler);
+                input.addEventListener('blur', inputBlurHandler);
+            });
+        } else {
+            // 禁用背景模糊 - 移除blur效果
+            if (bgBlurOverlay) {
+                bgBlurOverlay.style.backdropFilter = 'none';
+                bgBlurOverlay.style.webkitBackdropFilter = 'none';
+            }
+            // 确保模糊层不显示
+            if (bgBlurOverlay) {
+                bgBlurOverlay.classList.remove('active');
+            }
+            // 移除输入框的焦点监听
+            allInputs.forEach(input => {
+                input.removeEventListener('focus', inputBlurHandler);
+                input.removeEventListener('blur', inputBlurHandler);
+            });
+        }
+    }
+
+    // 控制背景滤镜（暗角效果）是否启用
+    function setBackgroundFilterEnabled(enabled) {
+        if (enabled) {
+            // 启用背景滤镜 - 恢复暗角效果
+            document.body.removeAttribute('data-filter-disabled');
+        } else {
+            // 禁用背景滤镜 - 清除暗角滤镜
+            document.body.setAttribute('data-filter-disabled', 'true');
+        }
+    }
+
+    // 更新设置面板中的开关状态显示
+    function updateSettingsPanelStates() {
+        const settings = loadGlobalSettings();
+        
+        // 更新背景模糊开关
+        const blurSetting = document.querySelector('[data-setting="auto-wallpaper"]');
+        if (blurSetting) {
+            const indicator = blurSetting.querySelector('.status-indicator');
+            const icon = blurSetting.querySelector('.status-icon');
+            if (indicator && icon) {
+                if (settings.backgroundBlur) {
+                    indicator.classList.add('enabled');
+                    icon.innerHTML = svgOn;
+                } else {
+                    indicator.classList.remove('enabled');
+                    icon.innerHTML = svgOff;
+                }
+            }
+        }
+        
+        // 更新背景滤镜开关
+        const filterSetting = document.querySelector('[data-setting="dark-mode"]');
+        if (filterSetting) {
+            const indicator = filterSetting.querySelector('.status-indicator');
+            const icon = filterSetting.querySelector('.status-icon');
+            if (indicator && icon) {
+                if (settings.backgroundFilter) {
+                    indicator.classList.add('enabled');
+                    icon.innerHTML = svgOn;
+                } else {
+                    indicator.classList.remove('enabled');
+                    icon.innerHTML = svgOff;
+                }
+            }
+        }
+    }
+
+    // 处理背景模糊开关的点击事件
+    function handleBackgroundBlurToggle(enabled) {
+        const settings = loadGlobalSettings();
+        settings.backgroundBlur = enabled;
+        saveGlobalSettings(settings);
+        setBackgroundBlurEnabled(enabled);
+    }
+
+    // 处理背景滤镜开关的点击事件
+    function handleBackgroundFilterToggle(enabled) {
+        const settings = loadGlobalSettings();
+        settings.backgroundFilter = enabled;
+        saveGlobalSettings(settings);
+        setBackgroundFilterEnabled(enabled);
+    }
+
+    // 输入框焦点事件处理器（用于背景模糊）
+    const inputBlurHandler = function(e) {
+        if (e.type === 'focus') {
+            const settings = loadGlobalSettings();
+            if (settings.backgroundBlur) {
+                setBackgroundBlur(true);
+            }
+        } else if (e.type === 'blur') {
+            const addShortcutPanel = document.getElementById('add-shortcut-panel');
+            // 如果添加面板是激活状态，不关闭背景模糊
+            if (addShortcutPanel && addShortcutPanel.classList.contains('active')) {
+                return;
+            }
+
+            setTimeout(() => {
+                const settings = loadGlobalSettings();
+                if (settings.backgroundBlur) {
+                    const hasFocusedInput = Array.from(document.querySelectorAll('input[type="text"]')).some(inp =>
+                        inp === document.activeElement || inp.contains(document.activeElement)
+                    );
+                    if (!hasFocusedInput) {
+                        setBackgroundBlur(false);
+                    }
+                }
+            }, 100);
+        }
+    };
 
     // 默认图标SVG
     const defaultIconSVG = '<svg t="1768974157218" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8714" width="32" height="32"><path d="M512.704787 1022.681895c-6.566636 0-12.885487-0.746767-19.370211-0.997965l223.522968-358.091907c32.011327-42.692008 51.675057-95.154106 51.675057-152.604663 0-88.961536-45.561669-167.195974-114.530461-213.091436l322.88327 0c29.969663 65.017888 47.096842 137.184673 47.096842 213.424546C1023.98157 793.752715 795.095394 1022.681895 512.704787 1022.681895zM512.205805 256.491303c-134.523205 0-243.604451 102.347371-254.246906 233.876682L96.997133 214.338551C189.740287 84.72121 341.184526 0 512.704787 0c189.230383 0 354.100731 103.095504 442.520963 255.992321C955.22575 255.992321 302.108946 256.491303 512.205805 256.491303zM511.416716 298.145073c118.142111 0 213.88189 95.36503 213.88189 213.051163 0 117.68545-95.739779 213.093484-213.88189 213.093484-118.103885 0-213.882572-95.408034-213.882572-213.093484C297.534144 393.510103 393.312831 298.145073 511.416716 298.145073zM269.683279 590.222492c33.504179 102.303002 128.784566 176.716231 242.522526 176.716231 38.828478 0 75.283547-9.269059 108.292157-24.733419L448.229568 1018.192418c-251.87691-31.759447-446.887571-246.346465-446.887571-506.872631 0-94.739084 26.233779-183.159316 71.129911-259.235365L269.683279 590.222492z" fill="#515151" p-id="8715"></path></svg>';
@@ -226,6 +397,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 控制背景模糊
     function setBackgroundBlur(blur) {
+        const settings = loadGlobalSettings();
+        // 如果背景模糊全局禁用，不执行任何操作
+        if (!settings.backgroundBlur) return;
+        
         if (bgBlurOverlay) {
             if (blur) {
                 bgBlurOverlay.classList.add('active');
@@ -238,32 +413,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 设置所有输入框的焦点监听
     function setupInputFocusListeners() {
         const allInputs = document.querySelectorAll('input[type="text"]');
+        const settings = loadGlobalSettings();
 
-        allInputs.forEach(input => {
-            input.addEventListener('focus', function() {
-                // 如果添加面板是激活状态，不改变背景模糊
-                if (!addShortcutPanel || !addShortcutPanel.classList.contains('active')) {
-                    setBackgroundBlur(true);
-                }
+        // 只在背景模糊启用时添加监听
+        if (settings.backgroundBlur) {
+            allInputs.forEach(input => {
+                input.addEventListener('focus', inputBlurHandler);
+                input.addEventListener('blur', inputBlurHandler);
             });
-
-            input.addEventListener('blur', function() {
-                // 如果添加面板是激活状态，不关闭背景模糊
-                if (addShortcutPanel && addShortcutPanel.classList.contains('active')) {
-                    return;
-                }
-
-                setTimeout(() => {
-                    // 检查是否还有其他输入框有焦点
-                    const hasFocusedInput = Array.from(allInputs).some(inp =>
-                        inp === document.activeElement || inp.contains(document.activeElement)
-                    );
-                    if (!hasFocusedInput) {
-                        setBackgroundBlur(false);
-                    }
-                }, 100);
-            });
-        });
+        }
     }
 
     // 初始化输入框焦点监听
@@ -1489,6 +1647,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     const svgOff = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0zM514.460823 921.606867a409.618313 409.618313 0 1 1 409.595422-409.595421A409.595422 409.595422 0 0 1 514.460823 921.606867z" fill="#CCCCCC" p-id="7318"></path>';
     const svgOn = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0z m0 921.606867a409.618313 409.618313 0 1 1 409.595421-409.595421A409.595422 409.595422 0 0 1 1536.011446 921.606867z" fill="#4CAF50" p-id="7474"></path>';
 
+    // ==================== 初始化全局设置 ====================
+    // 在SVG定义后应用全局设置
+    applyGlobalSettings();
+
     // 操作图标（用于需要确认的选项）
     const svgAction = '<svg t="1768966199939" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8663" width="18" height="18"><path d="M892 928.1H134c-19.9 0-36-16.1-36-36v-758c0-19.9 16.1-36 36-36h314.1c19.9 0 36 16.1 36 36s-16.1 36-36 36H170v686h686V579.6c0-19.9 16.1-36 36-36s36 16.1 36 36v312.5c0 19.9-16.1 36-36 36z" fill="#888888" p-id="8664"></path><path d="M927.9 131.6v-0.5c-0.1-1.7-0.4-3.3-0.7-4.9 0-0.1 0-0.2-0.1-0.3-0.4-1.7-0.9-3.3-1.5-4.9v-0.1c-0.6-1.6-1.4-3.1-2.2-4.6 0-0.1-0.1-0.1-0.1-0.2-0.8-1.4-1.7-2.8-2.7-4.1-0.1-0.1-0.2-0.3-0.3-0.4-0.5-0.6-0.9-1.1-1.4-1.7 0-0.1-0.1-0.1-0.1-0.2-0.5-0.6-1-1.1-1.6-1.6l-0.4-0.4c-0.5-0.5-1.1-1-1.6-1.5l-0.1-0.1c-0.6-0.5-1.2-1-1.9-1.4-0.1-0.1-0.3-0.2-0.4-0.3-1.4-1-2.8-1.8-4.3-2.6l-0.1-0.1c-1.6-0.8-3.2-1.5-4.9-2-1.6-0.5-3.3-1-5-1.2-0.1 0-0.2 0-0.3-0.1l-2.4-0.3h-0.3c-0.7-0.1-1.3-0.1-2-0.1H640.1c-19.9 0-36 16.1-36 36s16.1 36 36 36h165L487.6 487.6c-14.1 14.1-14.1 36.9 0 50.9 7 7 16.2 10.5 25.5 10.5 9.2 0 18.4-3.5 25.5-10.5L856 221v162.8c0 19.9 16.1 36 36 36s36-16.1 36-36V134.1c0-0.8 0-1.7-0.1-2.5z" fill="#888888" p-id="8665"></path></svg>';
 
@@ -2632,13 +2794,31 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 初始化设置项状态图标
     function initSettingItems() {
+        const settings = loadGlobalSettings();
+        
         settingItems.forEach(item => {
             const indicator = item.querySelector('.status-indicator');
             const icon = item.querySelector('.status-icon');
+            const settingType = item.dataset.setting;
+            
             if (indicator && icon) {
-                if (indicator.classList.contains('enabled')) {
+                let isEnabled = false;
+                
+                // 根据设置类型确定初始状态
+                if (settingType === 'auto-wallpaper') {
+                    isEnabled = settings.backgroundBlur;
+                } else if (settingType === 'dark-mode') {
+                    isEnabled = settings.backgroundFilter;
+                } else {
+                    // 其他设置使用DOM中的状态
+                    isEnabled = indicator.classList.contains('enabled');
+                }
+                
+                if (isEnabled) {
+                    indicator.classList.add('enabled');
                     icon.innerHTML = svgOn;
                 } else {
+                    indicator.classList.remove('enabled');
                     icon.innerHTML = svgOff;
                 }
             }
@@ -2651,12 +2831,24 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.stopPropagation();
             const indicator = this.querySelector('.status-indicator');
             const icon = this.querySelector('.status-icon');
+            const settingType = this.dataset.setting;
+            
             if (indicator && icon) {
+                const wasEnabled = indicator.classList.contains('enabled');
+                const isEnabled = !wasEnabled;
+                
                 indicator.classList.toggle('enabled');
-                if (indicator.classList.contains('enabled')) {
+                if (isEnabled) {
                     icon.innerHTML = svgOn;
                 } else {
                     icon.innerHTML = svgOff;
+                }
+                
+                // 根据设置类型处理对应的功能
+                if (settingType === 'auto-wallpaper') {
+                    handleBackgroundBlurToggle(isEnabled);
+                } else if (settingType === 'dark-mode') {
+                    handleBackgroundFilterToggle(isEnabled);
                 }
             }
         });

@@ -1702,6 +1702,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (action === 'general') {
                     // 常规设置 - 打开现有设置面板
                     openSettingsModal();
+                } else if (action === 'search-engine') {
+                    // 搜索引擎设置 - 打开搜索引擎面板
+                    openSearchEnginePanel();
                 } else if (action === 'appearance') {
                     // 壁纸设置 - 打开壁纸面板
                     openWallpaperPanel();
@@ -1749,6 +1752,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 关闭按钮图标
     const svgClose = '<svg t="1768962858078" class="icon" viewBox="0 0 1070 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5514" width="20" height="20"><path d="M50.368584 96.533526l30.769579 30.77162 82.037931 82.03793 117.900068 117.900068 138.353952 138.353953 143.399585 143.397544 133.036963 133.036963 107.268128 107.268129 66.091042 66.093081 13.582195 13.580155c12.576334 12.576334 33.589257 12.576334 46.165591 0s12.576334-33.589257 0-46.165591l-30.76958-30.769579-82.03793-82.039971-117.900068-117.898028-138.353953-138.353952-143.397544-143.399585-133.036963-133.036963-107.268128-107.268128L110.11433 63.950131l-13.582196-13.580156c-12.576334-12.578374-33.589257-12.578374-46.165591 0-12.576334 12.576334-12.576334 33.587217 0.002041 46.163551z" fill="" p-id="5515"></path><path d="M882.805987 50.369975l-30.76958 30.76958-82.03997 82.03793-117.898028 117.900068-138.353953 138.353953-143.399584 143.399584-133.036963 133.036963-107.268129 107.268129a2018478.867876 2018478.867876 0 0 1-66.093081 66.091041l-13.580156 13.582196c-12.578374 12.576334-12.578374 33.589257 0 46.165591 12.576334 12.576334 33.589257 12.576334 46.165591 0l30.77162-30.76958 82.037931-82.03793 117.900068-117.900068 138.353952-138.353953 143.397545-143.397544 133.036962-133.036963 107.268129-107.268129 66.093081-66.091041 13.580156-13.582196c12.576334-12.576334 12.576334-33.589257 0-46.16559-12.578374-12.580414-33.589257-12.580414-46.165591-0.002041z" fill="" p-id="5516"></path></svg>';
+
+    // 上移下移按钮图标
+    const svgArrowUp = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M7 14l5-5 5 5z"/></svg>';
+    const svgArrowDown = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>';
 
     // ==================== 壁纸设置面板功能 ====================
     const wallpaperPanel = document.getElementById('wallpaper-panel');
@@ -2223,6 +2230,309 @@ document.addEventListener('DOMContentLoaded', async function() {
             closeConfirmDialog();
         }
     });
+
+    // ==================== 搜索引擎设置面板 ====================
+    
+    // 搜索引擎设置面板元素
+    const searchEnginePanel = document.getElementById('search-engine-panel');
+    const searchEngineClose = document.getElementById('search-engine-close');
+    const searchEngineAdd = document.getElementById('search-engine-add');
+    const searchEngineCancel = document.getElementById('search-engine-cancel');
+    const searchEngineApply = document.getElementById('search-engine-apply');
+    const searchEngineOk = document.getElementById('search-engine-ok');
+    const searchEngineActiveList = document.getElementById('search-engine-active-list');
+    const searchEnginePresetList = document.getElementById('search-engine-preset-list');
+    const searchEngineCustomList = document.getElementById('search-engine-custom-list');
+    
+    // 添加搜索引擎面板元素
+    const addSearchEnginePanel = document.getElementById('add-search-engine-panel');
+    const addSearchEngineClose = document.getElementById('add-search-engine-close');
+    const addSearchEngineName = document.getElementById('add-search-engine-name');
+    const addSearchEngineUrl = document.getElementById('add-search-engine-url');
+    const addSearchEngineUrlError = document.getElementById('add-search-engine-url-error');
+    const addSearchEngineCancel = document.getElementById('add-search-engine-cancel');
+    const addSearchEngineSave = document.getElementById('add-search-engine-save');
+
+    // 搜索引擎设置
+    let searchEngineSettings = {
+        activeEngines: [],
+        disabledPresets: [],
+        disabledCustoms: []
+    };
+
+    // 初始化关闭按钮图标
+    if (searchEngineClose) {
+        searchEngineClose.innerHTML = svgClose;
+    }
+    if (addSearchEngineClose) {
+        addSearchEngineClose.innerHTML = svgClose;
+    }
+
+    // 加载搜索引擎数据（用于设置面板）
+    async function loadSearchEnginesForSettings() {
+        try {
+            const response = await fetch('search-engine.json');
+            if (!response.ok) throw new Error('Failed to load search-engine.json');
+            searchEngineData = await response.json();
+            
+            // 构建搜索引擎映射
+            searchEngineData.engines.forEach(engine => {
+                searchEngines[engine.id] = engine;
+            });
+            
+            // 从localStorage加载设置
+            loadSearchEngineSettings();
+        } catch (e) {
+            console.error('加载搜索引擎数据失败:', e);
+        }
+    }
+
+    // 从localStorage加载搜索引擎设置
+    function loadSearchEngineSettings() {
+        try {
+            const saved = localStorage.getItem('search_engine_settings');
+            if (saved) {
+                searchEngineSettings = JSON.parse(saved);
+            } else {
+                // 默认设置：所有预设引擎激活
+                searchEngineSettings = {
+                    activeEngines: searchEngineData.engines.filter(e => e.id <= 7).map(e => e.id),
+                    disabledPresets: [],
+                    disabledCustoms: []
+                };
+            }
+        } catch (e) {
+            console.error('加载搜索引擎设置失败:', e);
+        }
+    }
+
+    // 保存搜索引擎设置到localStorage
+    function saveSearchEngineSettings() {
+        localStorage.setItem('search_engine_settings', JSON.stringify(searchEngineSettings));
+    }
+
+    // 打开搜索引擎设置面板
+    function openSearchEnginePanel() {
+        if (searchEnginePanel) {
+            renderSearchEngineLists();
+            initSearchEngineCategoryCollapse();
+            searchEnginePanel.classList.add('active');
+        }
+    }
+
+    // 关闭搜索引擎设置面板
+    function closeSearchEnginePanel() {
+        if (searchEnginePanel) {
+            searchEnginePanel.classList.remove('active');
+        }
+    }
+
+    // 渲染搜索引擎列表
+    function renderSearchEngineLists() {
+        if (!searchEngineData) return;
+        
+        const activeIds = searchEngineSettings.activeEngines;
+        const disabledPresetIds = searchEngineSettings.disabledPresets;
+        const disabledCustomIds = searchEngineSettings.disabledCustoms;
+        
+        // 渲染使用中的引擎
+        renderSearchEngineCategory(searchEngineActiveList, 
+            searchEngineData.engines.filter(e => activeIds.includes(e.id)), 'active');
+        
+        // 渲染未使用的预设
+        renderSearchEngineCategory(searchEnginePresetList,
+            searchEngineData.engines.filter(e => e.id <= 7 && disabledPresetIds.includes(e.id)), 'preset');
+        
+        // 渲染未使用的自定义
+        renderSearchEngineCategory(searchEngineCustomList,
+            searchEngineData.engines.filter(e => e.id > 7 && disabledCustomIds.includes(e.id)), 'custom');
+    }
+
+    // 渲染单个分类的搜索引擎列表
+    function renderSearchEngineCategory(container, engines, category) {
+        container.innerHTML = '';
+        engines.forEach(engine => {
+            const item = document.createElement('div');
+            item.className = 'search-engine-item';
+            item.dataset.engineId = engine.id;
+            const isPreset = engine.id <= 7; // id <= 7 为预设搜索引擎
+            item.innerHTML = `
+                <div class="search-engine-item-icon">${engine.icon}</div>
+                <span class="search-engine-item-name">
+                    ${isPreset ? '<span class="preset-tag">预设</span>' : ''}${engine.title}
+                </span>
+                <div class="search-engine-item-actions">
+                    <button class="search-engine-move-up" title="上移">${svgArrowUp}</button>
+                    <button class="search-engine-move-down" title="下移">${svgArrowDown}</button>
+                </div>
+            `;
+            
+            // 上移按钮
+            const moveUp = item.querySelector('.search-engine-move-up');
+            moveUp.addEventListener('click', () => moveSearchEngine(engine.id, -1, category));
+            
+            // 下移按钮
+            const moveDown = item.querySelector('.search-engine-move-down');
+            moveDown.addEventListener('click', () => moveSearchEngine(engine.id, 1, category));
+            
+            container.appendChild(item);
+        });
+    }
+
+    // 初始化分类折叠功能
+    function initSearchEngineCategoryCollapse() {
+        const categories = document.querySelectorAll('.search-engine-category');
+        categories.forEach(category => {
+            const header = category.querySelector('.search-engine-category-header');
+            header.addEventListener('click', function() {
+                category.classList.toggle('collapsed');
+            });
+        });
+    }
+
+    // 移动搜索引擎顺序
+    function moveSearchEngine(engineId, direction, category) {
+        let list;
+        if (category === 'active') {
+            list = searchEngineSettings.activeEngines;
+        } else if (category === 'preset') {
+            list = searchEngineSettings.disabledPresets;
+        } else {
+            list = searchEngineSettings.disabledCustoms;
+        }
+        
+        const index = list.indexOf(engineId);
+        if (index === -1) return;
+        
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= list.length) return;
+        
+        // 交换位置
+        [list[index], list[newIndex]] = [list[newIndex], list[index]];
+        renderSearchEngineLists();
+    }
+
+    // 打开添加搜索引擎面板
+    function openAddSearchEnginePanel() {
+        if (addSearchEnginePanel) {
+            addSearchEngineName.value = '';
+            addSearchEngineUrl.value = '';
+            addSearchEngineUrlError.textContent = '';
+            addSearchEnginePanel.classList.add('active');
+        }
+    }
+
+    // 关闭添加搜索引擎面板
+    function closeAddSearchEnginePanel() {
+        if (addSearchEnginePanel) {
+            addSearchEnginePanel.classList.remove('active');
+        }
+    }
+
+    // 验证搜索引擎URL格式
+    function validateSearchEngineUrl(url) {
+        if (!url.trim()) {
+            return { valid: false, message: 'URL不能为空' };
+        }
+        if (!url.includes('%s')) {
+            return { valid: false, message: 'URL中必须包含 %s 作为搜索关键词占位符' };
+        }
+        return { valid: true, message: '' };
+    }
+
+    // 验证并添加搜索引擎
+    function addSearchEngine() {
+        const name = addSearchEngineName.value.trim();
+        const url = addSearchEngineUrl.value.trim();
+        
+        const validation = validateSearchEngineUrl(url);
+        if (!validation.valid) {
+            addSearchEngineUrlError.textContent = validation.message;
+            return false;
+        }
+        
+        // MC百科图标（用于自定义搜索引擎）
+        const mcIcon = '<svg t="1766328430081" class="search-icon" viewBox="0 0 1035 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="37846" width="24" height="24"><path d="M1013.852766 1011.332492a42.225028 42.225028 0 0 1-59.70619 0L702.316509 759.502424a428.900723 428.900723 0 1 1 133.958901-196.00858 41.718328 41.718328 0 0 1-4.919216 14.166497c-1.330088 3.61024-2.385714 7.347155-3.800252 10.91517l-2.385714-2.385714a42.225028 42.225028 0 0 1-72.690386-29.13527l-0.380025-3.905815a41.950565 41.950565 0 0 1 11.379645-28.670794l-3.926928-3.905815a336.976836 336.976836 0 1 0-88.123633 150.764463 6.333754 6.333754 0 0 0 0.612262-0.928951l61.120729 1.055626 145.254096 145.232984 0.274463-0.274463 135.12009 135.12009a42.225028 42.225028 0 0 1 0.042225 59.79064z" fill="#515151" p-id="37847"></path></svg>';
+        
+        // 创建新的搜索引擎
+        const newId = Math.max(...searchEngineData.engines.map(e => e.id)) + 1;
+        const newEngine = {
+            id: newId,
+            title: name || '新搜索引擎',
+            icon: mcIcon,
+            url: url,
+            comment: '自定义搜索引擎'
+        };
+        
+        // 添加到列表
+        searchEngineData.engines.push(newEngine);
+        searchEngines[newId] = newEngine;
+        
+        // 设置为激活状态
+        searchEngineSettings.activeEngines.push(newId);
+        saveSearchEngineSettings();
+        
+        // 关闭面板并刷新列表
+        closeAddSearchEnginePanel();
+        renderSearchEngineLists();
+        sendNotice('搜索引擎已添加', 'info');
+        
+        return true;
+    }
+
+    // 绑定搜索引擎面板事件
+    if (searchEngineClose) {
+        searchEngineClose.addEventListener('click', closeSearchEnginePanel);
+    }
+    if (searchEngineAdd) {
+        searchEngineAdd.addEventListener('click', openAddSearchEnginePanel);
+    }
+    if (searchEngineCancel) {
+        searchEngineCancel.addEventListener('click', closeSearchEnginePanel);
+    }
+    if (searchEngineApply || searchEngineOk) {
+        const saveAndClose = () => {
+            saveSearchEngineSettings();
+            sendNotice('搜索引擎设置已保存', 'info');
+            closeSearchEnginePanel();
+        };
+        if (searchEngineApply) searchEngineApply.addEventListener('click', saveAndClose);
+        if (searchEngineOk) searchEngineOk.addEventListener('click', saveAndClose);
+    }
+    
+    // 面板遮罩点击关闭
+    const searchEngineOverlay = document.querySelector('#search-engine-panel .settings-modal-overlay');
+    if (searchEngineOverlay) {
+        searchEngineOverlay.addEventListener('click', closeSearchEnginePanel);
+    }
+
+    // 绑定添加搜索引擎面板事件
+    if (addSearchEngineClose) {
+        addSearchEngineClose.addEventListener('click', closeAddSearchEnginePanel);
+    }
+    if (addSearchEngineCancel) {
+        addSearchEngineCancel.addEventListener('click', closeAddSearchEnginePanel);
+    }
+    if (addSearchEngineSave) {
+        addSearchEngineSave.addEventListener('click', addSearchEngine);
+    }
+    if (addSearchEngineUrl) {
+        // 失焦验证
+        addSearchEngineUrl.addEventListener('blur', function() {
+            const validation = validateSearchEngineUrl(this.value);
+            addSearchEngineUrlError.textContent = validation.message;
+        });
+        // 输入时清除错误
+        addSearchEngineUrl.addEventListener('input', function() {
+            addSearchEngineUrlError.textContent = '';
+        });
+    }
+
+    // 面板遮罩点击关闭
+    const addSearchEngineOverlay = document.querySelector('#add-search-engine-panel .settings-modal-overlay');
+    if (addSearchEngineOverlay) {
+        addSearchEngineOverlay.addEventListener('click', closeAddSearchEnginePanel);
+    }
 
     // ==================== 添加快捷方式面板 ====================
     
@@ -2983,4 +3293,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     initWallpaper();
+
+    // 初始化搜索引擎设置
+    loadSearchEnginesForSettings();
 });

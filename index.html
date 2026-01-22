@@ -36,6 +36,12 @@
                 </div>
                 <span>常规设置</span>
             </div>
+            <div class="settings-menu-item" data-action="search-engine">
+                <div class="settings-menu-icon">
+                    <svg t="1766328430081" class="icon" viewBox="0 0 1035 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="37846" width="20" height="20"><path d="M1013.852766 1011.332492a42.225028 42.225028 0 0 1-59.70619 0L702.316509 759.502424a428.900723 428.900723 0 1 1 133.958901-196.00858 41.718328 41.718328 0 0 1-4.919216 14.166497c-1.330088 3.61024-2.385714 7.347155-3.800252 10.91517l-2.385714-2.385714a42.225028 42.225028 0 0 1-72.690386-29.13527l-0.380025-3.905815a41.950565 41.950565 0 0 1 11.379645-28.670794l-3.926928-3.905815a336.976836 336.976836 0 1 0-88.123633 150.764463 6.333754 6.333754 0 0 0 0.612262-0.928951l61.120729 1.055626 145.254096 145.232984 0.274463-0.274463 135.12009 135.12009a42.225028 42.225028 0 0 1 0.042225 59.79064z" fill="#7a7a7a" p-id="37847"></path></svg>
+                </div>
+                <span>搜索引擎设置</span>
+            </div>
             <div class="settings-menu-item" data-action="appearance">
                 <div class="settings-menu-icon">
                     <svg t="1769007351921" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7106" width="20" height="20"><path d="M950.869333 73.130667H73.130667s-36.565333 0-36.565334 36.565333V914.346667c0 36.565333 36.565333 36.565333 36.565334 36.565333h877.738666s36.565333 0 36.565334-36.565333V109.653333s0-36.565333-36.565334-36.565333z m-36.565333 804.565333H109.653333V146.346667H914.346667V877.653333zM292.565333 402.346667a73.130667 73.130667 0 1 0 0-146.346667 73.130667 73.130667 0 0 0 0 146.346667z m365.738667-21.333334l-216.746667 328.277334-112.426666-167.594667-182.826667 281.173333H877.653333L658.346667 381.013333z" fill="#7a7a7a" p-id="7107"></path></svg>
@@ -169,6 +175,88 @@
             <div class="confirm-dialog-actions">
                 <button id="confirm-dialog-cancel" class="confirm-dialog-btn confirm-dialog-cancel">否</button>
                 <button id="confirm-dialog-ok" class="confirm-dialog-btn confirm-dialog-ok">是</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索引擎设置面板 -->
+    <div id="search-engine-panel" class="settings-modal">
+        <div class="settings-modal-overlay"></div>
+        <div class="settings-modal-content">
+            <div class="settings-header">
+                <span class="settings-title">搜索引擎设置</span>
+                <div class="search-engine-header-btns">
+                    <button id="search-engine-add" class="settings-reset-btn" title="添加搜索引擎">添加</button>
+                    <div id="search-engine-close" class="settings-close">
+                        <svg t="1768962858078" class="icon" viewBox="0 0 1070 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5514" width="20" height="20"><path d="M50.368584 96.533526l30.769579 30.77162 82.037931 82.03793 117.900068 117.900068 138.353952 138.353953 143.399585 143.397544 133.036963 133.036963 107.268128 107.268129 66.091042 66.093081 13.582195 13.580155c12.576334 12.576334 33.589257 12.576334 46.165591 0s12.576334-33.589257 0-46.165591l-30.76958-30.769579-82.03793-82.039971-117.900068-117.898028-138.353953-138.353952-143.397544-143.399585-133.036963-133.036963-107.268128-107.268128L110.11433 63.950131l-13.582196-13.580156c-12.576334-12.578374-33.589257-12.578374-46.165591 0-12.576334 12.576334-12.576334 33.587217 0.002041 46.163551z" fill="" p-id="5515"></path><path d="M882.805987 50.369975l-30.76958 30.76958-82.03997 82.03793-117.898028 117.900068-138.353953 138.353953-143.399584 143.399584-133.036963 133.036963-107.268129 107.268129a2018478.867876 2018478.867876 0 0 1-66.093081 66.091041l-13.580156 13.582196c-12.578374 12.576334-12.578374 33.589257 0 46.165591 12.576334 12.576334 33.589257 12.576334 46.165591 0l30.77162-30.76958 82.037931-82.03793 117.900068-117.900068 138.353952-138.353953 143.397545-143.397544 133.036962-133.036963 107.268129-107.268129 66.093081-66.091041 13.580156-13.582196c12.576334-12.576334 12.576334-33.589257 0-46.16559-12.578374-12.580414-33.589257-12.580414-46.165591-0.002041z" fill="" p-id="5516"></path></svg>
+                    </div>
+                </div>
+            </div>
+            <div id="search-engine-list" class="search-engine-list">
+                <!-- 使用中的搜索引擎 -->
+                <div class="search-engine-category" data-category="active">
+                    <div class="search-engine-category-header">
+                        <svg class="search-engine-collapse-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+                        <span class="search-engine-category-title">使用中</span>
+                    </div>
+                    <div class="search-engine-category-content">
+                        <div id="search-engine-active-list" class="search-engine-items"></div>
+                    </div>
+                </div>
+                <!-- 未使用的预设 -->
+                <div class="search-engine-category" data-category="preset">
+                    <div class="search-engine-category-header">
+                        <svg class="search-engine-collapse-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+                        <span class="search-engine-category-title">未使用的预设</span>
+                    </div>
+                    <div class="search-engine-category-content">
+                        <div id="search-engine-preset-list" class="search-engine-items"></div>
+                    </div>
+                </div>
+                <!-- 未使用的自定义 -->
+                <div class="search-engine-category" data-category="custom">
+                    <div class="search-engine-category-header">
+                        <svg class="search-engine-collapse-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+                        <span class="search-engine-category-title">未使用的自定义</span>
+                    </div>
+                    <div class="search-engine-category-content">
+                        <div id="search-engine-custom-list" class="search-engine-items"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="search-engine-buttons">
+                <button id="search-engine-cancel" class="search-engine-btn search-engine-cancel">取消</button>
+                <button id="search-engine-apply" class="search-engine-btn search-engine-apply">应用</button>
+                <button id="search-engine-ok" class="search-engine-btn search-engine-ok">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加搜索引擎面板 -->
+    <div id="add-search-engine-panel" class="settings-modal">
+        <div class="settings-modal-overlay"></div>
+        <div class="settings-modal-content" style="width: 400px; max-width: 90vw;">
+            <div class="settings-header">
+                <span class="settings-title">添加搜索引擎</span>
+                <div id="add-search-engine-close" class="settings-close icon-close">
+                    <!-- 关闭图标由JS生成 -->
+                </div>
+            </div>
+            <div class="settings-body">
+                <div class="add-shortcut-field">
+                    <label class="add-shortcut-label">引擎名称</label>
+                    <input type="text" id="add-search-engine-name" class="add-shortcut-input" placeholder="例如：百度">
+                </div>
+                <div class="add-shortcut-field">
+                    <label class="add-shortcut-label">URL</label>
+                    <input type="url" id="add-search-engine-url" class="add-shortcut-input" placeholder="https://www.baidu.com/s?wd=%s">
+                    <span class="url-format-hint">URL中必须包含 %s 作为搜索关键词占位符</span>
+                    <span id="add-search-engine-url-error" class="add-shortcut-error"></span>
+                </div>
+            </div>
+            <div class="add-shortcut-buttons">
+                <button id="add-search-engine-cancel" class="add-shortcut-btn add-shortcut-cancel">取消</button>
+                <button id="add-search-engine-save" class="add-shortcut-btn add-shortcut-save">确定</button>
             </div>
         </div>
     </div>

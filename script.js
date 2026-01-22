@@ -30,6 +30,11 @@ Licensed under GPLv3
 
 // 全局变量
 let quickAccessData = [];
+let searchEngineData = null;
+let searchEngines = {};
+
+// 搜索按钮SVG图标（硬编码在JS中）
+const searchButtonSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
 // 主应用
 document.addEventListener('DOMContentLoaded', async function() {
@@ -403,7 +408,75 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 设置事件委托（只绑定一次）
     setupMenuItemDelegation();
 
-    // 获取所有圆形搜索框
+    // 加载搜索引擎数据
+    async function loadSearchEngines() {
+        try {
+            const response = await fetch('search-engine.json');
+            if (!response.ok) {
+                throw new Error('Failed to load search-engine.json');
+            }
+            const data = await response.json();
+            searchEngineData = data;
+            
+            // 创建引擎ID到引擎信息的映射
+            if (data.engines) {
+                data.engines.forEach(engine => {
+                    searchEngines[engine.id] = engine;
+                });
+            }
+            
+            // 渲染搜索引擎图标和搜索按钮
+            renderSearchEngineIcons();
+        } catch (error) {
+            console.error('Error loading search engine data:', error);
+        }
+    }
+
+    // 渲染搜索引擎图标和搜索按钮
+    function renderSearchEngineIcons() {
+        const searchBoxes = document.querySelectorAll('.search-box-circle');
+        
+        searchBoxes.forEach(box => {
+            const engineId = box.getAttribute('data-engine-id');
+            const contentDiv = box.querySelector('.search-circle-content');
+            const btn = box.querySelector('.circle-search-btn');
+            
+            if (engineId && searchEngines[engineId]) {
+                const engine = searchEngines[engineId];
+                
+                // 渲染图标
+                if (contentDiv && engine.icon) {
+                    contentDiv.innerHTML = engine.icon;
+                }
+                
+                // 渲染搜索按钮（使用JS中定义的SVG）
+                if (btn && searchButtonSvg) {
+                    btn.innerHTML = searchButtonSvg;
+                }
+            }
+        });
+    }
+
+    // 根据引擎ID获取搜索URL
+    function getSearchUrl(engineId, query) {
+        if (!engineId || !searchEngines[engineId]) {
+            return '';
+        }
+        const engine = searchEngines[engineId];
+        if (!engine.url) return '';
+        
+        if (query) {
+            return engine.url.replace('{query}', encodeURIComponent(query));
+        } else {
+            // 如果没有查询，返回基础URL（去掉{query}部分）
+            return engine.url.split('{query}')[0];
+        }
+    }
+
+    // 等待搜索引擎数据加载完成后渲染
+    await loadSearchEngines();
+
+// 获取所有圆形搜索框
     const circleSearchBoxes = document.querySelectorAll('.search-box-circle');
     const centerSearchBox = document.querySelector('.center-0');
 
@@ -967,31 +1040,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // 执行搜索逻辑
             const query = input.value.trim();
-            let searchUrl = '';
-
-            // 根据搜索框的类名确定搜索引擎
-            if (box.classList.contains('left-circle-1')) {
-                searchUrl = query ? `https://www.baidu.com/s?wd=${encodeURIComponent(query)}` : 'https://www.baidu.com';
-            } else if (box.classList.contains('left-circle-2')) {
-                searchUrl = query ? `https://www.sogou.com/web?query=${encodeURIComponent(query)}` : 'https://www.sogou.com';
-            } else if (box.classList.contains('left-circle-3')) {
-                searchUrl = query ? `https://www.so.com/s?q=${encodeURIComponent(query)}` : 'https://www.so.com';
-            } else if (box.classList.contains('right-circle-1')) {
-                searchUrl = query ? `https://www.google.com/search?q=${encodeURIComponent(query)}` : 'https://www.google.com';
-            } else if (box.classList.contains('right-circle-2')) {
-                searchUrl = query ? `https://duckduckgo.com/?q=${encodeURIComponent(query)}` : 'https://duckduckgo.com';
-            } else if (box.classList.contains('right-circle-3')) {
-                searchUrl = query ? `https://search.mcmod.cn/s?key=${encodeURIComponent(query)}` : 'https://search.mcmod.cn';
-            } else {
-                searchUrl = query ? `https://www.bing.com/search?q=${encodeURIComponent(query)}` : 'https://www.bing.com';
-            }
+            const engineId = box.getAttribute('data-engine-id');
+            const searchUrl = getSearchUrl(engineId, query);
 
             // 搜索后清空输入框，但保持展开状态
             input.value = '';
             box.classList.remove('input-active');
 
             // 打开搜索页面
-            window.open(searchUrl, '_blank');
+            if (searchUrl) {
+                window.open(searchUrl, '_blank');
+            }
         });
         
         // 圆形搜索框输入框回车事件
@@ -1079,33 +1138,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     function performCircleSearch(box) {
         const input = box.querySelector('.circle-search-input');
         const query = input.value.trim();
-        let searchUrl = '';
+        const engineId = box.getAttribute('data-engine-id');
+        
+        const searchUrl = getSearchUrl(engineId, query);
 
-        // 根据搜索框的类名确定搜索引擎
-        if (box.classList.contains('left-circle-1')) {
-            // 百度
-            searchUrl = query ? `https://www.baidu.com/s?wd=${encodeURIComponent(query)}` : 'https://www.baidu.com';
-        } else if (box.classList.contains('left-circle-2')) {
-            // 搜狗
-            searchUrl = query ? `https://www.sogou.com/web?query=${encodeURIComponent(query)}` : 'https://www.sogou.com';
-        } else if (box.classList.contains('left-circle-3')) {
-            // 360搜索
-            searchUrl = query ? `https://www.so.com/s?q=${encodeURIComponent(query)}` : 'https://www.so.com';
-        } else if (box.classList.contains('right-circle-1')) {
-            // Google
-            searchUrl = query ? `https://www.google.com/search?q=${encodeURIComponent(query)}` : 'https://www.google.com';
-        } else if (box.classList.contains('right-circle-2')) {
-            // duckduckgo
-            searchUrl = query ? `https://duckduckgo.com/?q=${encodeURIComponent(query)}` : 'https://duckduckgo.com';
-        } else if (box.classList.contains('right-circle-3')) {
-            // MC百科
-            searchUrl = query ? `https://search.mcmod.cn/s?key=${encodeURIComponent(query)}` : 'https://search.mcmod.cn';
-        } else {
-            // 默认使用必应
-            searchUrl = query ? `https://www.bing.com/search?q=${encodeURIComponent(query)}` : 'https://www.bing.com';
+        if (searchUrl) {
+            window.open(searchUrl, '_blank');
         }
-
-        window.open(searchUrl, '_blank');
 
         // 搜索发起后清空输入框内容
         input.value = '';

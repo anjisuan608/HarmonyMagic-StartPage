@@ -422,14 +422,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 throw new Error('Failed to load search-engine.json');
             }
             const data = await response.json();
-            searchEngineData = data;
+            
+            // 如果是重置，先清空现有数据
+            if (!searchEngineData) {
+                searchEngineData = { engines: [] };
+                searchEngines = {};
+            }
+            
+            // 重新填充预设引擎
+            searchEngineData.engines = data.engines.slice();
             
             // 创建引擎ID到引擎信息的映射
-            if (data.engines) {
-                data.engines.forEach(engine => {
-                    searchEngines[engine.id] = engine;
-                });
-            }
+            data.engines.forEach(engine => {
+                searchEngines[engine.id] = engine;
+            });
             
             // 从localStorage加载自定义搜索引擎
             loadCustomSearchEngines();
@@ -489,10 +495,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!engine.url) return '';
         
         if (query) {
-            return engine.url.replace('{query}', encodeURIComponent(query));
+            // 同时支持 %s 和 {query} 两种占位符格式
+            let url = engine.url.replace('%s', encodeURIComponent(query));
+            url = url.replace('{query}', encodeURIComponent(query));
+            return url;
         } else {
-            // 如果没有查询，返回基础URL（去掉{query}部分）
-            return engine.url.split('{query}')[0];
+            // 如果没有查询，返回基础URL
+            let url = engine.url.split('%s')[0];
+            url = url.split('{query}')[0];
+            return url;
         }
     }
 
@@ -2183,8 +2194,48 @@ document.addEventListener('DOMContentLoaded', async function() {
                 renderEditShortcutList();
                 sendNotice('已还原所有隐藏的预设快捷访问', 'info');
             }
+        },
+        'reset-search-engines': {
+            title: '重置搜索引擎',
+            message: '确定要重置所有搜索引擎设置吗？这将删除所有自定义搜索引擎和排序设置。',
+            onOk: function() {
+                localStorage.removeItem('search_engine_settings');
+                localStorage.removeItem('custom_search_engines');
+                // 重置搜索引擎数据并刷新显示
+                searchEngineData = null;
+                searchEngines = {};
+                searchEngineSettings = null;
+                searchEngineSettingsWorking = null;
+                refreshSearchEngines();
+                sendNotice('搜索引擎已重置', 'info');
+            }
+        },
+        'restore-search-engines': {
+            title: '还原搜索引擎排序',
+            message: '确定要恢复默认排序吗？这将把所有预设引擎恢复为默认顺序，自定义搜索引擎将被移至未使用列表。',
+            onOk: function() {
+                localStorage.removeItem('search_engine_settings');
+                // 刷新搜索引擎显示
+                searchEngineSettings = null;
+                searchEngineSettingsWorking = null;
+                refreshSearchEngines();
+                sendNotice('搜索引擎排序已还原', 'info');
+            }
         }
     };
+
+    // 刷新搜索引擎数据和显示
+    async function refreshSearchEngines() {
+        // 如果搜索引擎设置面板已打开，使用 loadSearchEnginesForSettings
+        if (searchEnginePanel && searchEnginePanel.classList.contains('active')) {
+            await loadSearchEnginesForSettings();
+            // 重新渲染设置面板列表
+            renderSearchEngineLists();
+        } else {
+            // 否则重新加载搜索引擎数据并刷新主页显示
+            await loadSearchEngines();
+        }
+    }
 
     // 打开确认对话框
     function openConfirmDialog(actionId) {
@@ -2270,6 +2321,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const searchEnginePanel = document.getElementById('search-engine-panel');
     const searchEngineClose = document.getElementById('search-engine-close');
     const searchEngineAdd = document.getElementById('search-engine-add');
+    const searchEngineReset = document.getElementById('search-engine-reset');
+    const searchEngineRestore = document.getElementById('search-engine-restore');
     const searchEngineCancel = document.getElementById('search-engine-cancel');
     const searchEngineApply = document.getElementById('search-engine-apply');
     const searchEngineOk = document.getElementById('search-engine-ok');
@@ -2301,12 +2354,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const response = await fetch('search-engine.json');
             if (!response.ok) throw new Error('Failed to load search-engine.json');
-            searchEngineData = await response.json();
+            const data = await response.json();
+            
+            // 如果是重置，先清空现有数据
+            if (!searchEngineData) {
+                searchEngineData = { engines: [] };
+                searchEngines = {};
+            }
+            
+            // 重新填充预设引擎
+            searchEngineData.engines = data.engines.slice();
             
             // 构建搜索引擎映射
-            searchEngineData.engines.forEach(engine => {
+            data.engines.forEach(engine => {
                 searchEngines[engine.id] = engine;
             });
+            
+            // 从localStorage加载自定义搜索引擎（确保设置面板能看到自定义引擎）
+            loadCustomSearchEngines();
             
             // 从localStorage加载设置
             loadSearchEngineSettings();
@@ -2349,11 +2414,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (saved) {
                 searchEngineSettings = JSON.parse(saved);
             } else {
-                // 默认设置：所有预设引擎激活
+                // 默认设置：所有预设引擎激活，自定义引擎放入未使用列表
+                const customEngineIds = searchEngineData.engines.filter(e => e.id > 7).map(e => e.id);
                 searchEngineSettings = {
                     activeEngines: searchEngineData.engines.filter(e => e.id <= 7).map(e => e.id),
                     disabledPresets: [],
-                    disabledCustoms: []
+                    disabledCustoms: customEngineIds
                 };
             }
         } catch (e) {
@@ -2674,10 +2740,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (searchEngineClose) {
         searchEngineClose.addEventListener('click', closeSearchEnginePanel);
     }
-    if (searchEngineAdd) {
-        searchEngineAdd.addEventListener('click', openAddSearchEnginePanel);
-    }
-    if (searchEngineCancel) {
+        if (searchEngineAdd) {
+            searchEngineAdd.addEventListener('click', openAddSearchEnginePanel);
+        }
+        
+        // 重置：删除所有自定义引擎和排序设置
+        if (searchEngineReset) {
+            searchEngineReset.addEventListener('click', () => {
+                openConfirmDialog('reset-search-engines');
+            });
+        }
+        
+        // 还原：恢复默认排序
+        if (searchEngineRestore) {
+            searchEngineRestore.addEventListener('click', () => {
+                openConfirmDialog('restore-search-engines');
+            });
+        }
+        
+        if (searchEngineCancel) {
         searchEngineCancel.addEventListener('click', () => {
             // 取消：丢弃内存中的更改
             searchEngineSettingsWorking = null;
@@ -2707,10 +2788,23 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 重新渲染主页搜索引擎
             renderSearchEngineIcons();
             sendNotice('搜索引擎设置已保存', 'info');
-            closeSearchEnginePanel();
         };
-        if (searchEngineApply) searchEngineApply.addEventListener('click', applySettings);
-        if (searchEngineOk) searchEngineOk.addEventListener('click', applySettings);
+        
+        // 应用：保存设置但不关闭面板
+        if (searchEngineApply) {
+            searchEngineApply.addEventListener('click', () => {
+                applySettings();
+                // 不关闭面板
+            });
+        }
+        
+        // 确定：保存设置并关闭面板
+        if (searchEngineOk) {
+            searchEngineOk.addEventListener('click', () => {
+                applySettings();
+                closeSearchEnginePanel();
+            });
+        }
     }
     
     // 面板遮罩点击关闭

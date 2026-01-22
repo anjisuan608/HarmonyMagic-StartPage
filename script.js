@@ -450,6 +450,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 根据activeEngines顺序获取对应的引擎ID
             const engineId = activeEngines[index];
             const contentDiv = box.querySelector('.search-circle-content');
+            const nameEl = box.querySelector('.search-engine-name');
             const btn = box.querySelector('.circle-search-btn');
             
             if (engineId && searchEngines[engineId]) {
@@ -461,6 +462,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 渲染图标
                 if (contentDiv && engine.icon) {
                     contentDiv.innerHTML = engine.icon;
+                }
+                
+                // 渲染引擎名称
+                if (nameEl) {
+                    nameEl.textContent = engine.title;
                 }
                 
                 // 渲染搜索按钮（使用JS中定义的SVG）
@@ -931,6 +937,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // 圆形搜索框输入框聚焦事件
         circleInput.addEventListener('focus', function() {
+            // 重新触发动画
+            const nameEl = box.querySelector('.search-engine-name');
+            if (nameEl) {
+                nameEl.style.animation = 'none';
+                nameEl.offsetHeight; // 触发重绘
+                nameEl.style.animation = '';
+            }
+            
             // 桌面端使用快速切换逻辑
             if (!isMobile()) {
                 // 如果搜索框未展开，快速展开并切换

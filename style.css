@@ -210,6 +210,46 @@ body[data-filter-disabled="true"]::after {
     justify-content: center;
 }
 
+/* 引擎名称滑入动画 - 贴在图标右侧 */
+.search-engine-name {
+    position: absolute;
+    left: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    z-index: 2;
+}
+
+/* 只有进入输入焦点时才显示引擎名称动画 */
+.search-box-circle.input-active .search-engine-name {
+    animation: engineNameSlideIn 3.5s ease-out forwards;
+}
+
+@keyframes engineNameSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-80%);
+    }
+    15% {
+        opacity: 1;
+        transform: translateY(-50%);
+    }
+    70% {
+        opacity: 1;
+        transform: translateY(-50%);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(20%);
+    }
+}
+
 .search-box-circle .search-icon {
     width: 20px;
     height: 20px;

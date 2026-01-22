@@ -2809,15 +2809,73 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 应用：保存设置但不关闭面板
         if (searchEngineApply) {
             searchEngineApply.addEventListener('click', () => {
-                applySettings();
-                // 不关闭面板
+                const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
+                
+                // 检查是否有实际更改
+                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+                if (!hasChanges) {
+                    sendNotice('没有未保存的更改', 'info');
+                    return;
+                }
+                
+                // 验证使用中的引擎数量必须为7
+                const presetCount = workingSettings.activeEngines.filter(id => id <= 7).length;
+                const customCount = workingSettings.activeEngines.filter(id => id > 7).length;
+                const totalCount = workingSettings.activeEngines.length;
+                const countError = document.getElementById('search-engine-count-error');
+                
+                if (totalCount !== 7) {
+                    if (countError) countError.textContent = `使用中的引擎数量必须为7个，当前为${totalCount}个`;
+                    return; // 不执行保存
+                }
+                if (countError) countError.textContent = '';
+                
+                // 验证通过，保存设置
+                searchEngineSettings = JSON.parse(JSON.stringify(workingSettings));
+                localStorage.setItem('search_engine_settings', JSON.stringify(searchEngineSettings));
+                
+                // 重新渲染主页搜索引擎
+                renderSearchEngineIcons();
+                sendNotice('设置已应用', 'info');
             });
         }
         
         // 确定：保存设置并关闭面板
         if (searchEngineOk) {
             searchEngineOk.addEventListener('click', () => {
-                applySettings();
+                // 只有在applySettings成功执行时才关闭面板
+                const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
+                
+                // 检查是否有实际更改
+                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+                if (!hasChanges) {
+                    sendNotice('没有未保存的更改', 'info');
+                    closeSearchEnginePanel();
+                    return;
+                }
+                
+                // 验证使用中的引擎数量必须为7
+                const presetCount = workingSettings.activeEngines.filter(id => id <= 7).length;
+                const customCount = workingSettings.activeEngines.filter(id => id > 7).length;
+                const totalCount = workingSettings.activeEngines.length;
+                const countError = document.getElementById('search-engine-count-error');
+                
+                if (totalCount !== 7) {
+                    if (countError) countError.textContent = `使用中的引擎数量必须为7个，当前为${totalCount}个`;
+                    return; // 不关闭面板
+                }
+                if (countError) countError.textContent = '';
+                
+                // 验证通过，保存设置
+                searchEngineSettings = JSON.parse(JSON.stringify(workingSettings));
+                localStorage.setItem('search_engine_settings', JSON.stringify(searchEngineSettings));
+                searchEngineSettingsWorking = null;
+                
+                // 重新渲染主页搜索引擎
+                renderSearchEngineIcons();
+                sendNotice('搜索引擎设置已保存', 'info');
+                
+                // 成功保存后关闭面板
                 closeSearchEnginePanel();
             });
         }

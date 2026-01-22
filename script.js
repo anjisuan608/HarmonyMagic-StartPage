@@ -1373,6 +1373,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             !e.target.closest('.settings-dropdown') &&
             !e.target.closest('#settings-close') &&
             !e.target.closest('#add-shortcut-panel') &&
+            !e.target.closest('#search-engine-panel') &&
+            !e.target.closest('#add-search-engine-panel') &&
+            !e.target.closest('.search-engine-move-up') &&
+            !e.target.closest('.search-engine-move-down') &&
+            !e.target.closest('.search-engine-disable') &&
+            !e.target.closest('.search-engine-enable') &&
+            !e.target.closest('.search-engine-delete') &&
             !e.target.closest('.confirm-dialog') &&
             !e.target.closest('.confirm-dialog-overlay')) {
             contextMenu.classList.remove('active');

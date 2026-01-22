@@ -1,4 +1,4 @@
-// 控制台ASCII字符画输出
+// 控制台输出
 console.log(`
 \x1b[32m
 Harmony Magic Start Page

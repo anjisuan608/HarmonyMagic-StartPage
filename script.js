@@ -2106,8 +2106,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // 点击底部版权打开关于面板
-    if (footerCopyright) {
-        footerCopyright.addEventListener('click', function() {
+    const copyrightText = document.getElementById('copyright-text');
+    if (copyrightText) {
+        copyrightText.addEventListener('click', function(e) {
+            e.stopPropagation();
             openAboutPanel();
         });
     }

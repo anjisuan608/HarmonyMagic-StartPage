@@ -880,13 +880,16 @@ body[data-filter-disabled="true"]::after {
 .footer-text {
     padding: 4px 20px;
     text-align: center;
-    font-family: inherit;
     font-size: 13px;
-    color: #f8f8f866;
     cursor: default;
 }
 
-.footer-text:hover {
+.copyright-text {
+    font-family: inherit;
+    color: #f8f8f866;
+}
+
+.copyright-text:hover {
     color: #f8f8f888;
 }
 

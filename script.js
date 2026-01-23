@@ -286,9 +286,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                     const hasFocusedInput = Array.from(document.querySelectorAll('input[type="text"]')).some(inp =>
                         inp === document.activeElement || inp.contains(document.activeElement)
                     );
-                    if (!hasFocusedInput) {
-                        setBackgroundBlur(false);
+                    // 如果有焦点输入框，或者快捷访问菜单是打开的，不关闭背景模糊
+                    if (hasFocusedInput || (contextMenu && contextMenu.classList.contains('active'))) {
+                        return;
                     }
+                    setBackgroundBlur(false);
                 }
             }, 100);
         }
@@ -1413,6 +1415,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 显示菜单
         contextMenu.classList.add('active');
         setBackgroundBlur(true); // 启用背景模糊
+        
         if (settings) {
             settings.style.display = 'block';
             // 调整通知位置，避让settings

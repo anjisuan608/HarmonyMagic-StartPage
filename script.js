@@ -1956,13 +1956,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 加载壁纸设置
     function loadWallpaperSettings() {
-        const cookieValue = getCookieRaw('wallpaper_settings') || '';
+        const saved = getLocalStorageItem('wallpaper_settings');
         let settings = { id: 1, customUrl: '', customMode: 'local' };
         
-        if (cookieValue) {
+        if (saved) {
             try {
-                const decoded = decodeURIComponent(cookieValue);
-                settings = JSON.parse(decoded);
+                settings = saved;
             } catch (e) {
                 console.error('解析壁纸设置失败:', e);
             }
@@ -2070,8 +2069,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 保存壁纸设置
     function saveWallpaperSettings(id, customUrl, customMode) {
         const settings = { id, customUrl, customMode };
-        const encodedValue = encodeURIComponent(JSON.stringify(settings));
-        document.cookie = `wallpaper_settings=${encodedValue};path=/;expires=${new Date(Date.now() + 365*24*60*60*1000).toUTCString()}`;
+        setLocalStorageItem('wallpaper_settings', settings);
         
         // 应用壁纸
         applyWallpaper(settings);
@@ -2092,7 +2090,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         if (wallpaperUrl) {
             document.body.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
-            setCookie('wallpaper_url', wallpaperUrl);
+            setLocalStorageItem('wallpaper_url', wallpaperUrl);
         }
     }
 
@@ -2215,10 +2213,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             title: '重置壁纸',
             message: '确定要重置为默认壁纸吗？',
             onOk: function() {
-                // 清除壁纸设置cookie
-                document.cookie = 'wallpaper_settings=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
-                // 清除壁纸URL cookie
-                document.cookie = 'wallpaper_url=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                // 清除壁纸设置localStorage
+                removeLocalStorageItem('wallpaper_settings');
+                // 清除壁纸URL localStorage
+                removeLocalStorageItem('wallpaper_url');
                 // 重置壁纸URL样式
                 document.body.style.setProperty('--wallpaper-url', 'none');
                 // 清除自定义壁纸缓存
@@ -3972,12 +3970,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 初始化壁纸设置
     function initWallpaper() {
-        const cookieValue = getCookieRaw('wallpaper_settings') || '';
-        if (cookieValue) {
+        const saved = getLocalStorageItem('wallpaper_settings');
+        if (saved) {
             try {
-                const decoded = decodeURIComponent(cookieValue);
-                const settings = JSON.parse(decoded);
-                applyWallpaper(settings);
+                applyWallpaper(saved);
             } catch (e) {
                 console.error('初始化壁纸失败:', e);
             }

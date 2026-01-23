@@ -2686,3 +2686,50 @@ body[data-filter-disabled="true"]::after {
         opacity: 1;
     }
 }
+
+/* 壁纸设置面板移动端适配 */
+@media (max-width: 768px) {
+    .wallpaper-custom-row {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .wallpaper-preview {
+        width: 200px;
+        max-width: 200px;
+    }
+    
+    .wallpaper-preview-img {
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+    
+    .wallpaper-custom-options {
+        width: 100%;
+    }
+    
+    .wallpaper-option-tabs {
+        width: 100%;
+    }
+    
+    .wallpaper-tab-btn {
+        flex: 1;
+        padding: 14px 8px;
+        font-size: 13px;
+    }
+    
+    .wallpaper-tab-content {
+        flex-direction: column;
+    }
+    
+    .wallpaper-input {
+        width: 100%;
+        font-size: 13px;
+    }
+    
+    .wallpaper-browse-btn {
+        width: 100%;
+        margin-top: 8px;
+    }
+}

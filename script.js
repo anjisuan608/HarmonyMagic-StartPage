@@ -2301,6 +2301,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 应用默认壁纸
                 const defaultSettings = { id: 1, customUrl: '', customMode: 'cover' };
                 applyWallpaper(defaultSettings);
+                // 刷新壁纸设置面板显示
+                loadWallpaperSettings();
                 sendNotice('壁纸已重置为默认', 'info');
             }
         },

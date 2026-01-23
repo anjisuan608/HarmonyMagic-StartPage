@@ -2472,7 +2472,7 @@ body[data-filter-disabled="true"]::after {
 }
 
 .search-engine-item:hover {
-    background: #f0f0f0;
+    background: #fafafa;
 }
 
 .search-engine-item-icon {

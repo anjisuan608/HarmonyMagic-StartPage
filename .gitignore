@@ -96,7 +96,6 @@ ehthumbs.db
 
 # 文件记录
 filelist.xml
-*.xml
 
 # 日志文件
 *.log

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wallpapers>
+    <wallpaper id="1">
+        <title>Bubbles</title>
+        <comment>彩色气泡</comment>
+        <url>https://www.bing.com/th?id=OHR.BubblesAbraham_ZH-CN7203734882_1920x1080.jpg</url>
+    </wallpaper>
+    <wallpaper id="2">
+        <title>Sunbeams</title>
+        <comment>森林阳光</comment>
+        <url>https://www.bing.com/th?id=OHR.SunbeamsForest_ZH-CN5358008117_1920x1080.jpg</url>
+    </wallpaper>
+    <wallpaper id="3">
+        <title>WhiteSands</title>
+        <comment>白色沙丘</comment>
+        <url>https://www.bing.com/th?id=OHR.WhiteSandsNM_ZH-CN7070772772_1920x1080.jpg</url>
+    </wallpaper>
+</wallpapers>

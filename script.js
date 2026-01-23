@@ -2163,6 +2163,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // 重置壁纸按钮
+    const wallpaperReset = document.getElementById('wallpaper-reset');
+    if (wallpaperReset) {
+        wallpaperReset.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openConfirmDialog('reset-wallpaper');
+        });
+    }
+
     // 点击遮罩层关闭
     if (wallpaperPanelOverlay) {
         wallpaperPanelOverlay.addEventListener('click', function() {

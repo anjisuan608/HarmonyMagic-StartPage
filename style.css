@@ -2055,6 +2055,10 @@ body[data-filter-disabled="true"]::after {
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3), 0 4px 20px rgba(76, 175, 80, 0.3);
 }
 
+.wallpaper-preview-img.selected .wallpaper-placeholder-icon {
+    display: none;
+}
+
 .wallpaper-custom-options {
     flex: 1;
     display: flex;

@@ -3537,12 +3537,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 `;
             }
             
-            div.innerHTML = `
-                <div class="edit-shortcut-item-icon">${iconContent}</div>
-                <div class="edit-shortcut-item-text" title="${item.title}">
-                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
-                </div>
-                <div class="edit-shortcut-item-actions">
+            // 移动按钮（仅显示中分类有）
+            let moveButtons = '';
+            if (category === 'visible') {
+                const isFirst = index === 0;
+                const isLast = index === items.length - 1;
+                moveButtons = `
                     <button class="edit-shortcut-move-btn edit-shortcut-move-up" data-category="${category}" data-index="${index}" ${isFirst ? 'disabled' : ''}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 15L12 9L6 15"/>
@@ -3553,6 +3553,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <path d="M6 9L12 15L18 9"/>
                         </svg>
                     </button>
+                `;
+            }
+            
+            div.innerHTML = `
+                <div class="edit-shortcut-item-icon">${iconContent}</div>
+                <div class="edit-shortcut-item-text" title="${item.title}">
+                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
+                </div>
+                <div class="edit-shortcut-item-actions">
+                    ${moveButtons}
                     ${actionButton}
                 </div>
             `;

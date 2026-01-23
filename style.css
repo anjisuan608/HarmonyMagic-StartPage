@@ -1621,9 +1621,58 @@ body[data-filter-disabled="true"]::after {
     color: #aaa;
 }
 
+.edit-shortcut-category {
+    margin-bottom: 8px;
+}
+
+.edit-shortcut-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f5f5f5;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.edit-shortcut-category-header:hover {
+    background: #eeeeee;
+}
+
+.edit-shortcut-collapse-icon {
+    transition: transform 0.2s;
+}
+
+.edit-shortcut-category.collapsed .edit-shortcut-collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.edit-shortcut-category.collapsed .edit-shortcut-category-content {
+    display: none;
+}
+
+.edit-shortcut-category-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.edit-shortcut-category-content {
+    padding: 4px 0;
+}
+
+.edit-shortcut-items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 8px;
+}
+
 .edit-shortcut-list {
     overflow-y: auto;
     padding: 10px 0;
+    max-height: 400px;
 }
 
 .edit-shortcut-item {
@@ -1707,10 +1756,39 @@ body[data-filter-disabled="true"]::after {
 }
 
 .edit-shortcut-delete {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
     color: #e53935;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
 }
 
 .edit-shortcut-delete:hover:not(:disabled) {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.edit-shortcut-toggle {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    color: #e53935;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.edit-shortcut-toggle:hover:not(:disabled) {
     background: #ffebee;
     color: #c62828;
 }

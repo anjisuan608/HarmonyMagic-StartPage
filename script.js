@@ -2440,6 +2440,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         addSearchEngineClose.innerHTML = svgClose;
     }
 
+    // 记录预设引擎数量
+    let presetEngineCount = 0;
+
     // 加载搜索引擎数据（用于设置面板）
     async function loadSearchEnginesForSettings() {
         try {
@@ -2455,6 +2458,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // 重新填充预设引擎
             searchEngineData.engines = data.engines.slice();
+            // 记录预设引擎数量（用于区分预设和自定义）
+            presetEngineCount = data.engines.length;
             
             // 构建搜索引擎映射
             data.engines.forEach(engine => {
@@ -2490,8 +2495,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 保存自定义搜索引擎到localStorage
     function saveCustomSearchEngines() {
         try {
-            // 只保存id > 7的自定义引擎
-            const customEngines = searchEngineData.engines.filter(e => e.id > 7);
+            // 只保存非预设引擎（用户添加的自定义引擎）
+            const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+            const customEngines = searchEngineData.engines.filter(e => !presetIds.includes(e.id));
             localStorage.setItem('custom_search_engines', JSON.stringify(customEngines));
         } catch (e) {
             console.error('保存自定义搜索引擎失败:', e);
@@ -2505,12 +2511,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (saved) {
                 searchEngineSettings = JSON.parse(saved);
             } else {
-                // 默认设置：所有预设引擎激活，自定义引擎放入未使用列表
-                const customEngineIds = searchEngineData.engines.filter(e => e.id > 7).map(e => e.id);
+                // 默认设置：前7个预设引擎激活，多余的预设引擎放入未使用预设列表，自定义引擎放入未使用自定义列表
+                const presetEngines = searchEngineData.engines.slice(0, presetEngineCount);
+                const customEngines = searchEngineData.engines.slice(presetEngineCount);
+                
+                // 前7个预设引擎放入使用中，超出的预设引擎放入未使用预设
+                const activePresets = presetEngines.slice(0, 7).map(e => e.id);
+                const disabledPresets = presetEngines.slice(7).map(e => e.id);
+                
                 searchEngineSettings = {
-                    activeEngines: searchEngineData.engines.filter(e => e.id <= 7).map(e => e.id),
-                    disabledPresets: [],
-                    disabledCustoms: customEngineIds
+                    activeEngines: activePresets,
+                    disabledPresets: disabledPresets,
+                    disabledCustoms: customEngines.map(e => e.id)
                 };
             }
         } catch (e) {
@@ -2569,11 +2581,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 渲染单个分类的搜索引擎列表
     function renderSearchEngineCategory(container, engines, category) {
         container.innerHTML = '';
+        // 获取预设引擎的id列表
+        const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+        
         engines.forEach((engine, index) => {
             const item = document.createElement('div');
             item.className = 'search-engine-item';
             item.dataset.engineId = engine.id;
-            const isPreset = engine.id <= 7; // id <= 7 为预设搜索引擎
+            const isPreset = presetIds.includes(engine.id); // 判断是否为预设搜索引擎
             const isFirst = index === 0;
             const isLast = index === engines.length - 1;
             
@@ -2682,7 +2697,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 移至未使用
     function disableSearchEngine(engineId) {
         const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
-        const isPreset = engineId <= 7;
+        // 判断是否为预设引擎：id在前presetEngineCount个预设引擎中
+        const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+        const isPreset = presetIds.includes(engineId);
         
         // 从使用中移除
         const activeIndex = workingSettings.activeEngines.indexOf(engineId);
@@ -2719,7 +2736,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 删除自定义搜索引擎
     function deleteSearchEngine(engineId) {
-        if (engineId <= 7) return; // 预设引擎不允许删除
+        // 预设引擎不允许删除
+        const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+        if (presetIds.includes(engineId)) return;
         
         const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
         
@@ -2903,8 +2922,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             // 验证使用中的引擎数量必须为7
-            const presetCount = workingSettings.activeEngines.filter(id => id <= 7).length;
-            const customCount = workingSettings.activeEngines.filter(id => id > 7).length;
+            const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+            const presetCount = workingSettings.activeEngines.filter(id => presetIds.includes(id)).length;
+            const customCount = workingSettings.activeEngines.filter(id => !presetIds.includes(id)).length;
             const totalCount = workingSettings.activeEngines.length;
             const countError = document.getElementById('search-engine-count-error');
             
@@ -2937,8 +2957,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 
                 // 验证使用中的引擎数量必须为7
-                const presetCount = workingSettings.activeEngines.filter(id => id <= 7).length;
-                const customCount = workingSettings.activeEngines.filter(id => id > 7).length;
+                const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+                const presetCount = workingSettings.activeEngines.filter(id => presetIds.includes(id)).length;
+                const customCount = workingSettings.activeEngines.filter(id => !presetIds.includes(id)).length;
                 const totalCount = workingSettings.activeEngines.length;
                 const countError = document.getElementById('search-engine-count-error');
                 
@@ -2973,8 +2994,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 
                 // 验证使用中的引擎数量必须为7
-                const presetCount = workingSettings.activeEngines.filter(id => id <= 7).length;
-                const customCount = workingSettings.activeEngines.filter(id => id > 7).length;
+                const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+                const presetCount = workingSettings.activeEngines.filter(id => presetIds.includes(id)).length;
+                const customCount = workingSettings.activeEngines.filter(id => !presetIds.includes(id)).length;
                 const totalCount = workingSettings.activeEngines.length;
                 const countError = document.getElementById('search-engine-count-error');
                 

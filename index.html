@@ -63,8 +63,11 @@
         <div class="settings-modal-content">
             <div class="settings-header">
                 <span class="settings-title">壁纸设置</span>
-                <div id="wallpaper-close" class="settings-close">
-                    <svg t="1768962858078" class="icon" viewBox="0 0 1070 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5514" width="20" height="20"><path d="M50.368584 96.533526l30.769579 30.77162 82.037931 82.03793 117.900068 117.900068 138.353952 138.353953 143.399585 143.397544 133.036963 133.036963 107.268128 107.268129 66.091042 66.093081 13.582195 13.580155c12.576334 12.576334 33.589257 12.576334 46.165591 0s12.576334-33.589257 0-46.165591l-30.76958-30.769579-82.03793-82.039971-117.900068-117.898028-138.353953-138.353952-143.397544-143.399585-133.036963-133.036963-107.268128-107.268128L110.11433 63.950131l-13.582196-13.580156c-12.576334-12.578374-33.589257-12.578374-46.165591 0-12.576334 12.576334-12.576334 33.587217 0.002041 46.163551z" fill="" p-id="5515"></path><path d="M882.805987 50.369975l-30.76958 30.76958-82.03997 82.03793-117.898028 117.900068-138.353953 138.353953-143.399584 143.399584-133.036963 133.036963-107.268129 107.268129a2018478.867876 2018478.867876 0 0 1-66.093081 66.091041l-13.580156 13.582196c-12.578374 12.576334-12.578374 33.589257 0 46.165591 12.576334 12.576334 33.589257 12.576334 46.165591 0l30.77162-30.76958 82.037931-82.03793 117.900068-117.900068 138.353952-138.353953 143.397545-143.397544 133.036962-133.036963 107.268129-107.268129 66.093081-66.091041 13.580156-13.582196c12.576334-12.576334 12.576334-33.589257 0-46.16559-12.578374-12.580414-33.589257-12.580414-46.165591-0.002041z" fill="" p-id="5516"></path></svg>
+                <div class="wallpaper-header-btns">
+                    <button id="wallpaper-reset" class="settings-reset-btn" title="重置为默认壁纸">重置</button>
+                    <div id="wallpaper-close" class="settings-close">
+                        <svg t="1768962858078" class="icon" viewBox="0 0 1070 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5514" width="20" height="20"><path d="M50.368584 96.533526l30.769579 30.77162 82.037931 82.03793 117.900068 117.900068 138.353952 138.353953 143.399585 143.397544 133.036963 133.036963 107.268128 107.268129 66.091042 66.093081 13.582195 13.580155c12.576334 12.576334 33.589257 12.576334 46.165591 0s12.576334-33.589257 0-46.165591l-30.76958-30.769579-82.03793-82.039971-117.900068-117.898028-138.353953-138.353952-143.397544-143.399585-133.036963-133.036963-107.268128-107.268128L110.11433 63.950131l-13.582196-13.580156c-12.576334-12.578374-33.589257-12.578374-46.165591 0-12.576334 12.576334-12.576334 33.587217 0.002041 46.163551z" fill="" p-id="5515"></path><path d="M882.805987 50.369975l-30.76958 30.76958-82.03997 82.03793-117.898028 117.900068-138.353953 138.353953-143.399584 143.399584-133.036963 133.036963-107.268129 107.268129a2018478.867876 2018478.867876 0 0 1-66.093081 66.091041l-13.580156 13.582196c-12.578374 12.576334-12.578374 33.589257 0 46.165591 12.576334 12.576334 33.589257 12.576334 46.165591 0l30.77162-30.76958 82.037931-82.03793 117.900068-117.900068 138.353952-138.353953 143.397545-143.397544 133.036962-133.036963 107.268129-107.268129 66.093081-66.091041 13.580156-13.582196c12.576334-12.576334 12.576334-33.589257 0-46.16559-12.578374-12.580414-33.589257-12.580414-46.165591-0.002041z" fill="" p-id="5516"></path></svg>
+                    </div>
                 </div>
             </div>
             <div class="wallpaper-body">
@@ -86,7 +89,7 @@
                             </div>
                             <!-- 本地图片选项 -->
                             <div class="wallpaper-tab-content active" id="wallpaper-tab-local">
-                                <input type="text" id="wallpaper-local-url" class="wallpaper-input" placeholder="file:///..." readonly>
+                                <input type="text" id="wallpaper-local-url" class="wallpaper-input" placeholder="点击浏览按钮选择壁纸" readonly>
                                 <input type="file" id="wallpaper-local-file" class="wallpaper-file-input" accept="image/*">
                                 <button id="wallpaper-local-browse" class="wallpaper-browse-btn">浏览</button>
                             </div>
@@ -119,8 +122,11 @@
                 </div>
             </div>
             <div class="settings-body">
-                <div class="setting-item setting-item-action" data-setting="reset-wallpaper">
-                    <span class="setting-item-text">重置为默认壁纸</span>
+                <div class="setting-item" data-setting="notifications">
+                    <span class="setting-item-text">深色模式</span>
+                    <span class="status-indicator">
+                        <svg class="status-icon" viewBox="0 0 2048 1024"></svg>
+                    </span>
                 </div>
                 <div class="setting-item" data-setting="auto-wallpaper">
                     <span class="setting-item-text">背景模糊</span>
@@ -137,11 +143,11 @@
                 <div class="setting-item setting-item-action" data-setting="reset-shortcuts">
                     <span class="setting-item-text">重置快捷访问</span>
                 </div>
-                <div class="setting-item" data-setting="notifications">
-                    <span class="setting-item-text">深色模式</span>
-                    <span class="status-indicator">
-                        <svg class="status-icon" viewBox="0 0 2048 1024"></svg>
-                    </span>
+                <div class="setting-item setting-item-action" data-setting="reset-search-engines">
+                    <span class="setting-item-text">重置搜索引擎</span>
+                </div>
+                <div class="setting-item setting-item-action" data-setting="reset-wallpaper">
+                    <span class="setting-item-text">重置为默认壁纸</span>
                 </div>
             </div>
         </div>
@@ -451,7 +457,7 @@
     </div>
     <div class="footer-copyright">
         <div class="footer-text">
-            <p>Copyright &copy; 2026 anjisuan608 | Licensed under GPLv3</p>
+            <p class="copyright-text" id="copyright-text">Copyright &copy; 2026 anjisuan608 | Licensed under GPLv3</p>
         </div>
     </div>
 

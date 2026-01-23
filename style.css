@@ -802,6 +802,16 @@ body[data-filter-disabled="true"]::after {
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+    }
+
+    .wallpaper-preview-img > svg {
+        position: absolute;
+        z-index: 0;
+    }
+
+    .wallpaper-preview-img:not([style*="background-image: none"]) > svg {
+        z-index: -1;
     }
 
     .wallpaper-preview-img.selected {
@@ -849,13 +859,7 @@ body[data-filter-disabled="true"]::after {
     }
 
     .wallpaper-preset-item.selected .wallpaper-preset-img {
-        box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.3);
-    }
-
-    .wallpaper-preset-checkmark {
-        width: 20px;
-        height: 20px;
-        font-size: 12px;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3), 0 4px 20px rgba(76, 175, 80, 0.3);
     }
 
     .wallpaper-preset-name {
@@ -880,13 +884,16 @@ body[data-filter-disabled="true"]::after {
 .footer-text {
     padding: 4px 20px;
     text-align: center;
-    font-family: inherit;
     font-size: 13px;
-    color: #f8f8f866;
     cursor: default;
 }
 
-.footer-text:hover {
+.copyright-text {
+    font-family: inherit;
+    color: #f8f8f866;
+}
+
+.copyright-text:hover {
     color: #f8f8f888;
 }
 
@@ -1687,6 +1694,10 @@ body[data-filter-disabled="true"]::after {
     border-bottom: none;
 }
 
+.edit-shortcut-item:hover {
+    background: #fafafa;
+}
+
 .edit-shortcut-item-icon {
     width: 32px;
     height: 32px;
@@ -2044,6 +2055,16 @@ body[data-filter-disabled="true"]::after {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+}
+
+.wallpaper-preview-img > svg {
+    position: absolute;
+    z-index: 0;
+}
+
+.wallpaper-preview-img:not([style*="background-image: none"]) > svg {
+    z-index: -1;
 }
 
 .wallpaper-placeholder-icon {
@@ -2202,27 +2223,7 @@ body[data-filter-disabled="true"]::after {
 
 .wallpaper-preset-item.selected .wallpaper-preset-img {
     border-color: #4CAF50;
-}
-
-.wallpaper-preset-checkmark {
-    position: absolute;
-    bottom: 6px;
-    right: 6px;
-    width: 22px;
-    height: 22px;
-    background: #4CAF50;
-    border-radius: 50%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    color: white;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-.wallpaper-preset-item.selected .wallpaper-preset-checkmark {
-    display: flex;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3), 0 4px 20px rgba(76, 175, 80, 0.3);
 }
 
 .wallpaper-preset-name {
@@ -2396,6 +2397,17 @@ body[data-filter-disabled="true"]::after {
     overflow: hidden;
 }
 
+#wallpaper-panel .settings-header {
+    flex-shrink: 0;
+}
+
+.wallpaper-header-btns {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+}
+
 #search-engine-panel .settings-header {
     flex-shrink: 0;
 }
@@ -2469,7 +2481,7 @@ body[data-filter-disabled="true"]::after {
 }
 
 .search-engine-item:hover {
-    background: #f0f0f0;
+    background: #fafafa;
 }
 
 .search-engine-item-icon {

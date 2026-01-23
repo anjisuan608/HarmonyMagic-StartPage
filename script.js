@@ -286,9 +286,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                     const hasFocusedInput = Array.from(document.querySelectorAll('input[type="text"]')).some(inp =>
                         inp === document.activeElement || inp.contains(document.activeElement)
                     );
-                    if (!hasFocusedInput) {
-                        setBackgroundBlur(false);
+                    // 如果有焦点输入框，或者快捷访问菜单是打开的，不关闭背景模糊
+                    if (hasFocusedInput || (contextMenu && contextMenu.classList.contains('active'))) {
+                        return;
                     }
+                    setBackgroundBlur(false);
                 }
             }, 100);
         }
@@ -1413,6 +1415,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 显示菜单
         contextMenu.classList.add('active');
         setBackgroundBlur(true); // 启用背景模糊
+        
         if (settings) {
             settings.style.display = 'block';
             // 调整通知位置，避让settings
@@ -2006,6 +2009,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (!contextMenu.classList.contains('active')) {
                 setBackgroundBlur(false);
             }
+            // 关闭时清除自定义预览框背景图
+            wallpaperPreviewImg.style.backgroundImage = 'none';
+            wallpaperPreviewImg.classList.remove('selected');
         }
     }
 
@@ -2106,8 +2112,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // 点击底部版权打开关于面板
-    if (footerCopyright) {
-        footerCopyright.addEventListener('click', function() {
+    const copyrightText = document.getElementById('copyright-text');
+    if (copyrightText) {
+        copyrightText.addEventListener('click', function(e) {
+            e.stopPropagation();
             openAboutPanel();
         });
     }
@@ -2155,6 +2163,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         wallpaperClose.addEventListener('click', function(e) {
             e.stopPropagation();
             closeWallpaperPanel();
+        });
+    }
+
+    // 重置壁纸按钮
+    const wallpaperReset = document.getElementById('wallpaper-reset');
+    if (wallpaperReset) {
+        wallpaperReset.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openConfirmDialog('reset-wallpaper');
         });
     }
 
@@ -2216,7 +2233,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const items = window.wallpaperPresetItems || document.querySelectorAll('.wallpaper-preset-item');
             items.forEach(i => i.classList.remove('selected'));
             
-            // 选中自定义预览
+            // 选中自定义预览并恢复背景图
             this.classList.add('selected');
             
             // 获取当前自定义URL
@@ -2225,6 +2242,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const customMode = isLocalTab ? 'local' : 'online';
             
             if (customUrl) {
+                this.style.backgroundImage = `url('${customUrl}')`;
                 saveWallpaperSettings(0, customUrl, customMode);
             }
         });
@@ -2245,9 +2263,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 选中当前
             item.classList.add('selected');
             
-            // 更新预览
+            // 取消自定义预览选中状态，但不清除背景图
             wallpaperPreviewImg.classList.remove('selected');
-            wallpaperPreviewImg.style.backgroundImage = 'none';
             
             // 保存设置
             saveWallpaperSettings(id, '', 'local');
@@ -2287,6 +2304,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 应用默认壁纸
                 const defaultSettings = { id: 1, customUrl: '', customMode: 'cover' };
                 applyWallpaper(defaultSettings);
+                // 刷新壁纸设置面板显示
+                loadWallpaperSettings();
                 sendNotice('壁纸已重置为默认', 'info');
             }
         },
@@ -2369,6 +2388,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 searchEngineSettings = null;
                 searchEngineSettingsWorking = null;
                 refreshSearchEngines();
+                // 同时刷新主页搜索框
+                loadSearchEngines();
                 sendNotice('搜索引擎已重置', 'info');
             }
         },
@@ -2381,6 +2402,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 searchEngineSettings = null;
                 searchEngineSettingsWorking = null;
                 refreshSearchEngines();
+                // 同时刷新主页搜索框
+                loadSearchEngines();
                 sendNotice('搜索引擎排序已还原', 'info');
             }
         },

@@ -1381,7 +1381,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             !e.target.closest('.search-engine-enable') &&
             !e.target.closest('.search-engine-delete') &&
             !e.target.closest('.confirm-dialog') &&
-            !e.target.closest('.confirm-dialog-overlay')) {
+            !e.target.closest('.confirm-dialog-overlay') &&
+            !e.target.closest('#notices')) {
             // 检查搜索引擎面板是否有未保存的更改
             if (searchEnginePanel && searchEnginePanel.classList.contains('active')) {
                 const workingSettings = searchEngineSettingsWorking || searchEngineSettings;

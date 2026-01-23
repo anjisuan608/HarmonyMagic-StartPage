@@ -90,6 +90,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         return null;
     }
 
+    // localStorage工具函数（用于替代cookie存储自定义快捷访问）
+    function getLocalStorageItem(key) {
+        try {
+            const item = localStorage.getItem(key);
+            if (item) {
+                return JSON.parse(item);
+            }
+            return null;
+        } catch (e) {
+            console.error('读取localStorage失败:', e);
+            return null;
+        }
+    }
+
+    function setLocalStorageItem(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.error('写入localStorage失败:', e);
+        }
+    }
+
+    function removeLocalStorageItem(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {
+            console.error('删除localStorage失败:', e);
+        }
+    }
+
     // ==================== 全局设置（global-settings） ====================
     // 默认设置值
     const defaultGlobalSettings = {
@@ -326,14 +356,22 @@ document.addEventListener('DOMContentLoaded', async function() {
                 menuItemsContainer.appendChild(menuItem);
             });
 
-            // 从Cookie加载自定义快捷方式
-            const customShortcuts = getCookie('custom_shortcuts') || [];
+            // 从localStorage加载自定义快捷方式
+            const customShortcuts = getLocalStorageItem('custom_shortcuts') || [];
+            // 按位置信息排序，如果没有位置信息则按id排序
+            customShortcuts.sort((a, b) => {
+                if (typeof a.position === 'number' && typeof b.position === 'number') {
+                    return a.position - b.position;
+                }
+                return (a.id || 0) - (b.id || 0);
+            });
             if (customShortcuts.length > 0) {
                 customShortcuts.forEach(item => {
                     const menuItem = document.createElement('div');
                     menuItem.className = 'menu-item custom-item';
                     menuItem.setAttribute('data-url', item.url);
                     menuItem.setAttribute('data-custom-id', item.id);
+                    menuItem.setAttribute('data-position', item.position ?? '');
                     
                     // 确定图标HTML
                     let iconContent;
@@ -2139,8 +2177,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             title: '重置快捷访问',
             message: '确定要重置快捷访问吗？这将删除所有自定义快捷方式。',
             onOk: function() {
-                // 删除快捷访问cookie
-                setCookie('custom_shortcuts', []);
+                // 清除localStorage中的自定义快捷访问数据
+                removeLocalStorageItem('custom_shortcuts');
                 // 清空隐藏预设记录
                 setCookie('hidden_presets', []);
                 // 重新加载菜单（保持context-menu打开，搜索框保持隐藏）
@@ -3314,16 +3352,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 icon = '';
             }
             
-            // 保存到Cookie
-            const customShortcuts = getCookie('custom_shortcuts') || [];
+            // 保存到localStorage
+            const customShortcuts = getLocalStorageItem('custom_shortcuts') || [];
             const newShortcut = {
                 id: Date.now(),
                 url: url,
                 title: name || url,
-                icon: icon || ''
+                icon: icon || '',
+                position: customShortcuts.length // 使用当前长度作为位置信息
             };
             customShortcuts.push(newShortcut);
-            setCookie('custom_shortcuts', customShortcuts);
+            setLocalStorageItem('custom_shortcuts', customShortcuts);
 
             // 先清除输入，再关闭面板（避免保存成功后又弹出警告）
             clearAddShortcutInputs();
@@ -3421,7 +3460,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         items.push(...visiblePresets);
         
         // 加载自定义快捷方式（在隐藏预设之前）
-        const customShortcuts = getCookie('custom_shortcuts') || [];
+        const customShortcuts = getLocalStorageItem('custom_shortcuts') || [];
         customShortcuts.forEach(item => {
             items.push({
                 id: 'custom_' + item.id,
@@ -3429,6 +3468,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 url: item.url,
                 title: item.title,
                 icon: item.icon,
+                position: item.position, // 保留位置信息
                 isPreset: false,
                 isHidden: false
             });
@@ -3596,14 +3636,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         const encodedHiddenPresets = encodeURIComponent(hiddenPresetsValue);
         document.cookie = 'hidden_presets=' + encodedHiddenPresets + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
         
-        // 保存自定义快捷方式
-        const newCustomShortcuts = customItems.map(item => ({
+        // 保存自定义快捷方式到localStorage
+        const newCustomShortcuts = customItems.map((item, index) => ({
             id: item.customId,
             url: item.url,
             title: item.title,
-            icon: item.icon
+            icon: item.icon,
+            position: index // 使用当前索引作为位置信息
         }));
-        document.cookie = 'custom_shortcuts=' + encodeURIComponent(JSON.stringify(newCustomShortcuts)) + ';path=/;expires=' + new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+        setLocalStorageItem('custom_shortcuts', newCustomShortcuts);
     }
 
     // 点击重置按钮

@@ -830,6 +830,10 @@ body[data-filter-disabled="true"]::after {
     .wallpaper-presets {
         gap: 10px;
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        max-height: 180px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 4px;
     }
 
     .wallpaper-preset-item {
@@ -2062,8 +2066,29 @@ body[data-filter-disabled="true"]::after {
     gap: 10px;
     width: 100%;
     max-width: 100%;
-    min-height: 200px;
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
     flex-shrink: 0;
+    padding-right: 4px;
+}
+
+/* 预设区域滚动条样式 */
+.wallpaper-presets::-webkit-scrollbar {
+    width: 6px;
+}
+
+.wallpaper-presets::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.wallpaper-presets::-webkit-scrollbar-thumb {
+    background: #CCCCCC;
+    border-radius: 3px;
+}
+
+.wallpaper-presets::-webkit-scrollbar-thumb:hover {
+    background: #AAAAAA;
 }
 
 .wallpaper-preset-item {

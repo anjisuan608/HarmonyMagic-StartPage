@@ -2326,23 +2326,30 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // ESC键关闭关于面板
+    // 统一的ESC键关闭处理器（优先级从高到低）
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && aboutPanel && aboutPanel.classList.contains('active')) {
-            closeAboutPanel();
-        }
-    });
+        if (e.key !== 'Escape') return;
 
-    // ESC键关闭确认对话框
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && confirmDialog && confirmDialog.classList.contains('active')) {
+        // 1. 确认对话框 - 最高优先级
+        if (confirmDialog && confirmDialog.classList.contains('active')) {
             closeConfirmDialog();
+            return;
         }
-    });
 
-    // ESC键关闭搜索引擎面板
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && searchEnginePanel && searchEnginePanel.classList.contains('active')) {
+        // 2. 添加搜索引擎面板
+        if (addSearchEnginePanel && addSearchEnginePanel.classList.contains('active')) {
+            closeAddSearchEnginePanel();
+            return;
+        }
+
+        // 3. 添加快捷方式面板
+        if (addShortcutPanel && addShortcutPanel.classList.contains('active')) {
+            closeAddShortcutPanel();
+            return;
+        }
+
+        // 4. 搜索引擎面板
+        if (searchEnginePanel && searchEnginePanel.classList.contains('active')) {
             const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
             const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
             if (hasChanges) {
@@ -2351,6 +2358,28 @@ document.addEventListener('DOMContentLoaded', async function() {
                 searchEngineSettingsWorking = null;
                 closeSearchEnginePanel();
             }
+            return;
+        }
+
+        // 5. 快捷访问编辑面板
+        if (editShortcutPanel && editShortcutPanel.classList.contains('active')) {
+            if (editShortcutHasChanges) {
+                openConfirmDialog('discard-changes');
+            } else {
+                closeEditShortcutPanel();
+            }
+            return;
+        }
+
+        // 6. 设置面板
+        if (settingsModal && settingsModal.classList.contains('active')) {
+            closeSettingsModal();
+            return;
+        }
+
+        // 7. 关于面板 - 最低优先级
+        if (aboutPanel && aboutPanel.classList.contains('active')) {
+            closeAboutPanel();
         }
     });
 
@@ -3226,13 +3255,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // ESC键关闭添加面板
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && addShortcutPanel && addShortcutPanel.classList.contains('active')) {
-            closeAddShortcutPanel();
-        }
-    });
-
     // 编辑快捷访问面板相关
     const editShortcutPanel = document.getElementById('edit-shortcut-panel');
     const editShortcutClose = document.getElementById('edit-shortcut-close');
@@ -3589,17 +3611,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // ESC键关闭编辑面板
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && editShortcutPanel && editShortcutPanel.classList.contains('active')) {
-            if (editShortcutHasChanges) {
-                openConfirmDialog('discard-changes');
-            } else {
-                closeEditShortcutPanel();
-            }
-        }
-    });
-
     // 初始化操作项图标
     function initActionItems() {
         const actionItems = document.querySelectorAll('.setting-item-action');
@@ -3689,13 +3700,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             }
         });
-    });
-
-    // ESC键关闭设置菜单
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && settingsModal && settingsModal.classList.contains('active')) {
-            closeSettingsModal();
-        }
     });
 
     // 打开设置菜单时初始化图标

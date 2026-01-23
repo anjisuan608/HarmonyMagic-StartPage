@@ -1668,7 +1668,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const settingsDropdown = document.getElementById('settings-dropdown');
     const settingsModal = document.getElementById('settings-modal');
     const settingsClose = document.getElementById('settings-close');
-    const settingsModalOverlay = document.querySelector('.settings-modal-overlay');
+    const settingsModalOverlay = document.querySelector('#settings-modal .settings-modal-overlay');
     const settingItems = document.querySelectorAll('.setting-item');
     const settingsMenuItems = document.querySelectorAll('.settings-menu-item');
     let settingsHoverTimeout = null;
@@ -2348,7 +2348,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 4. 搜索引擎面板
+        // 4. 壁纸面板
+        if (wallpaperPanel && wallpaperPanel.classList.contains('active')) {
+            closeWallpaperPanel();
+            return;
+        }
+
+        // 5. 搜索引擎面板
         if (searchEnginePanel && searchEnginePanel.classList.contains('active')) {
             const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
             const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
@@ -2361,7 +2367,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 5. 快捷访问编辑面板
+        // 6. 快捷访问编辑面板
         if (editShortcutPanel && editShortcutPanel.classList.contains('active')) {
             if (editShortcutHasChanges) {
                 openConfirmDialog('discard-changes');
@@ -2371,13 +2377,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 6. 设置面板
+        // 7. 常规设置面板
         if (settingsModal && settingsModal.classList.contains('active')) {
             closeSettingsModal();
             return;
         }
 
-        // 7. 关于面板 - 最低优先级
+        // 8. 关于面板 - 最低优先级
         if (aboutPanel && aboutPanel.classList.contains('active')) {
             closeAboutPanel();
         }

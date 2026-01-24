@@ -1983,6 +1983,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const item = document.createElement('div');
             item.className = 'wallpaper-preset-item';
             item.dataset.id = id;
+            item.title = comment; // 悬停显示 comment
             item.innerHTML = `
                 <div class="wallpaper-preset-img" style="background-image: url('${thumbnailUrl}');"></div>
                 <div class="wallpaper-preset-name">${title}</div>

@@ -2109,12 +2109,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         let wallpaperUrl = '';
         
         if (settings.id === 0) {
+            // 自定义壁纸
             wallpaperUrl = settings.customUrl;
         } else if (presetWallpapers[settings.id]) {
+            // 预设壁纸 - 直接获取URL并保存
             wallpaperUrl = presetWallpapers[settings.id];
         } else {
-            // 默认使用 id 1
-            wallpaperUrl = presetWallpapers[1];
+            // 预设壁纸但URL未加载（异步问题），尝试使用已保存的URL
+            const savedUrl = getLocalStorageItem('wallpaper_url');
+            if (savedUrl) {
+                wallpaperUrl = savedUrl;
+            } else {
+                // 默认使用 id 1
+                wallpaperUrl = presetWallpapers[1];
+            }
         }
 
         if (wallpaperUrl) {

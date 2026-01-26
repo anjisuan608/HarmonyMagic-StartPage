@@ -2715,6 +2715,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 打开搜索引擎设置面板
     function openSearchEnginePanel() {
         if (searchEnginePanel) {
+            // 先重置所有分类的折叠状态
+            const categories = document.querySelectorAll('.search-engine-category');
+            categories.forEach(cat => {
+                cat.classList.remove('collapsed');
+            });
             // 清空错误提示
             const countError = document.getElementById('search-engine-count-error');
             if (countError) countError.textContent = '';
@@ -3543,6 +3548,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 打开编辑快捷访问面板
     function openEditShortcutPanel() {
         if (editShortcutPanel) {
+            // 先重置所有分类的折叠状态
+            const categories = document.querySelectorAll('.edit-shortcut-category');
+            categories.forEach(cat => {
+                cat.classList.remove('collapsed');
+            });
             // 加载所有快捷方式
             loadAllShortcuts();
             // 保存原始顺序

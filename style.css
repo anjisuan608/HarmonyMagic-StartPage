@@ -527,11 +527,11 @@ body[data-filter-disabled="true"]::after {
 .menu-items {
     display: grid;
     grid-template-columns: repeat(5, 1fr); /* 5列布局 */
-    grid-template-rows: repeat(3, 1fr); /* 3行布局 */
     gap: 12px;
     width: 100%;
     max-width: 660px;
-    max-height: 880px;
+    /* 距离footer 8px，设置最大高度 */
+    max-height: calc(100vh - var(--search-box-top, 120px) - 40px - 28px - 8px);
     padding: 20px;
     margin-top: var(--search-box-top, 120px); /* 向下偏移到搜索框位置 */
     z-index: 2001;
@@ -541,6 +541,26 @@ body[data-filter-disabled="true"]::after {
     border-radius: 0;
     opacity: 0;
     transform: scale(0.95);
+    overflow-y: auto; /* 纵向滚动条 */
+    scrollbar-width: thin; /* Firefox滚动条样式 */
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox滚动条颜色 */
+}
+
+.menu-items::-webkit-scrollbar {
+    width: 6px;
+}
+
+.menu-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.menu-items::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.menu-items::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .context-menu.active .menu-items {
@@ -879,6 +899,12 @@ body[data-filter-disabled="true"]::after {
     align-items: center;
     justify-content: center;
     z-index: 100;
+}
+
+/* 快捷访问菜单打开时，footer保持可点击 */
+.context-menu.active ~ .footer-copyright,
+.context-menu.active + .footer-copyright {
+    z-index: 3001 !important;
 }
 
 .footer-text {

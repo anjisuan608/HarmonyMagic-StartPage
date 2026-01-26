@@ -2331,10 +2331,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             title: '放弃更改',
             message: '有未保存的更改，确定要放弃吗？',
             onOk: function() {
-                // 重新加载快捷访问数据
-                loadAllShortcuts();
-                // 重新渲染列表
-                renderEditShortcutList();
+                // 恢复所有被编辑过的快捷方式数据
+                restoreAllEditedShortcuts();
                 // 重置更改状态
                 editShortcutHasChanges = false;
                 // 关闭面板
@@ -3550,6 +3548,28 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // 恢复所有被编辑过的快捷方式数据
+    function restoreAllEditedShortcuts() {
+        // 恢复editShortcutVisibleItems中的数据
+        editShortcutVisibleItems.forEach(item => {
+            if (item.originalData) {
+                item.url = item.originalData.url;
+                item.title = item.originalData.title;
+                item.icon = item.originalData.icon;
+            }
+        });
+        // 恢复editShortcutHiddenItems中的数据
+        editShortcutHiddenItems.forEach(item => {
+            if (item.originalData) {
+                item.url = item.originalData.url;
+                item.title = item.originalData.title;
+                item.icon = item.originalData.icon;
+            }
+        });
+        // 重新渲染列表
+        renderEditShortcutList();
+    }
+
     // 加载所有快捷方式（预设 + 自定义）- 类似搜索引擎的混合排序
     function loadAllShortcuts() {
         // 创建预设映射
@@ -3894,6 +3914,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (editShortcutHasChanges) {
                 openConfirmDialog('discard-changes');
             } else {
+                // 恢复所有被编辑过的快捷方式数据
+                restoreAllEditedShortcuts();
                 closeEditShortcutPanel();
             }
         });
@@ -3906,6 +3928,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (editShortcutHasChanges) {
                 openConfirmDialog('discard-changes');
             } else {
+                // 恢复所有被编辑过的快捷方式数据
+                restoreAllEditedShortcuts();
                 closeEditShortcutPanel();
             }
         });
@@ -3950,6 +3974,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (editShortcutHasChanges) {
                 openConfirmDialog('discard-changes');
             } else {
+                // 恢复所有被编辑过的快捷方式数据
+                restoreAllEditedShortcuts();
                 closeEditShortcutPanel();
             }
         });
@@ -4114,27 +4140,53 @@ document.addEventListener('DOMContentLoaded', async function() {
     function openEditShortcutItemPanel(item, category, index) {
         if (!editShortcutItemPanel) return;
 
-        currentEditShortcut = { item, category, index };
+        // 保存原始数据到item对象，用于外层取消时恢复
+        item.originalData = {
+            url: item.url,
+            title: item.title,
+            icon: item.icon
+        };
+
+        // 初始化临时数据为当前项目数据
+        const tempData = {
+            url: item.url || '',
+            title: item.title || '',
+            icon: item.icon || ''
+        };
+
+        currentEditShortcut = { item, category, index, tempData };
         editShortcutItemHasChanges = false;
 
-        // 填充表单数据
-        if (editShortcutItemUrl) editShortcutItemUrl.value = item.url || '';
-        if (editShortcutItemName) editShortcutItemName.value = item.title || '';
-        if (editShortcutItemIcon) editShortcutItemIcon.value = item.icon || '';
+        // 填充表单数据（使用临时数据）
+        if (editShortcutItemUrl) editShortcutItemUrl.value = tempData.url;
+        if (editShortcutItemName) editShortcutItemName.value = tempData.title;
+        if (editShortcutItemIcon) editShortcutItemIcon.value = tempData.icon;
 
         // 更新图标预览
-        updateEditShortcutIconPreview(item.icon || '');
+        updateEditShortcutIconPreview(tempData.icon);
 
         editShortcutItemPanel.classList.add('active');
     }
 
     // 关闭编辑快捷访问项目面板
-    function closeEditShortcutItemPanel(checkChanges = true) {
-        if (checkChanges && editShortcutItemHasChanges) {
+    function closeEditShortcutItemPanel(checkChanges = true, discardChanges = false) {
+        if (checkChanges && editShortcutItemHasChanges && !discardChanges) {
             // 有未保存的更改，提示用户
             openConfirmDialog('discard-edit-shortcut');
             return;
         }
+
+        // 如果要丢弃更改，恢复原始数据
+        if (discardChanges && currentEditShortcut) {
+            const { item } = currentEditShortcut;
+            if (item.originalData) {
+                item.url = item.originalData.url;
+                item.title = item.originalData.title;
+                item.icon = item.originalData.icon;
+            }
+            renderEditShortcutList();
+        }
+
         if (editShortcutItemPanel) {
             editShortcutItemPanel.classList.remove('active');
             currentEditShortcut = null;
@@ -4160,23 +4212,23 @@ document.addEventListener('DOMContentLoaded', async function() {
         img.src = iconUrl;
     }
 
-    // 检查编辑快捷访问面板是否有更改
+    // 检查编辑快捷访问面板是否有更改（比较临时数据）
     function hasEditShortcutItemChanges() {
-        if (!currentEditShortcut) return false;
-        const item = currentEditShortcut.item;
-        return (editShortcutItemUrl?.value.trim() || '') !== (item.url || '') ||
-               (editShortcutItemName?.value.trim() || '') !== (item.title || '') ||
-               (editShortcutItemIcon?.value.trim() || '') !== (item.icon || '');
+        if (!currentEditShortcut || !currentEditShortcut.tempData) return false;
+        const tempData = currentEditShortcut.tempData;
+        return (editShortcutItemUrl?.value.trim() || '') !== (tempData.url || '') ||
+               (editShortcutItemName?.value.trim() || '') !== (tempData.title || '') ||
+               (editShortcutItemIcon?.value.trim() || '') !== (tempData.icon || '');
     }
 
-    // 保存编辑的快捷访问项目
+    // 保存编辑的快捷访问项目（只更新内存，不写入localStorage）
     function saveEditShortcutItem(closePanel = false) {
         if (!currentEditShortcut) return false;
 
-        const { item, category, index } = currentEditShortcut;
-        const newUrl = editShortcutItemUrl?.value.trim() || '';
-        const newName = editShortcutItemName?.value.trim() || '';
-        const newIcon = editShortcutItemIcon?.value.trim() || '';
+        const { item, tempData } = currentEditShortcut;
+        const newUrl = tempData.url;
+        const newName = tempData.title;
+        const newIcon = tempData.icon;
 
         // 验证URL
         if (!newUrl) {
@@ -4191,29 +4243,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             return false;
         }
 
-        // 更新项目数据
+        // 只更新内存中的项目数据，不写入localStorage
         item.url = newUrl;
         item.title = newName || newUrl;
         item.icon = newIcon || '';
 
-        // 如果是自定义项目，更新localStorage
-        if (!item.isPreset) {
-            const customShortcuts = getLocalStorageItem('custom_shortcuts') || [];
-            const customIndex = customShortcuts.findIndex(c => c.id === item.customId);
-            if (customIndex !== -1) {
-                customShortcuts[customIndex] = {
-                    id: item.customId,
-                    url: newUrl,
-                    title: newName || newUrl,
-                    icon: newIcon || '',
-                    position: customShortcuts[customIndex].position
-                };
-                setLocalStorageItem('custom_shortcuts', customShortcuts);
-            }
-        }
+        // 更新列表显示
+        renderEditShortcutList();
 
         editShortcutItemHasChanges = false;
-        renderEditShortcutList();
 
         if (closePanel) {
             closeEditShortcutItemPanel(false);
@@ -4243,14 +4281,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // URL输入变化检测
     if (editShortcutItemUrl) {
-        editShortcutItemUrl.addEventListener('input', () => {
+        editShortcutItemUrl.addEventListener('input', function() {
+            if (currentEditShortcut && currentEditShortcut.tempData) {
+                currentEditShortcut.tempData.url = this.value.trim();
+            }
             editShortcutItemHasChanges = hasEditShortcutItemChanges();
         });
     }
 
     // 名称输入变化检测
     if (editShortcutItemName) {
-        editShortcutItemName.addEventListener('input', () => {
+        editShortcutItemName.addEventListener('input', function() {
+            if (currentEditShortcut && currentEditShortcut.tempData) {
+                currentEditShortcut.tempData.title = this.value.trim();
+            }
             editShortcutItemHasChanges = hasEditShortcutItemChanges();
         });
     }
@@ -4258,6 +4302,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 图标输入变化检测和预览更新
     if (editShortcutItemIcon) {
         editShortcutItemIcon.addEventListener('input', function() {
+            if (currentEditShortcut && currentEditShortcut.tempData) {
+                currentEditShortcut.tempData.icon = this.value.trim();
+            }
             editShortcutItemHasChanges = hasEditShortcutItemChanges();
             updateEditShortcutIconPreview(this.value.trim());
         });
@@ -4282,66 +4329,101 @@ document.addEventListener('DOMContentLoaded', async function() {
     function openEditSearchEnginePanel(engine, category, index) {
         if (!editSearchEnginePanel) return;
 
-        currentEditSearchEngine = { engine, category, index };
+        // 保存原始数据，用于取消时恢复
+        const originalData = {
+            title: engine.title,
+            url: engine.url
+        };
+
+        // 初始化临时数据为当前引擎数据
+        const tempData = {
+            title: engine.title || '',
+            url: engine.url || ''
+        };
+
+        currentEditSearchEngine = { engine, category, index, originalData, tempData };
         editSearchEngineHasChanges = false;
 
-        // 填充表单数据
-        if (editSearchEngineName) editSearchEngineName.value = engine.title || '';
-        if (editSearchEngineUrl) editSearchEngineUrl.value = engine.url || '';
+        // 填充表单数据（使用临时数据）
+        if (editSearchEngineName) editSearchEngineName.value = tempData.title;
+        if (editSearchEngineUrl) editSearchEngineUrl.value = tempData.url;
         if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = '';
 
         editSearchEnginePanel.classList.add('active');
     }
 
     // 关闭编辑搜索引擎项目面板
-    function closeEditSearchEnginePanel(checkChanges = true) {
-        if (checkChanges && editSearchEngineHasChanges) {
+    function closeEditSearchEnginePanel(checkChanges = true, discardChanges = false) {
+        if (checkChanges && editSearchEngineHasChanges && !discardChanges) {
             // 有未保存的更改，提示用户
             openConfirmDialog('discard-edit-search-engine');
             return;
         }
+
+        // 如果要丢弃更改，恢复原始数据
+        if (discardChanges && currentEditSearchEngine) {
+            const { engine, originalData } = currentEditSearchEngine;
+            engine.title = originalData.title;
+            engine.url = originalData.url;
+            renderSearchEngineCategoryLists();
+        }
+
         if (editSearchEnginePanel) {
             editSearchEnginePanel.classList.remove('active');
             currentEditSearchEngine = null;
         }
     }
 
-    // 检查编辑搜索引擎面板是否有更改
+    // 检查编辑搜索引擎面板是否有更改（比较临时数据）
     function hasEditSearchEngineChanges() {
-        if (!currentEditSearchEngine) return false;
-        const engine = currentEditSearchEngine.engine;
-        return (editSearchEngineName?.value.trim() || '') !== (engine.title || '') ||
-               (editSearchEngineUrl?.value.trim() || '') !== (engine.url || '');
+        if (!currentEditSearchEngine || !currentEditSearchEngine.tempData) return false;
+        const tempData = currentEditSearchEngine.tempData;
+        return (editSearchEngineName?.value.trim() || '') !== (tempData.title || '') ||
+               (editSearchEngineUrl?.value.trim() || '') !== (tempData.url || '');
     }
 
     // 保存编辑的搜索引擎项目
     function saveEditSearchEngine(closePanel = false) {
         if (!currentEditSearchEngine) return false;
 
-        const { engine, category, index } = currentEditSearchEngine;
-        const newName = editSearchEngineName?.value.trim() || '';
-        const newUrl = editSearchEngineUrl?.value.trim() || '';
+        const { engine, tempData } = currentEditSearchEngine;
+        const newName = tempData.title;
+        const newUrl = tempData.url;
 
         // 验证URL
+        if (!newUrl) {
+            sendNotice('请输入URL', 'warn');
+            return false;
+        }
+
         const validation = validateSearchEngineUrl(newUrl);
         if (!validation.valid) {
             if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = validation.message;
             return false;
         }
-        if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = '';
 
         // 更新引擎数据
-        engine.title = newName || '新搜索引擎';
+        engine.title = newName || newUrl;
         engine.url = newUrl;
 
-        // 如果是自定义引擎，更新localStorage
-        const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
-        if (!presetIds.includes(engine.id)) {
-            saveCustomSearchEngines();
-        }
+        // 更新列表显示
+        renderSearchEngineCategoryLists();
 
-        // 如果引擎在列表中显示，重新渲染
-        renderSearchEngineLists();
+        // 如果是自定义引擎，更新localStorage
+        if (engine.isCustom) {
+            const customSearchEngines = getLocalStorageItem('custom_search_engines') || [];
+            const customIndex = customSearchEngines.findIndex(e => e.id === engine.customId);
+            if (customIndex !== -1) {
+                customSearchEngines[customIndex] = {
+                    id: engine.customId,
+                    title: newName || newUrl,
+                    url: newUrl,
+                    icon: customSearchEngines[customIndex].icon,
+                    position: customSearchEngines[customIndex].position
+                };
+                setLocalStorageItem('custom_search_engines', customSearchEngines);
+            }
+        }
 
         editSearchEngineHasChanges = false;
 
@@ -4373,7 +4455,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 名称输入变化检测
     if (editSearchEngineName) {
-        editSearchEngineName.addEventListener('input', () => {
+        editSearchEngineName.addEventListener('input', function() {
+            if (currentEditSearchEngine && currentEditSearchEngine.tempData) {
+                currentEditSearchEngine.tempData.title = this.value.trim();
+            }
             editSearchEngineHasChanges = hasEditSearchEngineChanges();
         });
     }
@@ -4381,6 +4466,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // URL输入变化检测和验证
     if (editSearchEngineUrl) {
         editSearchEngineUrl.addEventListener('input', function() {
+            if (currentEditSearchEngine && currentEditSearchEngine.tempData) {
+                currentEditSearchEngine.tempData.url = this.value.trim();
+            }
             editSearchEngineHasChanges = hasEditSearchEngineChanges();
             if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = '';
         });
@@ -4648,7 +4736,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         message: '有未保存的更改，确定要放弃吗？',
         onOk: function() {
             editShortcutItemHasChanges = false;
-            closeEditShortcutItemPanel(false);
+            closeEditShortcutItemPanel(false, true); // true表示丢弃更改
         }
     };
 
@@ -4657,7 +4745,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         message: '有未保存的更改，确定要放弃吗？',
         onOk: function() {
             editSearchEngineHasChanges = false;
-            closeEditSearchEnginePanel(false);
+            closeEditSearchEnginePanel(false, true);
         }
     };
 

@@ -2538,7 +2538,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 5. 搜索引擎面板
+        // 5. 编辑搜索引擎面板（在搜索引擎面板之前处理）
+        if (editSearchEnginePanel && editSearchEnginePanel.classList.contains('active')) {
+            closeEditSearchEnginePanel();
+            return;
+        }
+
+        // 6. 编辑快捷访问项目面板（在快捷访问编辑面板之前处理）
+        if (editShortcutItemPanel && editShortcutItemPanel.classList.contains('active')) {
+            closeEditShortcutItemPanel();
+            return;
+        }
+
+        // 7. 搜索引擎面板
         if (searchEnginePanel && searchEnginePanel.classList.contains('active')) {
             const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
             // 检查是否有实际更改（包括内层编辑面板的更改）
@@ -2552,7 +2564,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 6. 快捷访问编辑面板
+        // 8. 快捷访问编辑面板
         if (editShortcutPanel && editShortcutPanel.classList.contains('active')) {
             if (editShortcutHasChanges) {
                 openConfirmDialog('discard-changes');
@@ -2562,13 +2574,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 7. 常规设置面板
+        // 9. 常规设置面板
         if (settingsModal && settingsModal.classList.contains('active')) {
             closeSettingsModal();
             return;
         }
 
-        // 8. 关于面板 - 最低优先级
+        // 10. 关于面板 - 最低优先级
         if (aboutPanel && aboutPanel.classList.contains('active')) {
             closeAboutPanel();
         }

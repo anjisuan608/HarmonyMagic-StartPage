@@ -2411,6 +2411,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             message: '有未保存的更改，确定要放弃吗？',
             onOk: function() {
                 searchEngineSettingsWorking = null;
+                searchEngineSettingsHasInnerChanges = false; // 重置内层编辑标志
                 closeSearchEnginePanel();
             }
         },
@@ -2540,7 +2541,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 5. 搜索引擎面板
         if (searchEnginePanel && searchEnginePanel.classList.contains('active')) {
             const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
-            const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+            // 检查是否有实际更改（包括内层编辑面板的更改）
+            const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings) || searchEngineSettingsHasInnerChanges;
             if (hasChanges) {
                 openConfirmDialog('discard-search-engine-changes');
             } else {
@@ -3031,9 +3033,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 绑定搜索引擎面板事件
     if (searchEngineClose) {
         searchEngineClose.addEventListener('click', () => {
-            // 检查是否有未保存的更改
+            // 检查是否有未保存的更改（包括内层编辑面板的更改）
             const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
-            const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+            const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings) || searchEngineSettingsHasInnerChanges;
             if (hasChanges) {
                 openConfirmDialog('discard-search-engine-changes');
             } else {
@@ -3062,9 +3064,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         if (searchEngineCancel) {
             searchEngineCancel.addEventListener('click', () => {
-                // 检查是否有未保存的更改
+                // 检查是否有未保存的更改（包括内层编辑面板的更改）
                 const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
-                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings) || searchEngineSettingsHasInnerChanges;
                 if (hasChanges) {
                     openConfirmDialog('discard-search-engine-changes');
                 } else {
@@ -3101,6 +3103,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             searchEngineSettings = JSON.parse(JSON.stringify(workingSettings));
             localStorage.setItem('search_engine_settings', JSON.stringify(searchEngineSettings));
             searchEngineSettingsWorking = null;
+            searchEngineSettingsHasInnerChanges = false; // 重置内层编辑标志
             
             // 重新渲染主页搜索引擎
             renderSearchEngineIcons();
@@ -3112,8 +3115,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             searchEngineApply.addEventListener('click', () => {
                 const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
                 
-                // 检查是否有实际更改
-                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+                // 检查是否有实际更改（包括内层编辑面板的更改）
+                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings) || searchEngineSettingsHasInnerChanges;
                 if (!hasChanges) {
                     sendNotice('没有未保存的更改', 'info');
                     return;
@@ -3148,8 +3151,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 只有在applySettings成功执行时才关闭面板
                 const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
                 
-                // 检查是否有实际更改
-                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+                // 检查是否有实际更改（包括内层编辑面板的更改）
+                const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings) || searchEngineSettingsHasInnerChanges;
                 if (!hasChanges) {
                     sendNotice('没有未保存的更改', 'info');
                     closeSearchEnginePanel();
@@ -3173,6 +3176,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 searchEngineSettings = JSON.parse(JSON.stringify(workingSettings));
                 localStorage.setItem('search_engine_settings', JSON.stringify(searchEngineSettings));
                 searchEngineSettingsWorking = null;
+                searchEngineSettingsHasInnerChanges = false; // 重置内层编辑标志
                 
                 // 重新渲染主页搜索引擎
                 renderSearchEngineIcons();
@@ -3188,9 +3192,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     const searchEngineOverlay = document.querySelector('#search-engine-panel .settings-modal-overlay');
     if (searchEngineOverlay) {
         searchEngineOverlay.addEventListener('click', () => {
-            // 检查是否有未保存的更改
+            // 检查是否有未保存的更改（包括内层编辑面板的更改）
             const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
-            const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings);
+            const hasChanges = JSON.stringify(workingSettings) !== JSON.stringify(searchEngineSettings) || searchEngineSettingsHasInnerChanges;
             if (hasChanges) {
                 openConfirmDialog('discard-search-engine-changes');
             } else {
@@ -4125,6 +4129,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     let currentEditSearchEngine = null;
     let editShortcutItemHasChanges = false;
     let editSearchEngineHasChanges = false;
+    let searchEngineSettingsHasInnerChanges = false; // 跟踪内层编辑面板的更改
 
     // 初始化关闭按钮图标
     if (editShortcutItemClose) {
@@ -4415,6 +4420,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         engine.title = newName || newUrl;
         engine.url = newUrl;
 
+        // 标记外层设置面板有未保存的更改
+        searchEngineSettingsHasInnerChanges = true;
+
         // 更新列表显示
         renderSearchEngineLists();
 
@@ -4431,7 +4439,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 绑定编辑搜索引擎面板事件
     if (editSearchEngineClose) {
-        editSearchEngineClose.addEventListener('click', () => closeEditSearchEnginePanel());
+        editSearchEngineClose.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeEditSearchEnginePanel();
+        });
     }
 
     if (editSearchEngineCancel) {

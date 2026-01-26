@@ -1425,42 +1425,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 notices.style.top = (20 + settingsHeight + 10) + 'px';
             }
         }
-        
-        // 为菜单项添加点击事件（重新获取菜单项以确保包含所有动态添加的项）
-        const menuItems = document.querySelectorAll('.menu-item');
-        menuItems.forEach(item => {
-            // 处理"添加"和"编辑"按钮
-            if (item.hasAttribute('data-action')) {
-                const action = item.getAttribute('data-action');
-                item.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (action === 'add') {
-                        // 打开添加快捷方式面板
-                        openAddShortcutPanel();
-                    } else if (action === 'edit') {
-                        // 打开编辑快捷访问面板
-                        openEditShortcutPanel();
-                    }
-                };
-                return;
-            }
-
-            const url = item.getAttribute('data-url');
-            item.onclick = function() {
-                window.open(url, '_blank');
-                contextMenu.classList.remove('active');
-                document.documentElement.style.removeProperty('--search-box-top');
-                setBackgroundBlur(false); // 移除背景模糊
-                // 重新显示搜索框
-                searchBox.style.opacity = '1';
-                searchBox.style.visibility = 'visible';
-                if (settings) settings.style.display = 'none';
-                // 恢复通知位置
-                const notices = document.getElementById('notices');
-                if (notices) notices.style.top = '20px';
-            };
-        });
     });
     
     // 点击快捷访问面板外空白区域关闭菜单
@@ -2308,6 +2272,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 刷新壁纸设置面板显示
                 loadWallpaperSettings();
                 sendNotice('壁纸已重置为默认', 'info');
+            }
+        },
+        'clear-site-data': {
+            title: '清空网站数据',
+            message: '确定要清除所有Cookie和本地存储数据吗？此操作不可撤销，页面将立即刷新。',
+            onOk: function() {
+                // 清除所有localStorage数据
+                localStorage.clear();
+                // 清除所有cookie
+                document.cookie.split(";").forEach(function(c) {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                // 刷新页面
+                location.reload();
             }
         },
         'reset-shortcuts': {

@@ -16,4 +16,34 @@
         <comment>白色沙丘</comment>
         <url>https://www.bing.com/th?id=OHR.WhiteSandsNM_ZH-CN7070772772_1920x1080.jpg</url>
     </wallpaper>
+    <wallpaper id="4">
+        <title>WillowLake</title>
+        <comment>柳树湖泊</comment>
+        <url>https://www.bing.com/th?id=OHR.WillowLake_ZH-CN9798614021_1920x1080.jpg</url>
+    </wallpaper>
+    <wallpaper id="5">
+        <title>ComoChristmas</title>
+        <comment>科莫圣诞</comment>
+        <url>https://www.bing.com/th?id=OHR.ComoChristmas_ZH-CN2565627033_1920x1080.jpg</url>
+    </wallpaper>
+    <wallpaper id="6">
+        <title>AntarcticArch</title>
+        <comment>南极拱门</comment>
+        <url>https://www.bing.com/th?id=OHR.AntarcticArch_ZH-CN1622701432_1920x1080.jpg</url>
+    </wallpaper>
+    <wallpaper id="7">
+        <title>FranceLavender</title>
+        <comment>法国薰衣草</comment>
+        <url>https://www.bing.com/th?id=OHR.FranceLavender_ZH-CN1639602547_1920x1080.jpg</url>
+    </wallpaper>
+    <wallpaper id="8">
+        <title>NormandyBeach</title>
+        <comment>诺曼底海滩</comment>
+        <url>https://www.bing.com/th?id=OHR.NormandyBeach_ZH-CN9312381737_1920x1080.jpg</url>
+    </wallpaper>
+    <wallpaper id="9">
+        <title>WinterBegins</title>
+        <comment>冬至开始</comment>
+        <url>https://www.bing.com/th?id=OHR.WinterBegins_ZH-CN7638411804_1920x1080.jpg</url>
+    </wallpaper>
 </wallpapers>

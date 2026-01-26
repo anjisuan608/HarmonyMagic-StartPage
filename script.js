@@ -2310,6 +2310,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 sendNotice('壁纸已重置为默认', 'info');
             }
         },
+        'clear-site-data': {
+            title: '清空网站数据',
+            message: '确定要清除所有Cookie和本地存储数据吗？此操作不可撤销，页面将立即刷新。',
+            onOk: function() {
+                // 清除所有localStorage数据
+                localStorage.clear();
+                // 清除所有cookie
+                document.cookie.split(";").forEach(function(c) {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                // 刷新页面
+                location.reload();
+            }
+        },
         'reset-shortcuts': {
             title: '重置快捷访问',
             message: '确定要重置快捷访问吗？这将删除所有自定义快捷方式。',

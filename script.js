@@ -4334,8 +4334,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     function openEditSearchEnginePanel(engine, category, index) {
         if (!editSearchEnginePanel) return;
 
-        // 保存原始数据，用于取消时恢复
-        const originalData = {
+        // 保存原始数据到engine对象，用于外层取消时恢复
+        engine.originalData = {
             title: engine.title,
             url: engine.url
         };
@@ -4346,7 +4346,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             url: engine.url || ''
         };
 
-        currentEditSearchEngine = { engine, category, index, originalData, tempData };
+        currentEditSearchEngine = { engine, category, index, tempData };
         editSearchEngineHasChanges = false;
 
         // 填充表单数据（使用临时数据）
@@ -4367,27 +4367,31 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // 如果要丢弃更改，恢复原始数据
         if (discardChanges && currentEditSearchEngine) {
-            const { engine, originalData } = currentEditSearchEngine;
-            engine.title = originalData.title;
-            engine.url = originalData.url;
-            renderSearchEngineCategoryLists();
+            const { engine } = currentEditSearchEngine;
+            if (engine.originalData) {
+                engine.title = engine.originalData.title;
+                engine.url = engine.originalData.url;
+            }
+            renderSearchEngineLists();
         }
 
         if (editSearchEnginePanel) {
             editSearchEnginePanel.classList.remove('active');
             currentEditSearchEngine = null;
+            editSearchEngineHasChanges = false;
         }
     }
 
-    // 检查编辑搜索引擎面板是否有更改（比较临时数据）
+    // 检查编辑搜索引擎面板是否有更改（比较输入框与原始数据）
     function hasEditSearchEngineChanges() {
-        if (!currentEditSearchEngine || !currentEditSearchEngine.tempData) return false;
-        const tempData = currentEditSearchEngine.tempData;
-        return (editSearchEngineName?.value.trim() || '') !== (tempData.title || '') ||
-               (editSearchEngineUrl?.value.trim() || '') !== (tempData.url || '');
+        if (!currentEditSearchEngine || !currentEditSearchEngine.engine) return false;
+        const engine = currentEditSearchEngine.engine;
+        const originalData = engine.originalData || engine;
+        return (editSearchEngineName?.value.trim() || '') !== (originalData.title || '') ||
+               (editSearchEngineUrl?.value.trim() || '') !== (originalData.url || '');
     }
 
-    // 保存编辑的搜索引擎项目
+    // 保存编辑的搜索引擎项目（只更新内存，不写入localStorage）
     function saveEditSearchEngine(closePanel = false) {
         if (!currentEditSearchEngine) return false;
 
@@ -4407,28 +4411,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             return false;
         }
 
-        // 更新引擎数据
+        // 只更新内存中的引擎数据，不写入localStorage
         engine.title = newName || newUrl;
         engine.url = newUrl;
 
         // 更新列表显示
-        renderSearchEngineCategoryLists();
-
-        // 如果是自定义引擎，更新localStorage
-        if (engine.isCustom) {
-            const customSearchEngines = getLocalStorageItem('custom_search_engines') || [];
-            const customIndex = customSearchEngines.findIndex(e => e.id === engine.customId);
-            if (customIndex !== -1) {
-                customSearchEngines[customIndex] = {
-                    id: engine.customId,
-                    title: newName || newUrl,
-                    url: newUrl,
-                    icon: customSearchEngines[customIndex].icon,
-                    position: customSearchEngines[customIndex].position
-                };
-                setLocalStorageItem('custom_search_engines', customSearchEngines);
-            }
-        }
+        renderSearchEngineLists();
 
         editSearchEngineHasChanges = false;
 

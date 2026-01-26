@@ -1396,6 +1396,7 @@ body[data-filter-disabled="true"]::after {
 /* 添加快捷方式面板样式 */
 #add-shortcut-panel {
     display: none;
+    z-index: 10002; /* 高于编辑快捷访问面板的10001 */
 }
 
 #add-shortcut-panel.active {
@@ -1511,41 +1512,38 @@ body[data-filter-disabled="true"]::after {
 /* 编辑快捷访问面板 */
 .edit-shortcut-header-btns {
     display: flex;
-    align-items: center;
-    background: #f5f5f5;
-    border-radius: 4px;
-    padding: 2px;
+    gap: 8px;
 }
 
 .edit-shortcut-header-btns .settings-reset-btn {
     border: none;
     background: transparent;
-    border-radius: 0;
+    border-radius: 4px;
     padding: 6px 10px;
     margin: 0;
 }
 
 .edit-shortcut-header-btns .settings-reset-btn:first-child {
-    border-radius: 3px 0 0 3px;
+    border-radius: 4px;
 }
 
 .edit-shortcut-header-btns .settings-reset-btn:last-of-type {
     border-right: none;
-    border-radius: 0;
+    border-radius: 4px;
 }
 
 .edit-shortcut-header-btns .settings-reset-btn:hover {
-    background: #e8e8e8;
+    background: #e0e0e0;
 }
 
 .edit-shortcut-header-btns .settings-close {
     padding: 6px 8px;
     margin: 0;
-    border-radius: 0 3px 3px 0;
+    border-radius: 4px;
 }
 
 .edit-shortcut-header-btns .settings-close:hover {
-    background: #e8e8e8 !important;
+    background: transparent !important;
 }
 
 .settings-reset-btn {
@@ -1802,6 +1800,31 @@ body[data-filter-disabled="true"]::after {
 .edit-shortcut-toggle:hover:not(:disabled) {
     background: #ffebee;
     color: #c62828;
+}
+
+/* 编辑按钮样式 */
+.edit-shortcut-edit {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    color: #2196F3 !important;
+}
+
+.edit-shortcut-edit svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor !important;
+}
+
+.edit-shortcut-edit:hover {
+    background: #E3F2FD;
 }
 
 .edit-shortcut-buttons {
@@ -2532,11 +2555,10 @@ body[data-filter-disabled="true"]::after {
 
 .search-engine-item-actions {
     display: flex;
-    gap: 4px;
+    gap: 5px;
 }
 
-.search-engine-move-up,
-.search-engine-move-down {
+.search-engine-move-btn {
     width: 28px;
     height: 28px;
     border: none;
@@ -2549,13 +2571,11 @@ body[data-filter-disabled="true"]::after {
     transition: background-color 0.2s;
 }
 
-.search-engine-move-up:hover,
-.search-engine-move-down:hover {
+.search-engine-move-btn:hover {
     background: #e0e0e0;
 }
 
-.search-engine-move-up:disabled,
-.search-engine-move-down:disabled {
+.search-engine-move-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -2568,6 +2588,7 @@ body[data-filter-disabled="true"]::after {
     border: none;
     background: #f0f0f0;
     border-radius: 4px;
+    color: #666;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -2580,7 +2601,7 @@ body[data-filter-disabled="true"]::after {
 .search-engine-delete svg {
     width: 14px;
     height: 14px;
-    fill: #666;
+    fill: currentColor;
 }
 
 .search-engine-disable:hover,
@@ -2588,12 +2609,13 @@ body[data-filter-disabled="true"]::after {
     background: #e0e0e0;
 }
 
-.search-engine-delete:hover {
-    background: #ffebee;
+.search-engine-delete {
+    color: #e53935;
 }
 
-.search-engine-delete:hover svg {
-    fill: #e53935;
+.search-engine-delete:hover:not(:disabled) {
+    background: #ffebee;
+    color: #c62828;
 }
 
 .search-engine-delete:disabled {
@@ -2605,8 +2627,30 @@ body[data-filter-disabled="true"]::after {
     background: #f0f0f0;
 }
 
-.search-engine-delete:disabled:hover svg {
-    fill: #666;
+/* 编辑按钮样式 - 与编辑快捷访问面板一致 */
+.search-engine-edit {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    color: #2196F3 !important;
+}
+
+.search-engine-edit svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor !important;
+}
+
+.search-engine-edit:hover {
+    background: #E3F2FD;
+}
 }
 
 .search-engine-buttons {

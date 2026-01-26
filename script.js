@@ -2610,6 +2610,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     const addSearchEngineCancel = document.getElementById('add-search-engine-cancel');
     const addSearchEngineSave = document.getElementById('add-search-engine-save');
 
+    // 初始化分类折叠功能（使用事件委托）
+    initSearchEngineCategoryCollapse();
+
     // 搜索引擎设置
 
     // 初始化关闭按钮图标
@@ -2841,15 +2844,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // 初始化分类折叠功能
+    // 初始化分类折叠功能（使用事件委托）
     function initSearchEngineCategoryCollapse() {
-        const categories = document.querySelectorAll('.search-engine-category');
-        categories.forEach(category => {
-            const header = category.querySelector('.search-engine-category-header');
-            header.addEventListener('click', function() {
-                category.classList.toggle('collapsed');
+        // 使用事件委托，在面板上绑定一次事件
+        if (searchEnginePanel && !searchEnginePanel.dataset.collapseInitialized) {
+            searchEnginePanel.addEventListener('click', function(e) {
+                const header = e.target.closest('.search-engine-category-header');
+                if (header) {
+                    const category = header.closest('.search-engine-category');
+                    if (category) {
+                        category.classList.toggle('collapsed');
+                    }
+                }
             });
-        });
+            searchEnginePanel.dataset.collapseInitialized = 'true';
+        }
     }
 
     // 移动搜索引擎顺序
@@ -3545,6 +3554,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     let editShortcutOriginalHiddenOrder = []; // 原始隐藏顺序，用于检测更改
     let editShortcutHasChanges = false; // 是否有更改
 
+    // 初始化分类折叠功能（使用事件委托）
+    initEditShortcutCategoryCollapse();
+
     // 打开编辑快捷访问面板
     function openEditShortcutPanel() {
         if (editShortcutPanel) {
@@ -3561,8 +3573,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             editShortcutHasChanges = false;
             // 渲染列表
             renderEditShortcutList();
-            // 初始化折叠功能
-            initEditShortcutCategoryCollapse();
             editShortcutPanel.classList.add('active');
         }
     }
@@ -3887,19 +3897,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         renderEditShortcutList();
     }
 
-    // 初始化分类折叠功能
+    // 初始化分类折叠功能（使用事件委托）
     function initEditShortcutCategoryCollapse() {
-        const categories = document.querySelectorAll('.edit-shortcut-category');
-        categories.forEach(cat => {
-            const header = cat.querySelector('.edit-shortcut-category-header');
-            header.addEventListener('click', function() {
-                cat.classList.toggle('collapsed');
+        // 使用事件委托，在面板上绑定一次事件
+        if (editShortcutPanel && !editShortcutPanel.dataset.collapseInitialized) {
+            editShortcutPanel.addEventListener('click', function(e) {
+                const header = e.target.closest('.edit-shortcut-category-header');
+                if (header) {
+                    const category = header.closest('.edit-shortcut-category');
+                    if (category) {
+                        category.classList.toggle('collapsed');
+                    }
+                }
             });
-            // 隐藏分类默认折叠
-            if (cat.dataset.category === 'hidden') {
-                cat.classList.add('collapsed');
-            }
-        });
+            editShortcutPanel.dataset.collapseInitialized = 'true';
+        }
     }
 
     // 保存快捷访问顺序 - 使用localStorage

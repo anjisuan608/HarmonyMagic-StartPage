@@ -4066,6 +4066,618 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     initWallpaper();
 
+    // ==================== 编辑功能 ====================
+    
+    // 编辑按钮图标
+    const svgEdit = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+
+    // 编辑快捷访问面板元素
+    const editShortcutItemPanel = document.getElementById('edit-shortcut-item-panel');
+    const editShortcutItemClose = document.getElementById('edit-shortcut-item-close');
+    const editShortcutItemUrl = document.getElementById('edit-shortcut-item-url');
+    const editShortcutItemName = document.getElementById('edit-shortcut-item-name');
+    const editShortcutItemIcon = document.getElementById('edit-shortcut-item-icon');
+    const editShortcutItemPreviewIcon = document.getElementById('edit-shortcut-item-preview-icon');
+    const editShortcutItemCancel = document.getElementById('edit-shortcut-item-cancel');
+    const editShortcutItemSave = document.getElementById('edit-shortcut-item-save');
+    const editShortcutItemApply = document.getElementById('edit-shortcut-item-apply');
+    const editShortcutItemOverlay = editShortcutItemPanel ? editShortcutItemPanel.querySelector('.settings-modal-overlay') : null;
+
+    // 编辑搜索引擎面板元素
+    const editSearchEnginePanel = document.getElementById('edit-search-engine-panel');
+    const editSearchEngineClose = document.getElementById('edit-search-engine-close');
+    const editSearchEngineName = document.getElementById('edit-search-engine-name');
+    const editSearchEngineUrl = document.getElementById('edit-search-engine-url');
+    const editSearchEngineUrlError = document.getElementById('edit-search-engine-url-error');
+    const editSearchEngineCancel = document.getElementById('edit-search-engine-cancel');
+    const editSearchEngineSave = document.getElementById('edit-search-engine-save');
+    const editSearchEngineApply = document.getElementById('edit-search-engine-apply');
+    const editSearchEngineOverlay = editSearchEnginePanel ? editSearchEnginePanel.querySelector('.settings-modal-overlay') : null;
+
+    // 当前编辑的项目信息
+    let currentEditShortcut = null;
+    let currentEditSearchEngine = null;
+    let editShortcutItemHasChanges = false;
+    let editSearchEngineHasChanges = false;
+
+    // 初始化关闭按钮图标
+    if (editShortcutItemClose) {
+        editShortcutItemClose.innerHTML = svgClose;
+    }
+    if (editSearchEngineClose) {
+        editSearchEngineClose.innerHTML = svgClose;
+    }
+
+    // ==================== 编辑快捷访问项目 ====================
+
+    // 打开编辑快捷访问项目面板
+    function openEditShortcutItemPanel(item, category, index) {
+        if (!editShortcutItemPanel) return;
+
+        currentEditShortcut = { item, category, index };
+        editShortcutItemHasChanges = false;
+
+        // 填充表单数据
+        if (editShortcutItemUrl) editShortcutItemUrl.value = item.url || '';
+        if (editShortcutItemName) editShortcutItemName.value = item.title || '';
+        if (editShortcutItemIcon) editShortcutItemIcon.value = item.icon || '';
+
+        // 更新图标预览
+        updateEditShortcutIconPreview(item.icon || '');
+
+        editShortcutItemPanel.classList.add('active');
+    }
+
+    // 关闭编辑快捷访问项目面板
+    function closeEditShortcutItemPanel(checkChanges = true) {
+        if (checkChanges && editShortcutItemHasChanges) {
+            // 有未保存的更改，提示用户
+            openConfirmDialog('discard-edit-shortcut');
+            return;
+        }
+        if (editShortcutItemPanel) {
+            editShortcutItemPanel.classList.remove('active');
+            currentEditShortcut = null;
+        }
+    }
+
+    // 更新编辑面板的图标预览
+    function updateEditShortcutIconPreview(iconUrl) {
+        if (!editShortcutItemPreviewIcon) return;
+
+        if (!iconUrl || !iconUrl.trim()) {
+            editShortcutItemPreviewIcon.innerHTML = defaultIconSVG;
+            return;
+        }
+
+        const img = new Image();
+        img.onload = function() {
+            editShortcutItemPreviewIcon.innerHTML = '<img src="' + iconUrl + '" style="width:32px;height:32px;">';
+        };
+        img.onerror = function() {
+            editShortcutItemPreviewIcon.innerHTML = defaultIconSVG;
+        };
+        img.src = iconUrl;
+    }
+
+    // 检查编辑快捷访问面板是否有更改
+    function hasEditShortcutItemChanges() {
+        if (!currentEditShortcut) return false;
+        const item = currentEditShortcut.item;
+        return (editShortcutItemUrl?.value.trim() || '') !== (item.url || '') ||
+               (editShortcutItemName?.value.trim() || '') !== (item.title || '') ||
+               (editShortcutItemIcon?.value.trim() || '') !== (item.icon || '');
+    }
+
+    // 保存编辑的快捷访问项目
+    function saveEditShortcutItem(closePanel = false) {
+        if (!currentEditShortcut) return false;
+
+        const { item, category, index } = currentEditShortcut;
+        const newUrl = editShortcutItemUrl?.value.trim() || '';
+        const newName = editShortcutItemName?.value.trim() || '';
+        const newIcon = editShortcutItemIcon?.value.trim() || '';
+
+        // 验证URL
+        if (!newUrl) {
+            sendNotice('请输入URL', 'warn');
+            return false;
+        }
+
+        try {
+            new URL(newUrl);
+        } catch (e) {
+            sendNotice('URL格式不正确', 'warn');
+            return false;
+        }
+
+        // 更新项目数据
+        item.url = newUrl;
+        item.title = newName || newUrl;
+        item.icon = newIcon || '';
+
+        // 如果是自定义项目，更新localStorage
+        if (!item.isPreset) {
+            const customShortcuts = getLocalStorageItem('custom_shortcuts') || [];
+            const customIndex = customShortcuts.findIndex(c => c.id === item.customId);
+            if (customIndex !== -1) {
+                customShortcuts[customIndex] = {
+                    id: item.customId,
+                    url: newUrl,
+                    title: newName || newUrl,
+                    icon: newIcon || '',
+                    position: customShortcuts[customIndex].position
+                };
+                setLocalStorageItem('custom_shortcuts', customShortcuts);
+            }
+        }
+
+        editShortcutItemHasChanges = false;
+        renderEditShortcutList();
+
+        if (closePanel) {
+            closeEditShortcutItemPanel(false);
+        } else {
+            sendNotice('设置已应用', 'info');
+        }
+
+        return true;
+    }
+
+    // 绑定编辑快捷访问面板事件
+    if (editShortcutItemClose) {
+        editShortcutItemClose.addEventListener('click', () => closeEditShortcutItemPanel());
+    }
+
+    if (editShortcutItemCancel) {
+        editShortcutItemCancel.addEventListener('click', () => closeEditShortcutItemPanel());
+    }
+
+    if (editShortcutItemSave) {
+        editShortcutItemSave.addEventListener('click', () => saveEditShortcutItem(true));
+    }
+
+    if (editShortcutItemApply) {
+        editShortcutItemApply.addEventListener('click', () => saveEditShortcutItem(false));
+    }
+
+    // URL输入变化检测
+    if (editShortcutItemUrl) {
+        editShortcutItemUrl.addEventListener('input', () => {
+            editShortcutItemHasChanges = hasEditShortcutItemChanges();
+        });
+    }
+
+    // 名称输入变化检测
+    if (editShortcutItemName) {
+        editShortcutItemName.addEventListener('input', () => {
+            editShortcutItemHasChanges = hasEditShortcutItemChanges();
+        });
+    }
+
+    // 图标输入变化检测和预览更新
+    if (editShortcutItemIcon) {
+        editShortcutItemIcon.addEventListener('input', function() {
+            editShortcutItemHasChanges = hasEditShortcutItemChanges();
+            updateEditShortcutIconPreview(this.value.trim());
+        });
+
+        // 失焦时验证图标格式
+        editShortcutItemIcon.addEventListener('blur', function() {
+            const url = this.value.trim();
+            if (url && !isValidIconUrl(url)) {
+                sendNotice('图标格式不支持，请使用 ico/png/jpg 格式', 'warn');
+            }
+        });
+    }
+
+    // 点击遮罩层关闭
+    if (editShortcutItemOverlay) {
+        editShortcutItemOverlay.addEventListener('click', () => closeEditShortcutItemPanel());
+    }
+
+    // ==================== 编辑搜索引擎项目 ====================
+
+    // 打开编辑搜索引擎项目面板
+    function openEditSearchEnginePanel(engine, category, index) {
+        if (!editSearchEnginePanel) return;
+
+        currentEditSearchEngine = { engine, category, index };
+        editSearchEngineHasChanges = false;
+
+        // 填充表单数据
+        if (editSearchEngineName) editSearchEngineName.value = engine.title || '';
+        if (editSearchEngineUrl) editSearchEngineUrl.value = engine.url || '';
+        if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = '';
+
+        editSearchEnginePanel.classList.add('active');
+    }
+
+    // 关闭编辑搜索引擎项目面板
+    function closeEditSearchEnginePanel(checkChanges = true) {
+        if (checkChanges && editSearchEngineHasChanges) {
+            // 有未保存的更改，提示用户
+            openConfirmDialog('discard-edit-search-engine');
+            return;
+        }
+        if (editSearchEnginePanel) {
+            editSearchEnginePanel.classList.remove('active');
+            currentEditSearchEngine = null;
+        }
+    }
+
+    // 检查编辑搜索引擎面板是否有更改
+    function hasEditSearchEngineChanges() {
+        if (!currentEditSearchEngine) return false;
+        const engine = currentEditSearchEngine.engine;
+        return (editSearchEngineName?.value.trim() || '') !== (engine.title || '') ||
+               (editSearchEngineUrl?.value.trim() || '') !== (engine.url || '');
+    }
+
+    // 保存编辑的搜索引擎项目
+    function saveEditSearchEngine(closePanel = false) {
+        if (!currentEditSearchEngine) return false;
+
+        const { engine, category, index } = currentEditSearchEngine;
+        const newName = editSearchEngineName?.value.trim() || '';
+        const newUrl = editSearchEngineUrl?.value.trim() || '';
+
+        // 验证URL
+        const validation = validateSearchEngineUrl(newUrl);
+        if (!validation.valid) {
+            if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = validation.message;
+            return false;
+        }
+        if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = '';
+
+        // 更新引擎数据
+        engine.title = newName || '新搜索引擎';
+        engine.url = newUrl;
+
+        // 如果是自定义引擎，更新localStorage
+        const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+        if (!presetIds.includes(engine.id)) {
+            saveCustomSearchEngines();
+        }
+
+        // 如果引擎在列表中显示，重新渲染
+        renderSearchEngineLists();
+
+        editSearchEngineHasChanges = false;
+
+        if (closePanel) {
+            closeEditSearchEnginePanel(false);
+        } else {
+            sendNotice('设置已应用', 'info');
+        }
+
+        return true;
+    }
+
+    // 绑定编辑搜索引擎面板事件
+    if (editSearchEngineClose) {
+        editSearchEngineClose.addEventListener('click', () => closeEditSearchEnginePanel());
+    }
+
+    if (editSearchEngineCancel) {
+        editSearchEngineCancel.addEventListener('click', () => closeEditSearchEnginePanel());
+    }
+
+    if (editSearchEngineSave) {
+        editSearchEngineSave.addEventListener('click', () => saveEditSearchEngine(true));
+    }
+
+    if (editSearchEngineApply) {
+        editSearchEngineApply.addEventListener('click', () => saveEditSearchEngine(false));
+    }
+
+    // 名称输入变化检测
+    if (editSearchEngineName) {
+        editSearchEngineName.addEventListener('input', () => {
+            editSearchEngineHasChanges = hasEditSearchEngineChanges();
+        });
+    }
+
+    // URL输入变化检测和验证
+    if (editSearchEngineUrl) {
+        editSearchEngineUrl.addEventListener('input', function() {
+            editSearchEngineHasChanges = hasEditSearchEngineChanges();
+            if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = '';
+        });
+
+        // 失焦验证
+        editSearchEngineUrl.addEventListener('blur', function() {
+            const validation = validateSearchEngineUrl(this.value);
+            if (!validation.valid && editSearchEngineUrlError) {
+                editSearchEngineUrlError.textContent = validation.message;
+            }
+        });
+    }
+
+    // 点击遮罩层关闭
+    if (editSearchEngineOverlay) {
+        editSearchEngineOverlay.addEventListener('click', () => closeEditSearchEnginePanel());
+    }
+
+    // ==================== 在列表中添加编辑按钮 ====================
+
+    // 修改renderEditShortcutCategory函数，添加编辑按钮
+    const originalRenderEditShortcutCategory = renderEditShortcutCategory;
+    renderEditShortcutCategory = function(container, items, category) {
+        container.innerHTML = '';
+
+        items.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'edit-shortcut-item';
+            div.dataset.index = index;
+
+            // 图标
+            let iconContent;
+            if (item.isPreset) {
+                iconContent = item.icon;
+            } else if (item.icon && item.icon.trim()) {
+                iconContent = '<img src="' + encodeURI(item.icon.trim()) + '" class="favicon-img" width="32" height="32" onerror="this.classList.add(\'favicon-error\')">';
+            } else {
+                iconContent = defaultIconSVG;
+            }
+
+            // 操作按钮
+            let actionButton = '';
+            const isFirst = index === 0;
+            const isLast = index === items.length - 1;
+
+            if (category === 'visible') {
+                if (item.isPreset) {
+                    actionButton = `
+                        <button class="edit-shortcut-toggle" data-category="${category}" data-index="${index}" title="隐藏到已隐藏">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14"/>
+                            </svg>
+                        </button>
+                    `;
+                } else {
+                    actionButton = `
+                        <button class="edit-shortcut-delete" data-category="${category}" data-index="${index}" title="删除">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    `;
+                }
+            } else {
+                actionButton = `
+                    <button class="edit-shortcut-toggle" data-category="${category}" data-index="${index}" title="显示到显示中">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                    </button>
+                `;
+            }
+
+            // 移动按钮（仅显示中分类有）
+            let moveButtons = '';
+            if (category === 'visible') {
+                moveButtons = `
+                    <button class="edit-shortcut-move-btn edit-shortcut-move-up" data-category="${category}" data-index="${index}" ${isFirst ? 'disabled' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 15L12 9L6 15"/>
+                        </svg>
+                    </button>
+                    <button class="edit-shortcut-move-btn edit-shortcut-move-down" data-category="${category}" data-index="${index}" ${isLast ? 'disabled' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9L12 15L18 9"/>
+                        </svg>
+                    </button>
+                `;
+            }
+
+            // 编辑按钮（仅自定义项目有）
+            let editButton = '';
+            if (!item.isPreset) {
+                editButton = `
+                    <button class="edit-shortcut-edit" data-category="${category}" data-index="${index}" title="编辑">
+                        ${svgEdit}
+                    </button>
+                `;
+            }
+
+            div.innerHTML = `
+                <div class="edit-shortcut-item-icon">${iconContent}</div>
+                <div class="edit-shortcut-item-text" title="${item.title}">
+                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
+                </div>
+                <div class="edit-shortcut-item-actions">
+                    ${moveButtons}
+                    ${editButton}
+                    ${actionButton}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        // 绑定上移按钮事件
+        container.querySelectorAll('.edit-shortcut-move-up').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const category = btn.dataset.category;
+                const index = parseInt(btn.dataset.index);
+                moveEditShortcutItem(category, index, -1);
+            });
+        });
+
+        // 绑定下移按钮事件
+        container.querySelectorAll('.edit-shortcut-move-down').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const category = btn.dataset.category;
+                const index = parseInt(btn.dataset.index);
+                moveEditShortcutItem(category, index, 1);
+            });
+        });
+
+        // 绑定删除按钮事件（自定义项目）
+        container.querySelectorAll('.edit-shortcut-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const category = btn.dataset.category;
+                const index = parseInt(btn.dataset.index);
+                confirmDialog.dataset.category = category;
+                confirmDialog.dataset.targetIndex = index;
+                openConfirmDialog('delete-custom-shortcut');
+            });
+        });
+
+        // 绑定切换分类按钮事件（预设项目）
+        container.querySelectorAll('.edit-shortcut-toggle').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const category = btn.dataset.category;
+                const index = parseInt(btn.dataset.index);
+                toggleEditShortcutCategory(category, index);
+            });
+        });
+
+        // 绑定编辑按钮事件（自定义项目）
+        container.querySelectorAll('.edit-shortcut-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const category = btn.dataset.category;
+                const index = parseInt(btn.dataset.index);
+                const items = category === 'visible' ? editShortcutVisibleItems : editShortcutHiddenItems;
+                openEditShortcutItemPanel(items[index], category, index);
+            });
+        });
+    };
+
+    // 修改renderSearchEngineCategory函数，添加编辑按钮
+    const originalRenderSearchEngineCategory = renderSearchEngineCategory;
+    renderSearchEngineCategory = function(container, engines, category) {
+        container.innerHTML = '';
+
+        // 获取预设引擎的id列表
+        const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
+
+        engines.forEach((engine, index) => {
+            const item = document.createElement('div');
+            item.className = 'search-engine-item';
+            item.dataset.engineId = engine.id;
+            const isPreset = presetIds.includes(engine.id);
+
+            // 根据分类生成不同的操作按钮
+            let actionButtons = '';
+            if (category === 'active') {
+                actionButtons = `
+                    <button class="search-engine-move-up" title="上移" ${index === 0 ? 'disabled' : ''}>${svgArrowUp}</button>
+                    <button class="search-engine-move-down" title="下移" ${index === engines.length - 1 ? 'disabled' : ''}>${svgArrowDown}</button>
+                    <button class="search-engine-disable" title="移至未使用" data-engine-id="${engine.id}">${svgMinus}</button>
+                `;
+            } else if (category === 'preset') {
+                actionButtons = `
+                    <button class="search-engine-enable" title="移至使用中" data-engine-id="${engine.id}">${svgPlus}</button>
+                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" disabled>${svgClose}</button>
+                `;
+            } else {
+                actionButtons = `
+                    <button class="search-engine-enable" title="移至使用中" data-engine-id="${engine.id}">${svgPlus}</button>
+                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" ${isPreset ? 'disabled' : ''}>${svgClose}</button>
+                `;
+            }
+
+            // 编辑按钮（仅自定义引擎有）
+            let editButton = '';
+            if (!isPreset) {
+                editButton = `
+                    <button class="search-engine-edit" title="编辑" data-engine-id="${engine.id}">${svgEdit}</button>
+                `;
+            }
+
+            item.innerHTML = `
+                <div class="search-engine-item-icon">${engine.icon}</div>
+                <span class="search-engine-item-name">
+                    ${isPreset ? '<span class="preset-tag">预设</span>' : ''}${engine.title}
+                </span>
+                <div class="search-engine-item-actions">
+                    ${actionButtons}
+                    ${editButton}
+                </div>
+            `;
+
+            // 绑定上移按钮事件
+            const moveUp = item.querySelector('.search-engine-move-up');
+            if (moveUp) {
+                moveUp.addEventListener('click', () => moveSearchEngine(engine.id, -1, category));
+            }
+
+            // 绑定下移按钮事件
+            const moveDown = item.querySelector('.search-engine-move-down');
+            if (moveDown) {
+                moveDown.addEventListener('click', () => moveSearchEngine(engine.id, 1, category));
+            }
+
+            // 绑定移至未使用按钮事件
+            const disableBtn = item.querySelector('.search-engine-disable');
+            if (disableBtn) {
+                disableBtn.addEventListener('click', () => disableSearchEngine(engine.id));
+            }
+
+            // 绑定移至使用中按钮事件
+            const enableBtn = item.querySelector('.search-engine-enable');
+            if (enableBtn) {
+                enableBtn.addEventListener('click', () => enableSearchEngine(engine.id, isPreset ? 'preset' : 'custom'));
+            }
+
+            // 绑定删除按钮事件
+            const deleteBtn = item.querySelector('.search-engine-delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => deleteSearchEngine(engine.id));
+            }
+
+            // 绑定编辑按钮事件
+            const editBtn = item.querySelector('.search-engine-edit');
+            if (editBtn) {
+                editBtn.addEventListener('click', () => openEditSearchEnginePanel(engine, category, index));
+            }
+
+            container.appendChild(item);
+        });
+    };
+
+    // 添加确认对话框操作
+    confirmActions['discard-edit-shortcut'] = {
+        title: '放弃更改',
+        message: '有未保存的更改，确定要放弃吗？',
+        onOk: function() {
+            editShortcutItemHasChanges = false;
+            closeEditShortcutItemPanel(false);
+        }
+    };
+
+    confirmActions['discard-edit-search-engine'] = {
+        title: '放弃更改',
+        message: '有未保存的更改，确定要放弃吗？',
+        onOk: function() {
+            editSearchEngineHasChanges = false;
+            closeEditSearchEnginePanel(false);
+        }
+    };
+
+    // ESC键关闭编辑面板
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+
+        // 编辑快捷访问项目面板
+        if (editShortcutItemPanel && editShortcutItemPanel.classList.contains('active')) {
+            closeEditShortcutItemPanel();
+            return;
+        }
+
+        // 编辑搜索引擎项目面板
+        if (editSearchEnginePanel && editSearchEnginePanel.classList.contains('active')) {
+            closeEditSearchEnginePanel();
+            return;
+        }
+    });
+
     // 初始化搜索引擎设置
     loadSearchEnginesForSettings();
 });

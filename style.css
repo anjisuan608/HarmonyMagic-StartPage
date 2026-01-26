@@ -1805,6 +1805,30 @@ body[data-filter-disabled="true"]::after {
     color: #c62828;
 }
 
+/* 编辑按钮样式 */
+.edit-shortcut-edit {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.edit-shortcut-edit svg {
+    width: 14px;
+    height: 14px;
+    fill: #666;
+}
+
+.edit-shortcut-edit:hover {
+    background: #e0e0e0;
+}
+
 .edit-shortcut-buttons {
     display: flex;
     gap: 12px;
@@ -2608,6 +2632,30 @@ body[data-filter-disabled="true"]::after {
 
 .search-engine-delete:disabled:hover svg {
     fill: #666;
+}
+
+/* 编辑按钮样式 - 与其他操作按钮风格一致 */
+.search-engine-edit {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.search-engine-edit svg {
+    width: 14px;
+    height: 14px;
+    fill: #666;
+}
+
+.search-engine-edit:hover {
+    background: #e0e0e0;
 }
 
 .search-engine-buttons {

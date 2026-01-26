@@ -4667,24 +4667,49 @@ document.addEventListener('DOMContentLoaded', async function() {
             item.className = 'search-engine-item';
             item.dataset.engineId = engine.id;
             const isPreset = presetIds.includes(engine.id);
+            const isFirst = index === 0;
+            const isLast = index === engines.length - 1;
+
+            // 移动按钮（仅使用中分类有）
+            let moveButtons = '';
+            if (category === 'active') {
+                moveButtons = `
+                    <button class="search-engine-move-btn search-engine-move-up" title="上移" ${isFirst ? 'disabled' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 15L12 9L6 15"/>
+                        </svg>
+                    </button>
+                    <button class="search-engine-move-btn search-engine-move-down" title="下移" ${isLast ? 'disabled' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9L12 15L18 9"/>
+                        </svg>
+                    </button>
+                `;
+            }
 
             // 根据分类生成不同的操作按钮
             let actionButtons = '';
             if (category === 'active') {
                 actionButtons = `
-                    <button class="search-engine-move-up" title="上移" ${index === 0 ? 'disabled' : ''}>${svgArrowUp}</button>
-                    <button class="search-engine-move-down" title="下移" ${index === engines.length - 1 ? 'disabled' : ''}>${svgArrowDown}</button>
                     <button class="search-engine-disable" title="移至未使用" data-engine-id="${engine.id}">${svgMinus}</button>
                 `;
             } else if (category === 'preset') {
                 actionButtons = `
                     <button class="search-engine-enable" title="移至使用中" data-engine-id="${engine.id}">${svgPlus}</button>
-                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" disabled>${svgClose}</button>
+                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
                 `;
             } else {
                 actionButtons = `
                     <button class="search-engine-enable" title="移至使用中" data-engine-id="${engine.id}">${svgPlus}</button>
-                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" ${isPreset ? 'disabled' : ''}>${svgClose}</button>
+                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" ${isPreset ? 'disabled' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
                 `;
             }
 
@@ -4702,8 +4727,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     ${isPreset ? '<span class="preset-tag">预设</span>' : ''}${engine.title}
                 </span>
                 <div class="search-engine-item-actions">
-                    ${actionButtons}
+                    ${moveButtons}
                     ${editButton}
+                    ${actionButtons}
                 </div>
             `;
 

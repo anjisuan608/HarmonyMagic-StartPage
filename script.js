@@ -3774,6 +3774,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!url.trim()) {
             return { valid: false, message: 'URL不能为空' };
         }
+        // 检查协议是否为 http、https 或 ftp
+        const trimmedUrl = url.trim();
+        if (!/^https?:\/\//i.test(trimmedUrl) && !/^ftp:\/\//i.test(trimmedUrl)) {
+            return { valid: false, message: 'URL协议不支持，仅支持 http://、https:// 和 ftp://' };
+        }
         if (!url.includes('%s')) {
             return { valid: false, message: 'URL中必须包含 %s 作为搜索关键词占位符' };
         }

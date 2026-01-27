@@ -1541,23 +1541,43 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupInputMethodHandlers();
     setupViewportHandler();
 
-    // 动态加载壁纸
-    function loadWallpaper() {
-        const wallpaperUrl = 'https://www.bing.com/th?id=OHR.BubblesAbraham_ZH-CN7203734882_1920x1080.jpg';
-        const img = new Image();
+    // 动态加载壁纸（从XML读取id=1的预设壁纸）
+    async function loadWallpaper() {
+        try {
+            const response = await fetch('wallpaper.xml');
+            if (!response.ok) throw new Error('加载壁纸XML失败');
+            const text = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, 'text/xml');
 
-        img.onload = function() {
-            // 使用CSS变量设置背景图片，CSS负责渲染
-            document.documentElement.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
-        };
+            // 获取 id=1 的壁纸URL
+            const wpElement = xmlDoc.querySelector('wallpaper[id="1"]');
+            if (!wpElement) {
+                networkTimeoutNotice('未找到默认壁纸');
+                return;
+            }
 
-        img.onerror = function() {
+            const wallpaperUrl = wpElement.querySelector('url')?.textContent;
+            if (!wallpaperUrl) {
+                networkTimeoutNotice('默认壁纸URL无效');
+                return;
+            }
+
+            // 加载壁纸
+            const img = new Image();
+            img.onload = function() {
+                document.documentElement.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
+            };
+            img.onerror = function() {
+                networkTimeoutNotice('壁纸加载失败');
+            };
+            img.src = wallpaperUrl;
+        } catch (e) {
+            console.error('加载壁纸失败:', e);
             networkTimeoutNotice('壁纸加载失败');
-        };
-
-        img.src = wallpaperUrl;
+        }
     }
-    
+
     // 启动壁纸加载
     loadWallpaper();
 
@@ -2107,27 +2127,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 应用壁纸
     function applyWallpaper(settings) {
         let wallpaperUrl = '';
-        
+
         if (settings.id === 0) {
-            // 自定义壁纸
-            wallpaperUrl = settings.customUrl;
-        } else if (presetWallpapers[settings.id]) {
-            // 预设壁纸 - 直接获取URL并保存
-            wallpaperUrl = presetWallpapers[settings.id];
+            // 自定义壁纸 - 从localStorage读取
+            wallpaperUrl = settings.customUrl || '';
         } else {
-            // 预设壁纸但URL未加载（异步问题），尝试使用已保存的URL
-            const savedUrl = getLocalStorageItem('wallpaper_url');
-            if (savedUrl) {
-                wallpaperUrl = savedUrl;
-            } else {
-                // 默认使用 id 1
-                wallpaperUrl = presetWallpapers[1];
-            }
+            // 预设壁纸 - 从XML读取（presetWallpapers在面板打开时已加载）
+            wallpaperUrl = presetWallpapers[settings.id] || presetWallpapers[1] || '';
         }
 
         if (wallpaperUrl) {
             document.body.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
-            setLocalStorageItem('wallpaper_url', wallpaperUrl);
         }
     }
 
@@ -2266,16 +2276,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             onOk: function() {
                 // 清除壁纸设置localStorage
                 removeLocalStorageItem('wallpaper_settings');
-                // 清除壁纸URL localStorage
-                removeLocalStorageItem('wallpaper_url');
                 // 重置壁纸URL样式
                 document.body.style.setProperty('--wallpaper-url', 'none');
-                // 清除自定义壁纸缓存
-                localStorage.removeItem('custom_wallpaper');
-                // 清除自定义壁纸URL缓存
-                localStorage.removeItem('custom_wallpaper_url');
                 // 应用默认壁纸
-                const defaultSettings = { id: 1, customUrl: '', customMode: 'cover' };
+                const defaultSettings = { id: 1, customUrl: '', customMode: 'local' };
                 applyWallpaper(defaultSettings);
                 // 刷新壁纸设置面板显示
                 loadWallpaperSettings();
@@ -4104,14 +4108,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // 初始化壁纸设置
-    function initWallpaper() {
+    async function initWallpaper() {
         const saved = getLocalStorageItem('wallpaper_settings');
-        if (saved) {
+        let settings = saved ? JSON.parse(saved) : { id: 1, customUrl: '', customMode: 'local' };
+
+        // 如果预设壁纸还没加载，先加载XML
+        if (Object.keys(presetWallpapers).length === 0) {
             try {
-                applyWallpaper(saved);
+                const response = await fetch('wallpaper.xml');
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, 'text/xml');
+                const wallpaperElements = xmlDoc.querySelectorAll('wallpaper');
+                wallpaperElements.forEach(wp => {
+                    const id = parseInt(wp.getAttribute('id'));
+                    const url = wp.querySelector('url')?.textContent || '';
+                    presetWallpapers[id] = url;
+                });
             } catch (e) {
-                console.error('初始化壁纸失败:', e);
+                console.error('初始化加载壁纸XML失败:', e);
             }
+        }
+
+        try {
+            applyWallpaper(settings);
+        } catch (e) {
+            console.error('初始化壁纸失败:', e);
         }
     }
     initWallpaper();

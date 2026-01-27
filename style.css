@@ -1768,6 +1768,11 @@ body[data-filter-disabled="true"]::after {
     background: #e0e0e0;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .edit-shortcut-header-btns .settings-reset-btn:hover {
+    background: #3a3a3a;
+}
+
 .edit-shortcut-header-btns .settings-close {
     padding: 6px 8px;
     margin: 0;
@@ -1789,9 +1794,20 @@ body[data-filter-disabled="true"]::after {
     transition: background-color 0.2s;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .settings-reset-btn {
+    color: #e0e0e0;
+}
+
 .settings-reset-btn:hover {
     background: #f0f0f0;
     color: #333;
+}
+
+/* 深色模式悬停适配 */
+[data-theme="dark"] .settings-reset-btn:hover {
+    background: #3a3a3a;
+    color: #ffffff;
 }
 
 /* 编辑面板隐藏按钮样式 */
@@ -2067,6 +2083,11 @@ body[data-filter-disabled="true"]::after {
     border-top: 1px solid #eee;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .edit-shortcut-buttons {
+    border-color: #404040;
+}
+
 .edit-shortcut-btn {
     padding: 10px 20px;
     border: none;
@@ -2083,6 +2104,16 @@ body[data-filter-disabled="true"]::after {
 
 .edit-shortcut-cancel:hover {
     background: #e0e0e0;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .edit-shortcut-cancel {
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .edit-shortcut-cancel:hover {
+    background: #4a4a4a;
 }
 
 .edit-shortcut-apply {
@@ -2280,6 +2311,11 @@ body[data-filter-disabled="true"]::after {
     font-weight: 500;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .wallpaper-section-label {
+    color: #b0b0b0;
+}
+
 .wallpaper-custom-row {
     display: flex;
     gap: 20px;
@@ -2297,6 +2333,11 @@ body[data-filter-disabled="true"]::after {
     cursor: pointer;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .wallpaper-preview {
+    background: #3a3a3a;
+}
+
 .wallpaper-preview-img {
     width: 100%;
     height: 100%;
@@ -2311,6 +2352,12 @@ body[data-filter-disabled="true"]::after {
     align-items: center;
     justify-content: center;
     position: relative;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .wallpaper-preview-img {
+    background-color: #3a3a3a;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .wallpaper-preview-img > svg {
@@ -2364,6 +2411,16 @@ body[data-filter-disabled="true"]::after {
     background: #E8E8E8;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .wallpaper-tab-btn {
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .wallpaper-tab-btn:hover {
+    background: #4a4a4a;
+}
+
 .wallpaper-tab-btn.active {
     background: #4CAF50;
     color: white;
@@ -2390,6 +2447,18 @@ body[data-filter-disabled="true"]::after {
     font-size: 14px;
     outline: none;
     transition: all 0.3s;
+    color: #333;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .wallpaper-input {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .wallpaper-input::placeholder {
+    color: #888;
 }
 
 .wallpaper-input:focus {
@@ -2413,9 +2482,20 @@ body[data-filter-disabled="true"]::after {
     transition: all 0.3s;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .wallpaper-browse-btn {
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
 .wallpaper-browse-btn:hover {
     background: #E8E8E8;
     transform: translateY(-1px);
+}
+
+/* 深色模式悬停适配 */
+[data-theme="dark"] .wallpaper-browse-btn:hover {
+    background: #4a4a4a;
 }
 
 .wallpaper-presets {
@@ -2920,6 +3000,16 @@ body[data-filter-disabled="true"]::after {
 
 .search-engine-cancel:hover {
     background: #e8e8e8;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .search-engine-cancel {
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .search-engine-cancel:hover {
+    background: #4a4a4a;
 }
 
 .search-engine-apply,

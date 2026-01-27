@@ -3990,30 +3990,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // 获取页面标题（使用多个代理服务）
-    async function fetchPageTitle(url, signal) {
-        const proxyServices = [
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://api.codetabs.com/v1/proxy?quest='
-        ];
-        
-        for (const service of proxyServices) {
-            try {
-                const proxyUrl = service + encodeURIComponent(url);
-                const response = await fetch(proxyUrl, { signal });
-                if (!response.ok) continue;
-                const text = await response.text();
-                const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
-                if (titleMatch) return titleMatch[1].trim();
-            } catch (e) {
-                if (e.name === 'AbortError') throw e;
-                continue;
-            }
-        }
-        return null;
-    }
-
     // 打开添加快捷方式面板
     function openAddShortcutPanel() {
         if (addShortcutPanel) {
@@ -4123,21 +4099,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // favicon获取失败时不填充输入框
             };
             img.src = faviconUrl;
-        }
-        
-        // 只有用户未手动输入标题时才获取标题
-        if (!userHasEnteredTitle) {
-            try {
-                const title = await fetchPageTitle(url, addPanelAbortController.signal);
-                if (addPanelAbortController.signal.aborted) return;
-                if (title) {
-                    addShortcutName.value = title;
-                }
-            } catch (e) {
-                if (e.name !== 'AbortError') {
-                    console.log('获取标题失败:', e);
-                }
-            }
         }
     });
 

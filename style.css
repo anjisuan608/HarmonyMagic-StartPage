@@ -768,6 +768,12 @@ body[data-filter-disabled="true"]::after {
     text-align: center;
 }
 
+/* 深色模式适配：添加和编辑按钮 */
+[data-theme="dark"] .menu-item[data-action="add"] .menu-icon svg path,
+[data-theme="dark"] .menu-item[data-action="edit"] .menu-icon svg path {
+    fill: #e0e0e099 !important;
+}
+
 @media (max-width: 768px) {
     #time {
         font-size: 2.5rem;
@@ -1532,6 +1538,12 @@ body[data-filter-disabled="true"]::after {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .confirm-dialog-content {
+    background: #2d2d2d;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
 .confirm-dialog.active .confirm-dialog-content {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1550,11 +1562,21 @@ body[data-filter-disabled="true"]::after {
     color: #333333;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .confirm-dialog-title {
+    color: #e0e0e0;
+}
+
 .confirm-dialog-message {
     font-size: 14px;
     color: #666666;
     margin-bottom: 20px;
     line-height: 1.5;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .confirm-dialog-message {
+    color: #b0b0b0;
 }
 
 .confirm-dialog-actions {
@@ -1579,6 +1601,16 @@ body[data-filter-disabled="true"]::after {
 
 .confirm-dialog-cancel:hover {
     background: #EEEEEE;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .confirm-dialog-cancel {
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .confirm-dialog-cancel:hover {
+    background: #4a4a4a;
 }
 
 .confirm-dialog-ok {

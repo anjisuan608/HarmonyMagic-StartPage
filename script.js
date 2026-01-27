@@ -513,19 +513,29 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 共享的搜索引擎JSON加载函数（避免重复请求）
     let searchEngineJsonLoaded = false;
     let searchEngineJsonData = null;
+    let searchEngineJsonPromise = null; // Promise 锁，防止并发请求
     async function loadSearchEngineJson() {
         if (searchEngineJsonLoaded && searchEngineJsonData) return searchEngineJsonData;
 
-        try {
-            const response = await fetch('search-engine.json');
-            if (!response.ok) throw new Error('Failed to load search-engine.json');
-            searchEngineJsonData = await response.json();
-            searchEngineJsonLoaded = true;
-            return searchEngineJsonData;
-        } catch (e) {
-            console.error('加载搜索引擎JSON失败:', e);
-            return null;
-        }
+        // 如果已有请求在进行中，等待它完成
+        if (searchEngineJsonPromise) return searchEngineJsonPromise;
+
+        searchEngineJsonPromise = (async () => {
+            try {
+                const response = await fetch('search-engine.json');
+                if (!response.ok) throw new Error('Failed to load search-engine.json');
+                searchEngineJsonData = await response.json();
+                searchEngineJsonLoaded = true;
+                return searchEngineJsonData;
+            } catch (e) {
+                console.error('加载搜索引擎JSON失败:', e);
+                return null;
+            } finally {
+                searchEngineJsonPromise = null; // 请求完成后重置
+            }
+        })();
+
+        return searchEngineJsonPromise;
     }
 
     // 加载搜索引擎数据
@@ -1555,21 +1565,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 共享的壁纸XML加载函数（避免重复请求）
     let wallpaperXmlLoaded = false;
     let wallpaperXmlDoc = null;
+    let wallpaperXmlPromise = null; // Promise 锁，防止并发请求
     async function loadWallpaperXml() {
         if (wallpaperXmlLoaded && wallpaperXmlDoc) return wallpaperXmlDoc;
 
-        try {
-            const response = await fetch('wallpaper.xml');
-            if (!response.ok) throw new Error('加载壁纸XML失败');
-            const text = await response.text();
-            const parser = new DOMParser();
-            wallpaperXmlDoc = parser.parseFromString(text, 'text/xml');
-            wallpaperXmlLoaded = true;
-            return wallpaperXmlDoc;
-        } catch (e) {
-            console.error('加载壁纸XML失败:', e);
-            return null;
-        }
+        // 如果已有请求在進行中，等待它完成
+        if (wallpaperXmlPromise) return wallpaperXmlPromise;
+
+        wallpaperXmlPromise = (async () => {
+            try {
+                const response = await fetch('wallpaper.xml');
+                if (!response.ok) throw new Error('加载壁纸XML失败');
+                const text = await response.text();
+                const parser = new DOMParser();
+                wallpaperXmlDoc = parser.parseFromString(text, 'text/xml');
+                wallpaperXmlLoaded = true;
+                return wallpaperXmlDoc;
+            } catch (e) {
+                console.error('加载壁纸XML失败:', e);
+                return null;
+            } finally {
+                wallpaperXmlPromise = null; // 请求完成后重置
+            }
+        })();
+
+        return wallpaperXmlPromise;
     }
 
     // 动态加载壁纸（仅在未设置壁纸时加载默认壁纸）

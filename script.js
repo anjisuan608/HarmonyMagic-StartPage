@@ -4110,7 +4110,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 初始化壁纸设置
     async function initWallpaper() {
         const saved = getLocalStorageItem('wallpaper_settings');
-        let settings = saved ? JSON.parse(saved) : { id: 1, customUrl: '', customMode: 'local' };
+        let settings = saved || { id: 1, customUrl: '', customMode: 'local' };
 
         // 如果预设壁纸还没加载，先加载XML
         if (Object.keys(presetWallpapers).length === 0) {

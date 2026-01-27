@@ -510,42 +510,53 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 设置事件委托（只绑定一次）
     setupMenuItemDelegation();
 
-    // 加载搜索引擎数据
-    async function loadSearchEngines() {
+    // 共享的搜索引擎JSON加载函数（避免重复请求）
+    let searchEngineJsonLoaded = false;
+    let searchEngineJsonData = null;
+    async function loadSearchEngineJson() {
+        if (searchEngineJsonLoaded && searchEngineJsonData) return searchEngineJsonData;
+
         try {
             const response = await fetch('search-engine.json');
-            if (!response.ok) {
-                throw new Error('Failed to load search-engine.json');
-            }
-            const data = await response.json();
-            
-            // 如果是重置，先清空现有数据
-            if (!searchEngineData) {
-                searchEngineData = { engines: [] };
-                searchEngines = {};
-            }
-            
-            // 重新填充预设引擎
-            searchEngineData.engines = data.engines.slice();
-            // 记录预设引擎数量（用于区分预设和自定义）
-            presetEngineCount = data.engines.length;
-            
-            // 创建引擎ID到引擎信息的映射
-            data.engines.forEach(engine => {
-                searchEngines[engine.id] = engine;
-            });
-            
-            // 从localStorage加载自定义搜索引擎
-            loadCustomSearchEngines();
-            
-            // 从localStorage加载搜索引擎设置
-            loadSearchEngineSettings();
-            
-            // 渲染搜索引擎图标和搜索按钮
-            renderSearchEngineIcons();
-        } catch (error) {
-            console.error('Error loading search engine data:', error);
+            if (!response.ok) throw new Error('Failed to load search-engine.json');
+            searchEngineJsonData = await response.json();
+            searchEngineJsonLoaded = true;
+            return searchEngineJsonData;
+        } catch (e) {
+            console.error('加载搜索引擎JSON失败:', e);
+            return null;
         }
+    }
+
+    // 加载搜索引擎数据
+    async function loadSearchEngines() {
+        const data = await loadSearchEngineJson();
+        if (!data) return;
+
+        // 如果是重置，先清空现有数据
+        if (!searchEngineData) {
+            searchEngineData = { engines: [] };
+            searchEngines = {};
+        }
+
+        // 重新填充预设引擎
+        searchEngineData.engines = data.engines.slice();
+        // 记录预设引擎数量（用于区分预设和自定义）
+        presetEngineCount = data.engines.length;
+
+        // 创建引擎ID到引擎信息的映射
+        data.engines.forEach(engine => {
+            searchEngines[engine.id] = engine;
+        });
+
+        // 从localStorage加载自定义搜索引擎
+        loadCustomSearchEngines();
+
+        // 从localStorage加载搜索引擎设置
+        loadSearchEngineSettings();
+
+        // 渲染搜索引擎图标和搜索按钮
+        renderSearchEngineIcons();
     }
 
     // 渲染搜索引擎图标和搜索按钮（根据activeEngines动态渲染）
@@ -1541,48 +1552,61 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupInputMethodHandlers();
     setupViewportHandler();
 
-    // 动态加载壁纸（仅在未设置壁纸时加载默认壁纸）
-    async function loadWallpaper() {
-        // 检查是否已有用户设置
-        const saved = getLocalStorageItem('wallpaper_settings');
-        if (saved) {
-            // 用户已设置壁纸，由 initWallpaper 处理
-            return;
-        }
+    // 共享的壁纸XML加载函数（避免重复请求）
+    let wallpaperXmlLoaded = false;
+    let wallpaperXmlDoc = null;
+    async function loadWallpaperXml() {
+        if (wallpaperXmlLoaded && wallpaperXmlDoc) return wallpaperXmlDoc;
 
         try {
             const response = await fetch('wallpaper.xml');
             if (!response.ok) throw new Error('加载壁纸XML失败');
             const text = await response.text();
             const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, 'text/xml');
-
-            // 获取 id=1 的壁纸URL
-            const wpElement = xmlDoc.querySelector('wallpaper[id="1"]');
-            if (!wpElement) {
-                networkTimeoutNotice('未找到默认壁纸');
-                return;
-            }
-
-            const wallpaperUrl = wpElement.querySelector('url')?.textContent;
-            if (!wallpaperUrl) {
-                networkTimeoutNotice('默认壁纸URL无效');
-                return;
-            }
-
-            // 加载壁纸
-            const img = new Image();
-            img.onload = function() {
-                document.documentElement.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
-            };
-            img.onerror = function() {
-                networkTimeoutNotice('壁纸加载失败');
-            };
-            img.src = wallpaperUrl;
+            wallpaperXmlDoc = parser.parseFromString(text, 'text/xml');
+            wallpaperXmlLoaded = true;
+            return wallpaperXmlDoc;
         } catch (e) {
-            console.error('加载壁纸失败:', e);
-            networkTimeoutNotice('壁纸加载失败');
+            console.error('加载壁纸XML失败:', e);
+            return null;
         }
+    }
+
+    // 动态加载壁纸（仅在未设置壁纸时加载默认壁纸）
+    async function loadWallpaper() {
+        // 检查是否已有用户设置
+        const saved = getLocalStorageItem('wallpaper_settings');
+        if (saved) {
+            return;
+        }
+
+        const xmlDoc = await loadWallpaperXml();
+        if (!xmlDoc) {
+            networkTimeoutNotice('加载壁纸XML失败');
+            return;
+        }
+
+        const wpElement = xmlDoc.querySelector('wallpaper[id="1"]');
+        if (!wpElement) {
+            networkTimeoutNotice('未找到默认壁纸');
+            return;
+        }
+
+        const wallpaperUrl = wpElement.querySelector('url')?.textContent;
+        if (!wallpaperUrl) {
+            networkTimeoutNotice('默认壁纸URL无效');
+            return;
+        }
+
+        // 加载壁纸
+        const img = new Image();
+        img.onload = function() {
+            document.documentElement.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
+        };
+        img.onerror = function() {
+            networkTimeoutNotice('壁纸加载失败');
+        };
+        img.src = wallpaperUrl;
     }
 
     // 启动壁纸加载
@@ -2639,35 +2663,30 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 加载搜索引擎数据（用于设置面板）
     async function loadSearchEnginesForSettings() {
-        try {
-            const response = await fetch('search-engine.json');
-            if (!response.ok) throw new Error('Failed to load search-engine.json');
-            const data = await response.json();
-            
-            // 如果是重置，先清空现有数据
-            if (!searchEngineData) {
-                searchEngineData = { engines: [] };
-                searchEngines = {};
-            }
-            
-            // 重新填充预设引擎
-            searchEngineData.engines = data.engines.slice();
-            // 记录预设引擎数量（用于区分预设和自定义）
-            presetEngineCount = data.engines.length;
-            
-            // 构建搜索引擎映射
-            data.engines.forEach(engine => {
-                searchEngines[engine.id] = engine;
-            });
-            
-            // 从localStorage加载自定义搜索引擎（确保设置面板能看到自定义引擎）
-            loadCustomSearchEngines();
-            
-            // 从localStorage加载设置
-            loadSearchEngineSettings();
-        } catch (e) {
-            console.error('加载搜索引擎数据失败:', e);
+        const data = await loadSearchEngineJson();
+        if (!data) return;
+
+        // 如果是重置，先清空现有数据
+        if (!searchEngineData) {
+            searchEngineData = { engines: [] };
+            searchEngines = {};
         }
+
+        // 重新填充预设引擎
+        searchEngineData.engines = data.engines.slice();
+        // 记录预设引擎数量（用于区分预设和自定义）
+        presetEngineCount = data.engines.length;
+
+        // 构建搜索引擎映射
+        data.engines.forEach(engine => {
+            searchEngines[engine.id] = engine;
+        });
+
+        // 从localStorage加载自定义搜索引擎（确保设置面板能看到自定义引擎）
+        loadCustomSearchEngines();
+
+        // 从localStorage加载设置
+        loadSearchEngineSettings();
     }
 
     // 从localStorage加载自定义搜索引擎
@@ -4136,21 +4155,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const saved = getLocalStorageItem('wallpaper_settings');
         let settings = saved || { id: 1, customUrl: '', customMode: 'local' };
 
-        // 如果预设壁纸还没加载，先加载XML
+        // 如果预设壁纸还没加载，使用共享函数加载XML
         if (Object.keys(presetWallpapers).length === 0) {
-            try {
-                const response = await fetch('wallpaper.xml');
-                const text = await response.text();
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(text, 'text/xml');
+            const xmlDoc = await loadWallpaperXml();
+            if (xmlDoc) {
                 const wallpaperElements = xmlDoc.querySelectorAll('wallpaper');
                 wallpaperElements.forEach(wp => {
                     const id = parseInt(wp.getAttribute('id'));
                     const url = wp.querySelector('url')?.textContent || '';
                     presetWallpapers[id] = url;
                 });
-            } catch (e) {
-                console.error('初始化加载壁纸XML失败:', e);
             }
         }
 

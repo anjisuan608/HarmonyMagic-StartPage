@@ -2132,7 +2132,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // 应用壁纸
-    function applyWallpaper(settings) {
+    function applyWallpaper(settings, retryWithDefault = false) {
         let wallpaperUrl = '';
 
         if (settings.id === 0) {
@@ -2140,11 +2140,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             wallpaperUrl = settings.customUrl || '';
         } else {
             // 预设壁纸 - 从XML读取（presetWallpapers在面板打开时已加载）
-            wallpaperUrl = presetWallpapers[settings.id] || presetWallpapers[1] || '';
+            wallpaperUrl = presetWallpapers[settings.id] || '';
+        }
+
+        // 如果找不到或需要重试，使用默认壁纸id=1
+        if (!wallpaperUrl || retryWithDefault) {
+            wallpaperUrl = presetWallpapers[1] || '';
         }
 
         if (wallpaperUrl) {
-            document.body.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
+            // 加载壁纸并处理失败情况
+            const img = new Image();
+            img.onload = function() {
+                document.body.style.setProperty('--wallpaper-url', `url('${wallpaperUrl}')`);
+            };
+            img.onerror = function() {
+                console.warn(`壁纸加载失败: ${wallpaperUrl}, 尝试使用默认壁纸`);
+                // 如果当前不是默认壁纸，尝试使用id=1的默认壁纸
+                if (settings.id !== 1) {
+                    applyWallpaper({ id: 1, customUrl: '', customMode: 'local' }, true);
+                }
+            };
+            img.src = wallpaperUrl;
         }
     }
 

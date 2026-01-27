@@ -3555,10 +3555,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <button class="search-engine-disable" title="移至未使用" data-engine-id="${engine.id}">${svgMinus}</button>
                 `;
             } else if (category === 'preset') {
-                // 未使用的预设：显示移至使用中、删除（禁用）
+                // 未使用的预设：显示移至使用中
                 actionButtons = `
                     <button class="search-engine-enable" title="移至使用中" data-engine-id="${engine.id}">${svgPlus}</button>
-                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" disabled>${svgClose}</button>
                 `;
             } else {
                 // 未使用的自定义：显示移至使用中、删除
@@ -5509,11 +5508,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             } else if (category === 'preset') {
                 actionButtons = `
                     <button class="search-engine-enable" title="移至使用中" data-engine-id="${engine.id}">${svgPlus}</button>
-                    <button class="search-engine-delete" title="删除" data-engine-id="${engine.id}" disabled>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                        </svg>
-                    </button>
                 `;
             } else {
                 actionButtons = `

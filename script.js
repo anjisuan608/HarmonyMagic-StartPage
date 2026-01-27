@@ -28,6 +28,632 @@ Harmony Magic Start Page
 Licensed under GPLv3
 `);
 
+// ==================== 安全防护模块 (Security Module) ====================
+// 
+// 提供用户输入防注入保护，支持以下功能：
+// - XSS防护（HTML转义、Script过滤、事件处理器移除）
+// - URL安全验证（白名单协议、危险协议阻断）
+// - 数据绑定安全（innerHTML安全插入）
+// - 可配置安全级别（宽松/标准/严格）
+// - PHP代码过滤（默认禁用）
+// - SQL注入过滤（默认禁用）
+//
+// 使用方法：
+// Security.sanitize(input)                    // 默认标准级净化
+// Security.sanitize(input, 'strict')          // 严格模式
+// Security.sanitizeUrl(url)                   // URL安全验证
+// Security.sanitizeHtml(html, 'text')         // HTML安全净化（text模式转义所有标签）
+// Security.setConfig({...})                   // 自定义配置
+//
+// 启用控制：
+// Security.enable('xss')          // 启用XSS防护
+// Security.enable('url')          // 启用URL验证
+// Security.enable('html')         // 启用HTML净化
+// Security.enable('php')          // 启用PHP过滤
+// Security.enable('sql')          // 启用SQL过滤
+// Security.enableAll()            // 启用所有防护
+// Security.disableAll()           // 禁用所有防护（不推荐）
+
+const Security = (function() {
+    'use strict';
+    
+    // ==================== 默认配置 ====================
+    const defaultConfig = {
+        // XSS防护配置
+        xss: {
+            enabled: true,                        // 是否启用XSS防护
+            escapeHtml: true,                     // HTML转义
+            removeScript: true,                   // 移除Script标签
+            removeStyle: true,                    // 移除Style标签（防止CSS注入）
+            removeEventHandlers: true,            // 移除事件处理器(onclick等)
+            removeDangerousAttrs: true,           // 移除危险属性(href中的javascript:等)
+            allowSafeTags: ['b', 'i', 'u', 'strong', 'em', 'br', 'p', 'span', 'div'], // 允许的HTML标签
+            blockUrls: ['javascript:', 'data:', 'vbscript:'],                          // 阻断的URL协议
+        },
+        // URL验证配置
+        url: {
+            enabled: true,                        // 是否启用URL验证
+            allowedProtocols: ['http:', 'https:', 'ftp:', 'mailto:', '/'],            // 允许的协议
+            blockLocal: true,                     // 阻断本地文件访问(file://)
+            maxUrlLength: 2048,                   // 最大URL长度
+        },
+        // HTML净化配置
+        html: {
+            enabled: true,                        // 是否启用HTML净化
+            mode: 'text',                         // 模式：'text'(转义所有标签) | 'safe'(允许安全标签)
+            allowAttributes: ['class', 'style'],  // 允许的属性
+        },
+        // 搜索框专用配置（已禁用，所有输入直接传给搜索引擎）
+        search: {
+            enabled: false,    // 搜索框不做任何过滤，允许用户输入代码/HTML等
+        },
+        // PHP代码过滤（默认禁用）
+        // 启用方式：Security.config.phpFilter.enabled = true; Security.config.phpFilter.mode = 'block'; 
+        php: {
+            enabled: false,                       // 是否启用PHP代码过滤
+            mode: 'block',                        // 模式：'block'(阻断) | 'remove'(移除)
+            patterns: [
+                /<\?php/i,                        // PHP标签开始
+                /\?>/i,                           // PHP标签结束
+                /<\?(?!xml)/i,                    // PHP短标签（排除<?xml）
+                /\$\w+\s*\(/i,                    // PHP函数调用（如 eval(）
+                /\$\{(GLOBALS|_SERVER|_GET|_POST|_COOKIE|_SESSION|FILES)\}/i, // PHP超全局变量
+                /\b(eval|exec|system|passthru|shell_exec|popen|proc_open|curl_exec|curl_multi_exec|parse_ini_file|show_source)\s*\(/i, // 危险函数
+                /\b(base64_decode|gzinflate|str_rot13|pack|unpack)\s*\(/i, // 混淆函数
+            ],
+            blockMessage: '输入包含不允许的PHP代码',
+        },
+        // SQL注入过滤（默认禁用）
+        // 启用方式：Security.config.sqlFilter.enabled = true;
+        sql: {
+            enabled: false,                       // 是否启用SQL注入过滤
+            mode: 'block',                        // 模式：'block'(阻断) | 'remove'(移除)
+            // SQL注入特征模式
+            patterns: [
+                /(\%27)|(\')|(\-\-)|(\%23)|(#)/i,                            // 单引号及变体
+                /(\%3D)|(=)[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))/i,          // =后面跟分号
+                /\w*(\%27)|(\')|((\%6F)|(o)|(\%4F))((\%72)|(r)|(\%52))/i,    // or/or变体
+                /((\%27)|(\')|)union/i,                                      // union注入
+                /union\s+select/i,                                           // union select
+                /insert\s+into/i,                                            // insert into
+                /update\s+.*set\s+/i,                                        // update set
+                /delete\s+from/i,                                            // delete from
+                /drop\s+table/i,                                             // drop table
+                /truncate\s+table/i,                                         // truncate table
+                /alter\s+table/i,                                            // alter table
+                /create\s+table/i,                                           // create table
+                /exec\s*\(/i,                                                // exec(
+                /execute\s*\(/i,                                             // execute(
+                /xp_cmdshell/i,                                              // xp_cmdshell
+                /information_schema/i,                                       // information_schema
+                /concat\s*\(/i,                                              // concat(
+                /benchmark\s*\(/i,                                           // benchmark(
+                /sleep\s*\(/i,                                               // sleep(
+                /waitfor\s+delay/i,                                          // waitfor delay
+                /load_file\s*\(/i,                                          // load_file(
+                /into\s+outfile/i,                                          // into outfile
+                /into\s+dumpfile/i,                                         // into dumpfile
+            ],
+            // 允许的SQL关键字（白名单，用于检测是否为主动注入）
+            allowedKeywords: ['select', 'from', 'where', 'and', 'or', 'limit', 'order by', 'group by'],
+            blockMessage: '输入包含不允许的SQL代码',
+        },
+        // 通知/提示配置
+        notice: {
+            enabled: true,
+            maxLength: 1000,                      // 最大通知内容长度
+        },
+        // 日志配置
+        logging: {
+            enabled: true,                        // 是否记录安全拦截日志
+            consoleOutput: true,                  // 控制台输出
+        }
+    };
+    
+    // 当前配置（可动态修改）
+    let config = JSON.parse(JSON.stringify(defaultConfig));
+    
+    // 安全级别预设
+    const securityLevels = {
+        // 宽松模式 - 适合需要HTML格式的场景
+        permissive: {
+            xss: { enabled: true, escapeHtml: false, removeScript: true, removeStyle: true, removeEventHandlers: true, removeDangerousAttrs: false },
+            url: { enabled: true, allowedProtocols: ['http:', 'https:', '/'] },
+            html: { enabled: true, mode: 'safe', allowAttributes: ['class', 'style', 'id'] },
+            search: { enabled: true, blockSpecialChars: false },
+            php: { enabled: false, mode: 'block' },
+            sql: { enabled: false, mode: 'block' },
+        },
+        // 标准模式 - 平衡安全性和功能性（默认）
+        standard: {
+            xss: { enabled: true, escapeHtml: true, removeScript: true, removeStyle: true, removeEventHandlers: true, removeDangerousAttrs: true },
+            url: { enabled: true, allowedProtocols: ['http:', 'https:', 'mailto:'] },
+            html: { enabled: true, mode: 'text' },
+            search: { enabled: true, blockSpecialChars: false },
+            php: { enabled: false, mode: 'block' },
+            sql: { enabled: false, mode: 'block' },
+        },
+        // 严格模式 - 最高安全性，适合高安全需求
+        strict: {
+            xss: { enabled: true, escapeHtml: true, removeScript: true, removeStyle: true, removeEventHandlers: true, removeDangerousAttrs: true },
+            url: { enabled: true, allowedProtocols: ['https:'], blockLocal: true, maxUrlLength: 512 },
+            html: { enabled: true, mode: 'text', allowAttributes: [] },
+            search: { enabled: true, maxLength: 100, blockSpecialChars: true },
+            php: { enabled: true, mode: 'block' },
+            sql: { enabled: true, mode: 'block' },
+        }
+    };
+    
+    // ==================== 专有工具函数 ====================
+    
+    // HTML实体转义表
+    const htmlEscapeMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
+    
+    // 转义HTML特殊字符
+    function escapeHtml(str) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/[&<>"'`=/]/g, function(char) {
+            return htmlEscapeMap[char];
+        });
+    }
+    
+    // 移除HTML标签
+    function stripTags(str) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/<[^>]*>/g, '');
+    }
+    
+    // 移除事件处理器属性
+    function removeEventHandlers(html) {
+        if (typeof html !== 'string') return '';
+        // 移除 on* 事件属性
+        return html.replace(/\s*on\w+\s*=\s*(['"])[^'"]*\1/gi, '')
+                   // 移除 style 中的 expression()
+                   .replace(/style\s*=\s*(['"])[^'"]*expression\([^'"]*['"]/gi, 'style=$1$1')
+                   // 移除 href 中的 javascript:
+                   .replace(/href\s*=\s*(['"])\s*javascript:[^'"]*\1/gi, 'href="#"');
+    }
+    
+    // 移除危险URL协议
+    function blockDangerousUrls(str) {
+        if (typeof str !== 'string') return '';
+        let result = str;
+        config.xss.blockUrls.forEach(protocol => {
+            const regex = new RegExp(protocol, 'gi');
+            result = result.replace(regex, '');
+        });
+        return result;
+    }
+    
+    // 验证URL协议
+    function validateUrlProtocol(url) {
+        if (typeof url !== 'string') return false;
+        const allowed = config.url.allowedProtocols;
+        // 检查是否以允许的协议开头
+        return allowed.some(protocol => url.toLowerCase().startsWith(protocol.toLowerCase()));
+    }
+    
+    // 安全地设置innerHTML
+    function safeSetInnerHTML(element, html, context = 'general') {
+        if (!element || typeof element.innerHTML === 'undefined') return;
+        
+        const sanitized = sanitizeHtml(html, context);
+        element.innerHTML = sanitized;
+    }
+    
+    // ==================== 核心净化函数 ====================
+    
+    // XSS防护净化
+    function sanitizeXss(input, options = {}) {
+        if (typeof input !== 'string') return '';
+        if (!options.escapeHtml && !options.removeScript && !options.removeEventHandlers && 
+            !(options.phpFilter && options.phpFilter.enabled) && 
+            !(options.sqlFilter && options.sqlFilter.enabled)) {
+            return input; // 如果没有启用任何选项，返回原值
+        }
+        
+        let result = input;
+        
+        // 移除Script标签（递归移除，包括各种变形）
+        if (options.removeScript) {
+            // 移除 <script>...</script>
+            result = result.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+            // 移除 <script> 单独标签
+            result = result.replace(/<script\b[^>]*>/gi, '');
+            result = result.replace(/<\/script>/gi, '');
+            // 移除 javascript: URL
+            result = result.replace(/javascript:/gi, '');
+            // 移除 data: URL（可能导致XSS）
+            result = result.replace(/data:/gi, '');
+            // 移除 vbscript: URL
+            result = result.replace(/vbscript:/gi, '');
+        }
+        
+        // 移除Style标签（防止CSS注入和exploit）
+        if (options.removeStyle) {
+            // 移除 <style>...</style>
+            result = result.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+            // 移除 <style> 单独标签
+            result = result.replace(/<style\b[^>]*>/gi, '');
+            result = result.replace(/<\/style>/gi, '');
+            // 移除 style 属性中的危险内容（如 expression()）
+            result = result.replace(/\s*style\s*=\s*(['"])[^'"]*expression\s*\([^'"]*['"]/gi, '');
+            // 移除 style 属性中的 url(javascript:...)
+            result = result.replace(/\s*style\s*=\s*(['"])[^'"]*url\s*\(\s*javascript:[^)]*\)/gi, '');
+        }
+        
+        // 移除事件处理器
+        if (options.removeEventHandlers) {
+            result = removeEventHandlers(result);
+        }
+        
+        // 移除危险属性（如 href 中的协议、src 等）
+        if (options.removeDangerousAttrs) {
+            // 移除带有 javascript:/vbscript:/data: 的 href
+            result = result.replace(/\s*href\s*=\s*(['"])\s*(javascript|vbscript|data):[^'"]*\1/gi, ' href="#"');
+            // 移除 src 属性中的危险协议
+            result = result.replace(/\s*src\s*=\s*(['"])\s*(javascript|vbscript|data):[^'"]*\1/gi, '');
+            // 移除 action 属性
+            result = result.replace(/\s*action\s*=\s*(['"])[^'"]*\1/gi, '');
+            // 移除 formaction 属性
+            result = result.replace(/\s*formaction\s*=\s*(['"])[^'"]*\1/gi, '');
+        }
+        
+        // HTML转义
+        if (options.escapeHtml) {
+            result = escapeHtml(result);
+        }
+        
+        // PHP代码过滤
+        if (options.phpFilter && options.phpFilter.enabled) {
+            const phpResult = filterPhpCode(result, options.phpFilter.mode);
+            if (phpResult === null) {
+                logSecurity(options.phpFilter.blockMessage || '输入包含不允许的PHP代码', 'php', 'blocked');
+                return '';
+            }
+            result = phpResult;
+        }
+        
+        // SQL注入过滤
+        if (options.sqlFilter && options.sqlFilter.enabled) {
+            const sqlResult = filterSqlCode(result, options.sqlFilter.mode);
+            if (sqlResult === null) {
+                logSecurity(options.sqlFilter.blockMessage || '输入包含不允许的SQL代码', 'sql', 'blocked');
+                return '';
+            }
+            result = sqlResult;
+        }
+        
+        return result;
+    }
+    
+    // PHP代码过滤器
+    function filterPhpCode(input, mode = 'block') {
+        if (!input || typeof input !== 'string') return input;
+        
+        for (const pattern of defaultConfig.php.patterns) {
+            if (pattern.test(input)) {
+                if (mode === 'block') {
+                    return null; // 返回null表示应该阻断
+                } else if (mode === 'remove') {
+                    input = input.replace(pattern, '');
+                }
+            }
+        }
+        return input;
+    }
+    
+    // SQL注入过滤器
+    function filterSqlCode(input, mode = 'block') {
+        if (!input || typeof input !== 'string') return input;
+        
+        // 检查是否包含允许的关键字（白名单检查）
+        const hasAllowedKeyword = defaultConfig.sql.allowedKeywords.some(keyword => {
+            return new RegExp('\\b' + keyword + '\\b', 'i').test(input);
+        });
+        
+        for (const pattern of defaultConfig.sql.patterns) {
+            if (pattern.test(input)) {
+                // 如果没有允许的关键字，或者是明显的注入模式，则阻断/移除
+                if (!hasAllowedKeyword || mode === 'remove') {
+                    if (mode === 'block') {
+                        return null;
+                    } else if (mode === 'remove') {
+                        input = input.replace(pattern, '');
+                    }
+                }
+            }
+        }
+        return input;
+    }
+    
+    // URL安全验证
+    function sanitizeUrl(url, options = {}) {
+        if (typeof url !== 'string') return '';
+        
+        let result = url.trim();
+        
+        // 检查长度
+        if (options.maxUrlLength && result.length > options.maxUrlLength) {
+            logSecurity('URL过长，已截断', 'url', 'warning');
+            result = result.substring(0, options.maxUrlLength);
+        }
+        
+        // 阻断本地文件访问
+        if (options.blockLocal && result.toLowerCase().startsWith('file://')) {
+            logSecurity('本地文件访问被阻断', 'url', 'blocked');
+            return '';
+        }
+        
+        // 验证协议
+        if (!validateUrlProtocol(result)) {
+            logSecurity('不允许的URL协议', 'url', 'blocked');
+            return '';
+        }
+        
+        // 移除危险协议
+        result = blockDangerousUrls(result);
+        
+        return result;
+    }
+    
+    // HTML内容净化
+    function sanitizeHtml(html, mode = 'text', options = {}) {
+        if (typeof html !== 'string') return '';
+        
+        if (mode === 'text') {
+            // 文本模式：转义所有HTML标签
+            return escapeHtml(html);
+        } 
+        else if (mode === 'safe') {
+            // 安全模式：移除危险标签和属性，保留安全标签
+            let result = html;
+            
+            // 移除所有Script相关
+            result = result.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+            result = result.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+            result = result.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+            result = result.replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '');
+            result = result.replace(/<embed\b[^<]*>/gi, '');
+            result = result.replace(/<form\b[^>]*>/gi, '');
+            
+            // 移除事件处理器
+            result = removeEventHandlers(result);
+            
+            // 只保留允许的标签
+            const allowedTags = options.allowedTags || config.xss.allowSafeTags;
+            const tagPattern = new RegExp('<(' + allowedTags.join('|') + ')\\b[^>]*>', 'gi');
+            const closeTagPattern = new RegExp('</(' + allowedTags.join('|') + ')>', 'gi');
+            
+            // 这是一个简化的处理，实际应用中可能需要更复杂的HTML解析库
+            return escapeHtml(html);
+        }
+        
+        return html;
+    }
+    
+    // 搜索词净化
+    function sanitizeSearch(query, options = {}) {
+        if (typeof query !== 'string') return '';
+        
+        let result = query.trim();
+        
+        // 字数限制
+        if (result.length > 550) {
+            logSecurity('搜索词过长，已截断', 'search', 'warning');
+            result = result.substring(0, 550);
+        }
+        
+        // 搜索框不过滤，让用户自由输入代码等内容
+        // 完全不做任何过滤或转义，直接返回原输入
+        return result;
+    }
+    
+    // 通知内容净化
+    function sanitizeNotice(content, options = {}) {
+        if (typeof content !== 'string') return '';
+        
+        let result = content.trim();
+        
+        // 限制长度
+        if (options.maxLength && result.length > options.maxLength) {
+            logSecurity('通知内容过长，已截断', 'notice', 'warning');
+            result = result.substring(0, options.maxLength);
+        }
+        
+        // 移除Script标签和事件处理器
+        result = sanitizeXss(result, {
+            escapeHtml: false,
+            removeScript: true,
+            removeEventHandlers: true
+        });
+        
+        return result;
+    }
+    
+    // ==================== 日志功能 ====================
+    
+    function logSecurity(message, category, level = 'info') {
+        if (!config.logging.enabled || !config.logging.consoleOutput) return;
+        
+        const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+        const styles = {
+            blocked: 'color: #ff4444; font-weight: bold;',
+            warning: 'color: #ff8800;',
+            info: 'color: #2196F3;'
+        };
+        
+        console.log(`%c[Security][${timestamp}][${category.toUpperCase()}] ${message}`, styles[level] || styles.info);
+    }
+    
+    // ==================== 公共API ====================
+    
+    return {
+        // 获取当前配置
+        getConfig: function() {
+            return JSON.parse(JSON.stringify(config));
+        },
+        
+        // 应用配置
+        setConfig: function(newConfig) {
+            config = { ...config, ...newConfig };
+            logSecurity('安全配置已更新', 'config', 'info');
+        },
+        
+        // 重置为默认配置
+        resetConfig: function() {
+            config = JSON.parse(JSON.stringify(defaultConfig));
+            logSecurity('安全配置已重置为默认', 'config', 'info');
+        },
+        
+        // 应用安全级别预设
+        setSecurityLevel: function(level) {
+            if (!securityLevels[level]) {
+                logSecurity(`未知的安全级别: ${level}`, 'config', 'warning');
+                return false;
+            }
+            
+            const preset = securityLevels[level];
+            this.setConfig({
+                xss: { ...config.xss, ...preset.xss },
+                url: { ...config.url, ...preset.url },
+                html: { ...config.html, ...preset.html },
+                search: { ...config.search, ...preset.search }
+            });
+            
+            logSecurity(`安全级别已设置为: ${level}`, 'config', 'info');
+            return true;
+        },
+        
+        // 启用指定防护
+        enable: function(category) {
+            if (config[category]) {
+                config[category].enabled = true;
+                logSecurity(`${category}防护已启用`, category, 'info');
+            }
+        },
+        
+        // 禁用指定防护
+        disable: function(category) {
+            if (config[category]) {
+                config[category].enabled = false;
+                logSecurity(`${category}防护已禁用`, category, 'warning');
+            }
+        },
+        
+        // 启用所有防护
+        enableAll: function() {
+            Object.keys(config).forEach(key => {
+                if (typeof config[key] === 'object' && config[key] !== null) {
+                    config[key].enabled = true;
+                }
+            });
+            logSecurity('所有安全防护已启用', 'general', 'info');
+        },
+        
+        // 禁用所有防护
+        disableAll: function() {
+            Object.keys(config).forEach(key => {
+                if (typeof config[key] === 'object' && config[key] !== null) {
+                    config[key].enabled = false;
+                }
+            });
+            logSecurity('所有安全防护已禁用（不推荐）', 'general', 'warning');
+        },
+        
+        // 通用净化函数 - 根据类型自动选择净化方式
+        sanitize: function(input, options = {}) {
+            const type = options.type || 'general';
+            
+            switch (type) {
+                case 'search':
+                    return config.search.enabled ? sanitizeSearch(input, config.search) : input;
+                case 'url':
+                    return config.url.enabled ? sanitizeUrl(input, config.url) : input;
+                case 'html':
+                    const htmlMode = options.mode || config.html.mode;
+                    return config.html.enabled ? sanitizeHtml(input, htmlMode, options) : input;
+                case 'notice':
+                    return config.notice.enabled ? sanitizeNotice(input, config.notice) : input;
+                case 'xss':
+                default:
+                    return config.xss.enabled ? sanitizeXss(input, {...config.xss, phpFilter: config.php, sqlFilter: config.sql}) : input;
+            }
+        },
+        
+        // XSS防护
+        sanitizeXss: function(input) {
+            return config.xss.enabled ? sanitizeXss(input, {...config.xss, phpFilter: config.php, sqlFilter: config.sql}) : input;
+        },
+        
+        // URL安全验证
+        sanitizeUrl: function(url) {
+            return config.url.enabled ? sanitizeUrl(url, config.url) : url;
+        },
+        
+        // HTML净化
+        sanitizeHtml: function(html, mode) {
+            const htmlMode = mode || config.html.mode;
+            return config.html.enabled ? sanitizeHtml(html, htmlMode) : html;
+        },
+        
+        // 搜索词净化
+        sanitizeSearch: function(query) {
+            return config.search.enabled ? sanitizeSearch(query, config.search) : query;
+        },
+        
+        // 通知内容净化
+        sanitizeNotice: function(content) {
+            return config.notice.enabled ? sanitizeNotice(content, config.notice) : content;
+        },
+        
+        // 安全设置innerHTML
+        setInnerHTML: function(element, html, context = 'html') {
+            const mode = context === 'html' ? config.html.mode : 'text';
+            const sanitized = this.sanitizeHtml(html, mode);
+            if (element) {
+                element.innerHTML = sanitized;
+            }
+            return sanitized;
+        },
+        
+        // 获取安全级别预设
+        getSecurityLevels: function() {
+            return Object.keys(securityLevels);
+        },
+        
+        // 导出配置（用于保存到localStorage）
+        exportConfig: function() {
+            return JSON.stringify(config, null, 2);
+        },
+        
+        // 导入配置
+        importConfig: function(jsonConfig) {
+            try {
+                const imported = JSON.parse(jsonConfig);
+                this.setConfig(imported);
+                return true;
+            } catch (e) {
+                logSecurity('配置导入失败: 无效的JSON格式', 'config', 'warning');
+                return false;
+            }
+        }
+    };
+})();
+
+// ==================== 安全防护初始化 ====================
+// 默认启用所有防护
+Security.enableAll();
+
 // 全局变量
 let quickAccessData = [];
 let searchEngineData = null;
@@ -369,7 +995,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 <div class="menu-item-bg"></div>
                                 <div class="menu-icon">${item.icon}</div>
                             </div>
-                            <div class="menu-text" title="${item.title}">${item.title}</div>
+                            <div class="menu-text" title="${Security.sanitizeXss(item.title)}">${Security.sanitizeXss(item.title)}</div>
                         `;
                         menuItemsContainer.appendChild(menuItem);
                         renderedPresetIds.add(presetId);
@@ -397,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 <div class="menu-item-bg"></div>
                                 <div class="menu-icon">${iconContent}</div>
                             </div>
-                            <div class="menu-text" title="${item.title}">${item.title}</div>
+                            <div class="menu-text" title="${Security.sanitizeXss(item.title)}">${Security.sanitizeXss(item.title)}</div>
                         `;
                         menuItemsContainer.appendChild(menuItem);
                         renderedCustomIds.add(customId);
@@ -417,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <div class="menu-item-bg"></div>
                             <div class="menu-icon">${item.icon}</div>
                         </div>
-                        <div class="menu-text" title="${item.title}">${item.title}</div>
+                        <div class="menu-text" title="${Security.sanitizeXss(item.title)}">${Security.sanitizeXss(item.title)}</div>
                     `;
                     menuItemsContainer.appendChild(menuItem);
                 }
@@ -445,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <div class="menu-item-bg"></div>
                             <div class="menu-icon">${iconContent}</div>
                         </div>
-                        <div class="menu-text" title="${item.title}">${item.title}</div>
+                        <div class="menu-text" title="${Security.sanitizeXss(item.title)}">${Security.sanitizeXss(item.title)}</div>
                     `;
                     menuItemsContainer.appendChild(menuItem);
                 }
@@ -614,9 +1240,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!engine.url) return '';
         
         if (query) {
+            // 使用Security模块净化搜索关键词，防止XSS注入
+            const sanitizedQuery = Security.sanitizeSearch(query);
             // 同时支持 %s 和 {query} 两种占位符格式
-            let url = engine.url.replace('%s', encodeURIComponent(query));
-            url = url.replace('{query}', encodeURIComponent(query));
+            let url = engine.url.replace('%s', encodeURIComponent(sanitizedQuery));
+            url = url.replace('{query}', encodeURIComponent(sanitizedQuery));
             return url;
         } else {
             // 如果没有查询，返回基础URL
@@ -1522,7 +2150,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <div class="menu-icon-wrapper">
                         <div class="menu-item-bg"></div>
                     </div>
-                    <div class="menu-text">${bookmark.name}</div>
+                    <div class="menu-text">${Security.sanitizeXss(bookmark.name)}</div>
                 </div>
             `;
             
@@ -1669,17 +2297,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         const color = options.customColor || config.color;
         const duration = options.customDuration !== undefined ? options.customDuration : config.duration;
 
-        // 过滤HTML标签用于控制台输出
-        const plainText = content.replace(/<[^>]*>/g, '');
+        // 使用Security模块净化内容
+        const sanitizedContent = Security.sanitizeNotice(content);
+        const plainText = sanitizedContent.replace(/<[^>]*>/g, '');
         console.log(`[${getTimeString()}][${level.toUpperCase()}]${plainText}`);
 
         // 创建通知元素
         const notice = document.createElement('div');
         notice.className = 'notice-item';
         notice.style.backgroundColor = color;
+        // 使用Security模块的安全方式设置innerHTML
         notice.innerHTML = `
             <div class="notice-title">${level.toUpperCase()}</div>
-            <div class="notice-content">${content}</div>
+            <div class="notice-content">${sanitizedContent}</div>
         `;
 
         // 点击移除通知
@@ -3051,7 +3681,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 验证并添加搜索引擎
     function addSearchEngine() {
-        const name = addSearchEngineName.value.trim();
+        const rawName = addSearchEngineName.value.trim();
         const url = addSearchEngineUrl.value.trim();
         
         const validation = validateSearchEngineUrl(url);
@@ -3060,6 +3690,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             return false;
         }
         
+        // 使用Security模块净化名称输入（防止XSS）
+        const sanitizedName = Security.sanitizeXss(rawName);
+        
+        // 检查名称是否合法：非空且不包含HTML标签
+        const isNameValid = rawName.length > 0 && !/<[^>]*>/i.test(rawName);
+        
         // MC百科图标（用于自定义搜索引擎）
         const mcIcon = '<svg t="1766328430081" class="search-icon" viewBox="0 0 1035 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="37846" width="24" height="24"><path d="M1013.852766 1011.332492a42.225028 42.225028 0 0 1-59.70619 0L702.316509 759.502424a428.900723 428.900723 0 1 1 133.958901-196.00858 41.718328 41.718328 0 0 1-4.919216 14.166497c-1.330088 3.61024-2.385714 7.347155-3.800252 10.91517l-2.385714-2.385714a42.225028 42.225028 0 0 1-72.690386-29.13527l-0.380025-3.905815a41.950565 41.950565 0 0 1 11.379645-28.670794l-3.926928-3.905815a336.976836 336.976836 0 1 0-88.123633 150.764463 6.333754 6.333754 0 0 0 0.612262-0.928951l61.120729 1.055626 145.254096 145.232984 0.274463-0.274463 135.12009 135.12009a42.225028 42.225028 0 0 1 0.042225 59.79064z" fill="#515151" p-id="37847"></path></svg>';
         
@@ -3067,7 +3703,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         const newId = Math.max(...searchEngineData.engines.map(e => e.id)) + 1;
         const newEngine = {
             id: newId,
-            title: name || '新搜索引擎',
+            // 如果名称不合法，使用"未命名的搜索引擎"
+            title: isNameValid ? sanitizedName : '未命名的搜索引擎',
             icon: mcIcon,
             url: url,
             comment: '自定义搜索引擎'
@@ -3353,30 +3990,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // 获取页面标题（使用多个代理服务）
-    async function fetchPageTitle(url, signal) {
-        const proxyServices = [
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://api.codetabs.com/v1/proxy?quest='
-        ];
-        
-        for (const service of proxyServices) {
-            try {
-                const proxyUrl = service + encodeURIComponent(url);
-                const response = await fetch(proxyUrl, { signal });
-                if (!response.ok) continue;
-                const text = await response.text();
-                const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
-                if (titleMatch) return titleMatch[1].trim();
-            } catch (e) {
-                if (e.name === 'AbortError') throw e;
-                continue;
-            }
-        }
-        return null;
-    }
-
     // 打开添加快捷方式面板
     function openAddShortcutPanel() {
         if (addShortcutPanel) {
@@ -3487,21 +4100,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             };
             img.src = faviconUrl;
         }
-        
-        // 只有用户未手动输入标题时才获取标题
-        if (!userHasEnteredTitle) {
-            try {
-                const title = await fetchPageTitle(url, addPanelAbortController.signal);
-                if (addPanelAbortController.signal.aborted) return;
-                if (title) {
-                    addShortcutName.value = title;
-                }
-            } catch (e) {
-                if (e.name !== 'AbortError') {
-                    console.log('获取标题失败:', e);
-                }
-            }
-        }
     });
 
     // 图标输入失焦时验证
@@ -3529,22 +4127,44 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (addShortcutSave) {
         addShortcutSave.addEventListener('click', function(e) {
             e.stopPropagation();
-            const url = normalizeUrl(addShortcutUrl.value.trim());
-            if (!url) {
-                sendNotice('请输入URL', 'warn');
+            
+            // 使用Security模块净化URL输入
+            const rawUrl = addShortcutUrl.value.trim();
+            const sanitizedUrl = Security.sanitizeUrl(rawUrl);
+            
+            if (!sanitizedUrl) {
+                sendNotice('请输入有效的URL', 'warn');
                 return;
             }
             
             // 验证URL格式
             try {
-                new URL(url);
+                new URL(sanitizedUrl);
             } catch (e) {
                 sendNotice('URL格式不正确', 'warn');
                 return;
             }
             
-            const name = addShortcutName.value.trim() || addShortcutName.value.trim();
-            let icon = addShortcutIcon.value.trim();
+            // 使用Security模块净化名称输入（防止XSS）
+            const rawName = addShortcutName.value.trim();
+            const sanitizedName = Security.sanitizeXss(rawName);
+            
+            // 检查名称是否合法：非空且不包含HTML标签（说明原始输入不合法）
+            const isNameValid = rawName.length > 0 && !/<[^>]*>/i.test(rawName);
+            
+            // 使用Security模块净化图标URL
+            const rawIcon = addShortcutIcon.value.trim();
+            let sanitizedIcon = '';
+            if (rawIcon) {
+                sanitizedIcon = Security.sanitizeUrl(rawIcon);
+                if (!sanitizedIcon) {
+                    sendNotice('图标URL无效，将使用默认图标', 'warn');
+                }
+            }
+            
+            // 如果名称为空或不合法，使用"未命名的快捷方式"
+            const name = isNameValid ? sanitizedName : '未命名的快捷方式';
+            let icon = sanitizedIcon;
             
             // 如果没有指定图标，使用默认图标（空字符串会显示默认图标）
             if (!icon) {
@@ -3558,9 +4178,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             const customShortcuts = getLocalStorageItem('custom_shortcuts') || [];
             const newShortcut = {
                 id: Date.now(),
-                url: url,
-                title: name || url,
-                icon: icon || '',
+                url: sanitizedUrl,
+                title: name,
+                icon: icon,
                 position: customShortcuts.length // 使用当前长度作为位置信息
             };
             customShortcuts.push(newShortcut);
@@ -3861,8 +4481,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             div.innerHTML = `
                 <div class="edit-shortcut-item-icon">${iconContent}</div>
-                <div class="edit-shortcut-item-text" title="${item.title}">
-                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
+                <div class="edit-shortcut-item-text" title="${Security.sanitizeXss(item.title)}">
+                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${Security.sanitizeXss(item.title)}
                 </div>
                 <div class="edit-shortcut-item-actions">
                     ${moveButtons}
@@ -3976,7 +4596,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const newCustomShortcuts = visibleCustomItems.map((item, index) => ({
             id: parseInt(item.customId) || Date.now(),
             url: item.url,
-            title: item.title,
+            title: Security.sanitizeXss(item.title),
             icon: item.icon,
             position: index
         }));
@@ -4329,8 +4949,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const { item, tempData } = currentEditShortcut;
         const newUrl = tempData.url;
-        const newName = tempData.title;
+        const rawName = tempData.title;
         const newIcon = tempData.icon;
+
+        // 使用Security模块净化名称输入（防止XSS）
+        const sanitizedName = Security.sanitizeXss(rawName);
+        
+        // 检查名称是否合法：非空且不包含HTML标签
+        const isNameValid = rawName.length > 0 && !/<[^>]*>/i.test(rawName);
 
         // 验证URL
         if (!newUrl) {
@@ -4346,8 +4972,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // 只更新内存中的项目数据，不写入localStorage
+        // 如果名称不合法，使用"未命名的快捷方式"
         item.url = newUrl;
-        item.title = newName || newUrl;
+        item.title = isNameValid ? sanitizedName : '未命名的快捷方式';
         item.icon = newIcon || '';
 
         // 更新列表显示
@@ -4495,8 +5122,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!currentEditSearchEngine) return false;
 
         const { engine, tempData } = currentEditSearchEngine;
-        const newName = tempData.title;
+        const rawName = tempData.title;
         const newUrl = tempData.url;
+
+        // 使用Security模块净化名称输入（防止XSS）
+        const sanitizedName = Security.sanitizeXss(rawName);
+        
+        // 检查名称是否合法：非空且不包含HTML标签
+        const isNameValid = rawName.length > 0 && !/<[^>]*>/i.test(rawName);
 
         // 验证URL
         if (!newUrl) {
@@ -4511,7 +5144,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // 只更新内存中的引擎数据，不写入localStorage
-        engine.title = newName || newUrl;
+        // 如果名称不合法，使用"未命名的搜索引擎"
+        engine.title = isNameValid ? sanitizedName : '未命名的搜索引擎';
         engine.url = newUrl;
 
         // 标记外层设置面板有未保存的更改
@@ -4670,8 +5304,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             div.innerHTML = `
                 <div class="edit-shortcut-item-icon">${iconContent}</div>
-                <div class="edit-shortcut-item-text" title="${item.title}">
-                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${item.title}
+                <div class="edit-shortcut-item-text" title="${Security.sanitizeXss(item.title)}">
+                    ${item.isPreset ? '<span class="preset-tag">预设</span>' : ''}${Security.sanitizeXss(item.title)}
                 </div>
                 <div class="edit-shortcut-item-actions">
                     ${moveButtons}

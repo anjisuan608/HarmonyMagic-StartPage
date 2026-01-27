@@ -166,17 +166,15 @@ body[data-filter-disabled="true"]::after {
 #time {
     font-size: 76px;
     font-weight: bold;
-    color: var(--text-color);
-    text-shadow: 2px 2px 4px var(--shadow-color);
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     margin-bottom: 0.3rem;
-    transition: color 0.3s ease;
 }
 
 #date {
     font-size: 26px; /* 减小字体大小 (1.5rem - 0.3rem ≈ 3px减少) */
-    color: var(--text-color);
-    text-shadow: 1px 1px 2px var(--shadow-color);
-    transition: color 0.3s ease;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
 .search-boxes-container {
@@ -194,9 +192,9 @@ body[data-filter-disabled="true"]::after {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--card-bg);
+    background: rgba(255, 255, 255, 0.45);
     backdrop-filter: blur(10px);
-    border: 2px solid var(--border-color);
+    border: 2px solid rgba(255, 255, 255, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -206,6 +204,12 @@ body[data-filter-disabled="true"]::after {
     flex-shrink: 0; /* 防止被挤压变形 */
     position: relative;
     z-index: 1;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .search-box-circle {
+    background: rgba(60, 60, 60, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 /* 圆形搜索框展开状态 - 未输入状态 */
@@ -218,7 +222,16 @@ body[data-filter-disabled="true"]::after {
 /* 圆形搜索框展开状态 - 输入状态 */
 .search-box-circle.expanded.input-active {
     width: 300px; /* 与中间搜索框的展开宽度相同 */
-    background: var(--card-bg-hover);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* 深色模式适配 - 展开状态 */
+[data-theme="dark"] .search-box-circle.expanded {
+    background: rgba(80, 80, 80, 0.7);
+}
+
+[data-theme="dark"] .search-box-circle.expanded.input-active {
+    background: rgba(100, 100, 100, 0.8);
 }
 
 /* 移动端圆形搜索框直接展开到输入状态 */
@@ -253,6 +266,11 @@ body[data-filter-disabled="true"]::after {
     border-color: #4CAF50;
 }
 
+[data-theme="dark"] .search-box-circle:hover {
+    background: rgba(100, 100, 100, 0.7);
+    border-color: #4CAF50;
+}
+
 .search-circle-content {
     display: flex;
     align-items: center;
@@ -273,6 +291,12 @@ body[data-filter-disabled="true"]::after {
     pointer-events: none;
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     z-index: 2;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .search-engine-name {
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /* 只有进入输入焦点时才显示引擎名称动画 */
@@ -328,6 +352,11 @@ body[data-filter-disabled="true"]::after {
     text-align: center; /* 文字居中对齐 */
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .search-box-circle .circle-search-input {
+    color: #e0e0e0;
+}
+
 /* 展开状态显示输入框 */
 .search-box-circle.expanded .circle-search-input {
     opacity: 1;
@@ -372,6 +401,11 @@ body[data-filter-disabled="true"]::after {
     color: #45a049;
 }
 
+/* 深色模式适配 - 搜索按钮保持绿色高亮 */
+[data-theme="dark"] .search-box-circle .circle-search-btn {
+    color: #66BB6A;
+}
+
 /* 展开状态下图标位置调整 */
 .search-box-circle.expanded .search-circle-content {
     position: absolute;
@@ -394,6 +428,11 @@ body[data-filter-disabled="true"]::after {
     transition: opacity 0.3s ease,
                 transform 0.3s ease,
                 margin 0.3s ease;
+}
+
+/* 深色模式适配 - 圆形搜索框展开时的图标 */
+[data-theme="dark"] .search-box-circle.expanded .search-icon {
+    filter: brightness(1.3);
 }
 
 .search-box-center {
@@ -425,6 +464,12 @@ body[data-filter-disabled="true"]::after {
     justify-content: center;
 }
 
+/* 深色模式适配 */
+[data-theme="dark"] .search-container-shortened {
+    background: rgba(60, 60, 60, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
 /* 中间搜索框未输入展开状态 */
 .search-container-shortened.expanded {
     width: 150px; /* 未输入展开宽度 */
@@ -435,6 +480,15 @@ body[data-filter-disabled="true"]::after {
 /* 中间搜索框输入展开状态 */
 .search-container-shortened.expanded.input-active {
     width: 300px; /* 输入展开宽度 */
+}
+
+/* 深色模式适配 - 展开状态 */
+[data-theme="dark"] .search-container-shortened.expanded {
+    background: rgba(80, 80, 80, 0.7);
+}
+
+[data-theme="dark"] .search-container-shortened.expanded.input-active {
+    background: rgba(100, 100, 100, 0.8);
 }
 
 #search-input {
@@ -519,6 +573,16 @@ body[data-filter-disabled="true"]::after {
     color: #45a049;
 }
 
+/* 深色模式适配 - 中间搜索框搜索按钮 */
+[data-theme="dark"] #search-btn {
+    color: #66BB6A;
+}
+
+[data-theme="dark"] #search-btn:hover {
+    background: rgba(102, 187, 106, 0.2);
+    color: #81C784;
+}
+
 .search-icon {
     position: absolute;
     left: 50%;
@@ -531,6 +595,11 @@ body[data-filter-disabled="true"]::after {
     opacity: 1;
     visibility: visible;
     transition: all 0.3s ease;
+}
+
+/* 深色模式适配 - 图标变亮以在深色背景上清晰显示 */
+[data-theme="dark"] .search-icon {
+    filter: brightness(1.3);
 }
 
 /* 展开状态调整图标位置 */

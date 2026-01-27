@@ -2677,7 +2677,6 @@ body[data-filter-disabled="true"]::after {
 .search-engine-edit:hover {
     background: #E3F2FD;
 }
-}
 
 .search-engine-buttons {
     display: flex;

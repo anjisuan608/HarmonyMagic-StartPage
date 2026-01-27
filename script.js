@@ -3148,6 +3148,33 @@ document.addEventListener('DOMContentLoaded', async function() {
                 renderEditShortcutList();
             }
         },
+        'delete-search-engine': {
+            title: '删除搜索引擎',
+            message: '确定要删除该自定义搜索引擎吗？',
+            onOk: function() {
+                const engineId = parseInt(confirmDialog.dataset.targetEngineId, 10);
+                const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
+                
+                // 标记为待删除
+                if (!workingSettings.pendingDeleteIds) workingSettings.pendingDeleteIds = [];
+                if (!workingSettings.pendingDeleteIds.some(pid => pid == engineId)) {
+                    workingSettings.pendingDeleteIds.push(engineId);
+                }
+                
+                // 从所有列表中移除
+                const activeIndex = workingSettings.activeEngines.indexOf(engineId);
+                if (activeIndex !== -1) workingSettings.activeEngines.splice(activeIndex, 1);
+                
+                const presetIndex = workingSettings.disabledPresets.indexOf(engineId);
+                if (presetIndex !== -1) workingSettings.disabledPresets.splice(presetIndex, 1);
+                
+                const customIndex = workingSettings.disabledCustoms.indexOf(engineId);
+                if (customIndex !== -1) workingSettings.disabledCustoms.splice(customIndex, 1);
+                
+                searchEngineSettingsHasInnerChanges = true;
+                renderSearchEngineLists();
+            }
+        },
         'reset-search-engines': {
             title: '重置搜索引擎',
             message: '确定要重置所有搜索引擎设置吗？这将删除所有自定义搜索引擎和排序设置。',
@@ -3185,6 +3212,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             onOk: function() {
                 searchEngineSettingsWorking = null;
                 searchEngineSettingsHasInnerChanges = false; // 重置内层编辑标志
+                // 清除待删除列表
+                const workingSettings = searchEngineSettings;
+                if (workingSettings) {
+                    delete workingSettings.pendingDeleteIds;
+                }
                 closeSearchEnginePanel();
             }
         },
@@ -3517,17 +3549,23 @@ document.addEventListener('DOMContentLoaded', async function() {
         const activeIds = workingSettings.activeEngines;
         const disabledPresetIds = workingSettings.disabledPresets;
         const disabledCustomIds = workingSettings.disabledCustoms;
+        const pendingDeleteIds = workingSettings.pendingDeleteIds || [];
+        
+        // 排除待删除的引擎（使用 == 进行宽松比较以处理字符串/数字类型差异）
+        const filteredActiveIds = activeIds.filter(id => !pendingDeleteIds.some(pid => pid == id));
+        const filteredDisabledPresetIds = disabledPresetIds.filter(id => !pendingDeleteIds.some(pid => pid == id));
+        const filteredDisabledCustomIds = disabledCustomIds.filter(id => !pendingDeleteIds.some(pid => pid == id));
         
         // 按activeIds顺序渲染使用中的引擎
-        const activeEngines = activeIds.map(id => searchEngines[id]).filter(Boolean);
+        const activeEngines = filteredActiveIds.map(id => searchEngines[id]).filter(Boolean);
         renderSearchEngineCategory(searchEngineActiveList, activeEngines, 'active');
         
         // 渲染未使用的预设
-        const presetEngines = disabledPresetIds.map(id => searchEngines[id]).filter(Boolean);
+        const presetEngines = filteredDisabledPresetIds.map(id => searchEngines[id]).filter(Boolean);
         renderSearchEngineCategory(searchEnginePresetList, presetEngines, 'preset');
         
         // 渲染未使用的自定义
-        const customEngines = disabledCustomIds.map(id => searchEngines[id]).filter(Boolean);
+        const customEngines = filteredDisabledCustomIds.map(id => searchEngines[id]).filter(Boolean);
         renderSearchEngineCategory(searchEngineCustomList, customEngines, 'custom');
     }
 
@@ -3604,7 +3642,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 绑定删除按钮事件
             const deleteBtn = item.querySelector('.search-engine-delete');
             if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => deleteSearchEngine(engine.id));
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    confirmDialog.dataset.targetEngineId = engine.id;
+                    openConfirmDialog('delete-search-engine');
+                });
             }
             
             container.appendChild(item);
@@ -3689,37 +3731,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // 添加到使用中
         workingSettings.activeEngines.push(engineId);
-        renderSearchEngineLists();
-    }
-
-    // 删除自定义搜索引擎
-    function deleteSearchEngine(engineId) {
-        // 预设引擎不允许删除
-        const presetIds = searchEngineData.engines.slice(0, presetEngineCount).map(e => e.id);
-        if (presetIds.includes(engineId)) return;
-        
-        const workingSettings = searchEngineSettingsWorking || searchEngineSettings;
-        
-        // 从所有列表中移除
-        const activeIndex = workingSettings.activeEngines.indexOf(engineId);
-        if (activeIndex !== -1) workingSettings.activeEngines.splice(activeIndex, 1);
-        
-        const presetIndex = workingSettings.disabledPresets.indexOf(engineId);
-        if (presetIndex !== -1) workingSettings.disabledPresets.splice(presetIndex, 1);
-        
-        const customIndex = workingSettings.disabledCustoms.indexOf(engineId);
-        if (customIndex !== -1) workingSettings.disabledCustoms.splice(customIndex, 1);
-        
-        // 从searchEngines中移除
-        delete searchEngines[engineId];
-        
-        // 从searchEngineData.engines中移除
-        const engineIndex = searchEngineData.engines.findIndex(e => e.id === engineId);
-        if (engineIndex !== -1) searchEngineData.engines.splice(engineIndex, 1);
-        
-        // 同步更新localStorage
-        saveCustomSearchEngines();
-        
         renderSearchEngineLists();
     }
 
@@ -3905,6 +3916,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             searchEngineSettingsWorking = null;
             searchEngineSettingsHasInnerChanges = false; // 重置内层编辑标志
             
+            // 执行待删除的搜索引擎（从searchEngines和searchEngineData中移除）
+            const pendingDeleteIds = workingSettings.pendingDeleteIds || [];
+            pendingDeleteIds.forEach(engineId => {
+                delete searchEngines[engineId];
+                const engineIndex = searchEngineData.engines.findIndex(e => e.id === engineId);
+                if (engineIndex !== -1) searchEngineData.engines.splice(engineIndex, 1);
+            });
+            saveCustomSearchEngines();
+            
             // 重新渲染主页搜索引擎
             renderSearchEngineIcons();
             sendNotice('搜索引擎设置已保存', 'info');
@@ -3938,6 +3958,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 验证通过，保存设置
                 searchEngineSettings = JSON.parse(JSON.stringify(workingSettings));
                 localStorage.setItem('search_engine_settings', JSON.stringify(searchEngineSettings));
+                
+                // 执行待删除的搜索引擎（从searchEngines和searchEngineData中移除）
+                const pendingDeleteIds = workingSettings.pendingDeleteIds || [];
+                pendingDeleteIds.forEach(engineId => {
+                    delete searchEngines[engineId];
+                    const engineIndex = searchEngineData.engines.findIndex(e => e.id === engineId);
+                    if (engineIndex !== -1) searchEngineData.engines.splice(engineIndex, 1);
+                });
+                saveCustomSearchEngines();
                 
                 // 重新渲染主页搜索引擎
                 renderSearchEngineIcons();
@@ -5567,7 +5596,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 绑定删除按钮事件
             const deleteBtn = item.querySelector('.search-engine-delete');
             if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => deleteSearchEngine(engine.id));
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    confirmDialog.dataset.targetEngineId = engine.id;
+                    openConfirmDialog('delete-search-engine');
+                });
             }
 
             // 绑定编辑按钮事件

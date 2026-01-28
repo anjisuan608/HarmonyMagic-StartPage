@@ -16,6 +16,15 @@
 
 一个简洁高效的浏览器起始页，创新型多引擎搜索框分布、支持自定义预设快捷方式以及搜索引擎和壁纸。
 
+## 仓库镜像
+
+仓库 | 备注
+:--------:|:--------:
+[GitCode](https://gitcode.com/MeKv/HarmonyMagic-StartPage) | 主仓库
+[Gitee](https://gitee.com/MeKv/HarmonyMagic-StartPage) | GitCode镜像
+[GitLink](https://gitlink.org.cn/MeKv/HarmonyMagic-StartPage) | Gitee镜像
+[GitHub](https://github.com/MeKv/HarmonyMagic-StartPage) | Gitee镜像
+
 ## 功能特性
 
 ### 多引擎搜索

@@ -2766,11 +2766,201 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // 加载壁纸设置
-    function loadWallpaperSettings() {
+    // ==================== 壁纸缓存 (Cache API) ====================
+
+    const WALLPAPER_CACHE_NAME = 'harmonymagic-wallpaper';
+
+    // 将文件存储到 Cache API
+    async function cacheWallpaperFile(file) {
+        try {
+            const cache = await caches.open(WALLPAPER_CACHE_NAME);
+            const response = new Response(file, {
+                headers: { 'Content-Type': file.type }
+            });
+            await cache.put('local-wallpaper', response);
+            return true;
+        } catch (e) {
+            console.error('缓存壁纸失败:', e);
+            return false;
+        }
+    }
+
+    // 从 Cache API 获取壁纸 Blob URL
+    async function getCachedWallpaperUrl() {
+        try {
+            const cache = await caches.open(WALLPAPER_CACHE_NAME);
+            const response = await cache.match('local-wallpaper');
+            if (response) {
+                const blob = await response.blob();
+                return URL.createObjectURL(blob);
+            }
+        } catch (e) {
+            console.error('获取缓存壁纸失败:', e);
+        }
+        return null;
+    }
+
+    // 清除缓存的壁纸
+    async function clearCachedWallpaper() {
+        try {
+            const cache = await caches.open(WALLPAPER_CACHE_NAME);
+            await cache.delete('local-wallpaper');
+        } catch (e) {
+            console.error('清除壁纸缓存失败:', e);
+        }
+    }
+
+    // 检查是否有缓存的壁纸
+    async function hasCachedWallpaper() {
+        try {
+            const cache = await caches.open(WALLPAPER_CACHE_NAME);
+            return await cache.match('local-wallpaper') !== undefined;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // ==================== IndexedDB 存储 (大文件 > 50MB) ====================
+
+    const WALLPAPER_DB_NAME = 'HarmonyMagicWallpaperDB';
+    const WALLPAPER_DB_VERSION = 1;
+    const WALLPAPER_STORE_NAME = 'wallpapers';
+
+    // 打开 IndexedDB
+    function openWallpaperDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(WALLPAPER_DB_NAME, WALLPAPER_DB_VERSION);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(WALLPAPER_STORE_NAME)) {
+                    db.createObjectStore(WALLPAPER_STORE_NAME, { keyPath: 'id' });
+                }
+            };
+        });
+    }
+
+    // 将文件存储到 IndexedDB
+    async function storeWallpaperToIDB(file) {
+        try {
+            const db = await openWallpaperDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([WALLPAPER_STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(WALLPAPER_STORE_NAME);
+                const request = store.put({
+                    id: 'local-wallpaper',
+                    file: file,
+                    type: file.type,
+                    size: file.size,
+                    lastModified: file.lastModified
+                });
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(true);
+            });
+        } catch (e) {
+            console.error('存储壁纸到 IndexedDB 失败:', e);
+            return false;
+        }
+    }
+
+    // 从 IndexedDB 获取壁纸 Blob
+    async function getWallpaperFromIDB() {
+        try {
+            const db = await openWallpaperDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([WALLPAPER_STORE_NAME], 'readonly');
+                const store = transaction.objectStore(WALLPAPER_STORE_NAME);
+                const request = store.get('local-wallpaper');
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    if (request.result) {
+                        resolve(URL.createObjectURL(request.result.file));
+                    } else {
+                        resolve(null);
+                    }
+                };
+            });
+        } catch (e) {
+            console.error('从 IndexedDB 获取壁纸失败:', e);
+            return null;
+        }
+    }
+
+    // 检查 IndexedDB 中是否有壁纸
+    async function hasWallpaperInIDB() {
+        try {
+            const db = await openWallpaperDB();
+            return new Promise((resolve) => {
+                const transaction = db.transaction([WALLPAPER_STORE_NAME], 'readonly');
+                const store = transaction.objectStore(WALLPAPER_STORE_NAME);
+                const request = store.get('local-wallpaper');
+
+                request.onsuccess = () => resolve(!!request.result);
+                request.onerror = () => resolve(false);
+            });
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // 清除 IndexedDB 中的壁纸
+    async function clearWallpaperFromIDB() {
+        try {
+            const db = await openWallpaperDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([WALLPAPER_STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(WALLPAPER_STORE_NAME);
+                const request = store.delete('local-wallpaper');
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(true);
+            });
+        } catch (e) {
+            console.error('清除 IndexedDB 壁纸失败:', e);
+            return false;
+        }
+    }
+
+    // ==================== 统一存储接口 ====================
+
+    const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB
+
+    // 存储壁纸（根据大小选择存储方式）
+    async function storeWallpaper(file) {
+        if (file.size >= MAX_CACHE_SIZE) {
+            // 大文件使用 IndexedDB
+            return await storeWallpaperToIDB(file);
+        } else {
+            // 小文件使用 Cache API
+            return await cacheWallpaperFile(file);
+        }
+    }
+
+    // 获取壁纸 URL
+    async function getWallpaperUrl(settings) {
+        if (settings.storageType === 'idb') {
+            return await getWallpaperFromIDB();
+        } else {
+            return await getCachedWallpaperUrl();
+        }
+    }
+
+    // 清除所有存储的壁纸
+    async function clearAllWallpaperStorage() {
+        await clearCachedWallpaper();
+        await clearWallpaperFromIDB();
+    }
+
+    // ==================== 加载壁纸设置 ====================
+    async function loadWallpaperSettings() {
         const saved = getLocalStorageItem('wallpaper_settings');
         let settings = { id: 1, customUrl: '', customMode: 'local' };
-        
+
         if (saved) {
             try {
                 settings = saved;
@@ -2780,14 +2970,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // 更新预览图
-        updateWallpaperPreview(settings);
+        await updateWallpaperPreview(settings);
 
         // 更新选中状态
         updateWallpaperSelection(settings.id);
 
         // 更新自定义选项
         if (settings.customMode === 'local') {
-            wallpaperLocalUrl.value = settings.customUrl || '';
+            const displayText = (settings.customUrl === 'cached://wallpaper' || settings.customUrl === 'idb://wallpaper')
+                ? settings.customUrl
+                : (settings.customUrl || '');
+            wallpaperLocalUrl.value = displayText;
             switchTab('local');
         } else {
             wallpaperOnlineUrl.value = settings.customUrl || '';
@@ -2796,10 +2989,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // 更新壁纸预览
-    function updateWallpaperPreview(settings) {
+    async function updateWallpaperPreview(settings) {
         if (settings.id === 0 && settings.customUrl) {
-            wallpaperPreviewImg.style.backgroundImage = `url('${settings.customUrl}')`;
-            wallpaperPreviewImg.classList.add('selected');
+            let url = settings.customUrl;
+            // 如果是本地存储的壁纸，从对应存储获取 URL
+            if (settings.customUrl === 'cached://wallpaper' || settings.customUrl === 'idb://wallpaper') {
+                url = await getWallpaperUrl(settings);
+            }
+            if (url) {
+                wallpaperPreviewImg.style.backgroundImage = `url('${url}')`;
+                wallpaperPreviewImg.classList.add('selected');
+            }
         } else {
             wallpaperPreviewImg.style.backgroundImage = 'none';
             wallpaperPreviewImg.classList.remove('selected');
@@ -2882,21 +3082,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // 保存壁纸设置
-    function saveWallpaperSettings(id, customUrl, customMode) {
-        const settings = { id, customUrl, customMode };
+    function saveWallpaperSettings(id, customUrl, customMode, storageType = 'cache') {
+        const settings = { id, customUrl, customMode, storageType };
         setLocalStorageItem('wallpaper_settings', settings);
-        
+
         // 应用壁纸
         applyWallpaper(settings);
     }
 
     // 应用壁纸
-    function applyWallpaper(settings, retryWithDefault = false) {
+    async function applyWallpaper(settings, retryWithDefault = false) {
         let wallpaperUrl = '';
 
         if (settings.id === 0) {
-            // 自定义壁纸 - 从localStorage读取
-            wallpaperUrl = settings.customUrl || '';
+            // 自定义壁纸
+            if (settings.customUrl === 'cached://wallpaper' || settings.customUrl === 'idb://wallpaper') {
+                // 从存储加载
+                wallpaperUrl = await getWallpaperUrl(settings);
+            } else {
+                // 在线 URL
+                wallpaperUrl = settings.customUrl || '';
+            }
         } else {
             // 预设壁纸 - 从XML读取（presetWallpapers在面板打开时已加载）
             wallpaperUrl = presetWallpapers[settings.id] || '';
@@ -2917,7 +3123,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 console.warn(`壁纸加载失败: ${wallpaperUrl}, 尝试使用默认壁纸`);
                 // 如果当前不是默认壁纸，尝试使用id=1的默认壁纸
                 if (settings.id !== 1) {
-                    applyWallpaper({ id: 1, customUrl: '', customMode: 'local' }, true);
+                    applyWallpaper({ id: 1, customUrl: '', customMode: 'local', storageType: 'cache' }, true);
                 }
             };
             img.src = wallpaperUrl;
@@ -2964,14 +3170,26 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 本地文件选择
     if (wallpaperLocalFile) {
-        wallpaperLocalFile.addEventListener('change', function(e) {
+        wallpaperLocalFile.addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
-                const fileUrl = URL.createObjectURL(file);
-                wallpaperLocalUrl.value = fileUrl;
-                wallpaperPreviewImg.style.backgroundImage = `url('${fileUrl}')`;
-                wallpaperPreviewImg.classList.add('selected');
-                saveWallpaperSettings(0, fileUrl, 'local');
+                // 根据文件大小选择存储方式
+                const useIDB = file.size >= MAX_CACHE_SIZE;
+                const storageType = useIDB ? 'idb' : 'cache';
+
+                // 保存文件
+                const success = await storeWallpaper(file);
+                if (success) {
+                    // 获取 URL 用于显示
+                    const fileUrl = await getWallpaperUrl({ storageType });
+                    wallpaperLocalUrl.value = useIDB ? 'idb://wallpaper' : 'cached://wallpaper';
+                    wallpaperPreviewImg.style.backgroundImage = `url('${fileUrl}')`;
+                    wallpaperPreviewImg.classList.add('selected');
+                    // 保存设置
+                    saveWallpaperSettings(0, useIDB ? 'idb://wallpaper' : 'cached://wallpaper', 'local', storageType);
+                } else {
+                    sendNotice('壁纸存储失败，请重试', 'error');
+                }
             }
         });
     }
@@ -3056,13 +3274,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         'reset-wallpaper': {
             title: '重置壁纸',
             message: '确定要重置为默认壁纸吗？',
-            onOk: function() {
+            onOk: async function() {
                 // 清除壁纸设置localStorage
                 removeLocalStorageItem('wallpaper_settings');
+                // 清除所有壁纸存储
+                await clearAllWallpaperStorage();
                 // 重置壁纸URL样式
                 document.body.style.setProperty('--wallpaper-url', 'none');
                 // 应用默认壁纸
-                const defaultSettings = { id: 1, customUrl: '', customMode: 'local' };
+                const defaultSettings = { id: 1, customUrl: '', customMode: 'local', storageType: 'cache' };
                 applyWallpaper(defaultSettings);
                 // 刷新壁纸设置面板显示
                 loadWallpaperSettings();
@@ -3072,9 +3292,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         'clear-site-data': {
             title: '清空网站数据',
             message: '确定要清除所有Cookie和本地存储数据吗？此操作不可撤销，页面将立即刷新。',
-            onOk: function() {
+            onOk: async function() {
                 // 清除所有localStorage数据
                 localStorage.clear();
+                // 清除所有壁纸存储
+                await clearAllWallpaperStorage();
                 // 清除所有cookie
                 document.cookie.split(";").forEach(function(c) {
                     document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");

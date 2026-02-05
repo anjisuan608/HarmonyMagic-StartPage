@@ -2516,11 +2516,43 @@ document.addEventListener('DOMContentLoaded', async function() {
     const settingsMenuItems = document.querySelectorAll('.settings-menu-item');
     let settingsHoverTimeout = null;
 
+    // 获取所有面板元素（排除设置下拉菜单）
+    function getAllPanels() {
+        return [
+            settingsModal,
+            document.getElementById('wallpaper-panel'),
+            document.getElementById('about-panel'),
+            document.getElementById('search-engine-panel'),
+            document.getElementById('add-search-engine-panel'),
+            document.getElementById('add-shortcut-panel'),
+            document.getElementById('edit-shortcut-panel'),
+            document.getElementById('edit-shortcut-item-panel'),
+            document.getElementById('edit-search-engine-panel')
+        ].filter(Boolean);
+    }
+
+    // 检查是否有任何面板打开
+    function hasAnyPanelOpen() {
+        return getAllPanels().some(panel => panel.classList.contains('active'));
+    }
+
+    // 更新设置按钮显示状态
+    function updateSettingsButtonVisibility() {
+        if (settingsButton) {
+            if (hasAnyPanelOpen()) {
+                settingsButton.style.display = 'none';
+            } else {
+                settingsButton.style.display = '';
+            }
+        }
+    }
+
     // 打开设置菜单
     function openSettingsModal() {
         if (settingsModal) {
             settingsModal.classList.add('active');
             setBackgroundBlur(true);
+            updateSettingsButtonVisibility();
             // 初始化操作项图标
             initActionItems();
         }
@@ -2534,6 +2566,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (!contextMenu.classList.contains('active')) {
                 setBackgroundBlur(false);
             }
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -2750,6 +2783,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             loadPresetWallpapersFromXml();
             wallpaperPanel.classList.add('active');
             setBackgroundBlur(true);
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -2763,6 +2797,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 关闭时清除自定义预览框背景图
             wallpaperPreviewImg.style.backgroundImage = 'none';
             wallpaperPreviewImg.classList.remove('selected');
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -3034,6 +3069,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (aboutPanel) {
             aboutPanel.classList.add('active');
             setBackgroundBlur(true);
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -3044,6 +3080,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (!contextMenu.classList.contains('active')) {
                 setBackgroundBlur(false);
             }
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -3753,6 +3790,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             renderSearchEngineLists();
             initSearchEngineCategoryCollapse();
             searchEnginePanel.classList.add('active');
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -3760,6 +3798,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     function closeSearchEnginePanel() {
         if (searchEnginePanel) {
             searchEnginePanel.classList.remove('active');
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -3963,6 +4002,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             addSearchEngineUrl.value = '';
             addSearchEngineUrlError.textContent = '';
             addSearchEnginePanel.classList.add('active');
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -3974,6 +4014,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         if (addSearchEnginePanel) {
             addSearchEnginePanel.classList.remove('active');
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -4346,6 +4387,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             addShortcutPanel.classList.add('active');
+            updateSettingsButtonVisibility();
             // 不改变背景模糊状态
             // 清空表单
             addShortcutUrl.value = '';
@@ -4364,6 +4406,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         if (addShortcutPanel) {
             addShortcutPanel.classList.remove('active');
+            updateSettingsButtonVisibility();
             // 取消进行中的请求
             if (addPanelAbortController) {
                 addPanelAbortController.abort();
@@ -4587,6 +4630,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 渲染列表
             renderEditShortcutList();
             editShortcutPanel.classList.add('active');
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -4594,6 +4638,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     function closeEditShortcutPanel() {
         if (editShortcutPanel) {
             editShortcutPanel.classList.remove('active');
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -5159,6 +5204,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (e) {
             console.error('初始化壁纸失败:', e);
         }
+        
+        // 初始化设置按钮可见性
+        updateSettingsButtonVisibility();
     }
     initWallpaper();
 
@@ -5237,6 +5285,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         updateEditShortcutIconPreview(tempData.icon);
 
         editShortcutItemPanel.classList.add('active');
+        updateSettingsButtonVisibility();
     }
 
     // 关闭编辑快捷访问项目面板
@@ -5263,6 +5312,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (editShortcutItemPanel) {
             editShortcutItemPanel.classList.remove('active');
             currentEditShortcut = null;
+            updateSettingsButtonVisibility();
         }
     }
 
@@ -5433,6 +5483,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (editSearchEngineUrlError) editSearchEngineUrlError.textContent = '';
 
         editSearchEnginePanel.classList.add('active');
+        updateSettingsButtonVisibility();
     }
 
     // 关闭编辑搜索引擎项目面板
@@ -5457,6 +5508,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             editSearchEnginePanel.classList.remove('active');
             currentEditSearchEngine = null;
             editSearchEngineHasChanges = false;
+            updateSettingsButtonVisibility();
         }
     }
 

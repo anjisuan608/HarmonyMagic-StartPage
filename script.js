@@ -668,8 +668,65 @@ let searchEngineSettingsWorking = null; // 设置面板的内存副本
 // 记录预设搜索引擎数量
 let presetEngineCount = 0;
 
+// 历史记录导航状态
+let historyNavigationState = {
+    currentIndex: -1,      // 当前选中的历史记录索引
+    historyItems: [],       // 当前显示的历史记录列表
+    filledQuery: '',       // 当前填充的查询词
+    isNavigating: false    // 是否处于导航状态
+};
+
+// 记录当前触发历史记录菜单的搜索框（移动端用）
+let currentHistorySearchBox = null;
+
 // 搜索按钮SVG图标（硬编码在JS中）
 const searchButtonSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+// 自定义搜索引擎图标映射（存储名称以节省localStorage空间）
+const customSearchEngineIcons = {
+    'mc': '<svg t="1766328430081" class="search-icon" viewBox="0 0 1035 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="37846" width="24" height="24"><path d="M1013.852766 1011.332492a42.225028 42.225028 0 0 1-59.70619 0L702.316509 759.502424a428.900723 428.900723 0 1 1 133.958901-196.00858 41.718328 41.718328 0 0 1-4.919216 14.166497c-1.330088 3.61024-2.385714 7.347155-3.800252 10.91517l-2.385714-2.385714a42.225028 42.225028 0 0 1-72.690386-29.13527l-0.380025-3.905815a41.950565 41.950565 0 0 1 11.379645-28.670794l-3.926928-3.905815a336.976836 336.976836 0 1 0-88.123633 150.764463 6.333754 6.333754 0 0 0 0.612262-0.928951l61.120729 1.055626 145.254096 145.232984 0.274463-0.274463 135.12009 135.12009a42.225028 42.225028 0 0 1 0.042225 59.79064z" fill="#515151" p-id="37847"></path></svg>'
+};
+
+// 搜索历史缓存名称（全局常量）
+const SEARCH_HISTORY_CACHE_NAME = 'harmonymagic-search-history';
+const MAX_HISTORY_ITEMS = 64;
+
+// 根据图标名称获取SVG内容
+function getSearchEngineIcon(iconName) {
+    if (!iconName) return customSearchEngineIcons['mc'];
+    // 如果不是已知的图标名称，说明是旧的完整SVG，直接返回
+    if (!customSearchEngineIcons[iconName]) {
+        return iconName;
+    }
+    return customSearchEngineIcons[iconName];
+}
+
+// 从Cache API读取搜索历史（全局函数）
+async function getSearchHistoryFromCache() {
+    try {
+        const cache = await caches.open(SEARCH_HISTORY_CACHE_NAME);
+        const response = await cache.match('history');
+        if (response) {
+            return await response.json();
+        }
+    } catch (e) {
+        console.error('读取搜索历史失败:', e);
+    }
+    return [];
+}
+
+// 保存搜索历史到Cache API（全局函数）
+async function saveSearchHistoryToCache(history) {
+    try {
+        const cache = await caches.open(SEARCH_HISTORY_CACHE_NAME);
+        const response = new Response(JSON.stringify(history), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+        await cache.put('history', response);
+    } catch (e) {
+        console.error('保存搜索历史失败:', e);
+    }
+}
 
 // 主应用
 document.addEventListener('DOMContentLoaded', async function() {
@@ -814,6 +871,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     function saveGlobalSettings(settings) {
         const encodedValue = encodeURIComponent(JSON.stringify(settings));
         document.cookie = `global-settings=${encodedValue};path=/;expires=${new Date(Date.now() + 365*24*60*60*1000).toUTCString()}`;
+    }
+
+    // ==================== 历史记录设置（history-settings） ====================
+    // 默认设置值
+    const defaultHistorySettings = {
+        searchHistoryRecording: true, // 搜索历史记录（默认开启）
+        showAllHistory: true          // 显示全部历史记录（默认开启，false时仅显示当前搜索引擎的历史记录）
+    };
+
+    // 加载历史记录设置
+    function loadHistorySettings() {
+        const cookieValue = getCookieRaw('history-settings') || '';
+        let settings = { ...defaultHistorySettings };
+        
+        if (cookieValue) {
+            try {
+                const decoded = decodeURIComponent(cookieValue);
+                const parsed = JSON.parse(decoded);
+                settings = { ...settings, ...parsed };
+            } catch (e) {
+                console.error('解析历史记录设置失败:', e);
+            }
+        }
+        
+        return settings;
+    }
+
+    // 保存历史记录设置
+    function saveHistorySettings(settings) {
+        const encodedValue = encodeURIComponent(JSON.stringify(settings));
+        document.cookie = `history-settings=${encodedValue};path=/;expires=${new Date(Date.now() + 365*24*60*60*1000).toUTCString()}`;
     }
 
     // 应用全局设置
@@ -1269,8 +1357,41 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 从localStorage加载搜索引擎设置
         loadSearchEngineSettings();
 
+        // 刷新历史记录中无效的搜索引擎ID
+        await fixSearchHistoryEngineIds();
+
         // 渲染搜索引擎图标和搜索按钮
         renderSearchEngineIcons();
+    }
+
+    // 刷新历史记录中无效的搜索引擎ID
+    // 将不存在于搜索引擎列表中的记录的engineId设为0
+    async function fixSearchHistoryEngineIds() {
+        try {
+            const history = await getSearchHistoryFromCache();
+            if (!history || history.length === 0) return;
+
+            let hasChanges = false;
+            const validEngineIds = new Set(Object.keys(searchEngines).map(id => parseInt(id, 10)));
+
+            history.forEach(item => {
+                if (item.engineId !== undefined && item.engineId !== null) {
+                    const engineId = parseInt(item.engineId, 10);
+                    // 如果引擎ID不存在于当前搜索引擎列表中，设为0
+                    if (!validEngineIds.has(engineId)) {
+                        item.engineId = 0;
+                        hasChanges = true;
+                    }
+                }
+            });
+
+            if (hasChanges) {
+                await saveSearchHistoryToCache(history);
+                console.log('已刷新历史记录中无效的搜索引擎ID');
+            }
+        } catch (e) {
+            console.error('刷新历史记录引擎ID失败:', e);
+        }
     }
 
     // 渲染搜索引擎图标和搜索按钮（根据activeEngines动态渲染）
@@ -1291,9 +1412,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 更新data-engine-id
                 box.setAttribute('data-engine-id', engineId);
                 
-                // 渲染图标
+                // 渲染图标（支持图标名称和完整SVG两种格式）
                 if (contentDiv && engine.icon) {
-                    contentDiv.innerHTML = engine.icon;
+                    contentDiv.innerHTML = getSearchEngineIcon(engine.icon);
                 }
                 
                 // 渲染引擎名称
@@ -1783,6 +1904,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 nameEl.offsetHeight; // 触发重绘
                 nameEl.style.animation = '';
             }
+
+            // 显示搜索历史下拉列表
+            showSearchHistory(this);
             
             // 桌面端使用快速切换逻辑
             if (!isMobile()) {
@@ -1854,6 +1978,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 记录当前失焦的输入框和相关的按钮
             const blurInput = this;
             const relatedBtn = circleBtn;
+            const box = this.closest('.search-box-circle');
             
             setTimeout(() => {
                 // 如果当前焦点在同一个搜索框的按钮上，保持状态不变
@@ -1864,6 +1989,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 如果焦点在同一个输入框上，保持状态不变
                 if (document.activeElement === blurInput) {
                     return;
+                }
+
+                // 检查焦点是否在历史记录面板内，或最近点击是否在搜索框/历史记录面板内
+                if (box) {
+                    const historyDropdown = box.querySelector('.search-history-dropdown');
+                    const isFocusInDropdown = historyDropdown && historyDropdown.contains(document.activeElement);
+                    // 检查最近点击的目标是否在搜索框或历史记录面板内
+                    const isClickInSearchBox = lastClickTarget && box.contains(lastClickTarget);
+                    const isClickInDropdown = historyDropdown && lastClickTarget && 
+                        (historyDropdown.contains(lastClickTarget) || lastClickTarget.closest('.search-history-toggle, .search-history-item, .search-history-clear'));
+
+                    if (isFocusInDropdown || isClickInDropdown || isClickInSearchBox) {
+                        return;
+                    }
+                    // 隐藏搜索历史下拉列表
+                    if (historyDropdown) {
+                        historyDropdown.style.display = 'none';
+                    }
                 }
                 
                 // 如果当前展开的搜索框还是同一个，不重置
@@ -1925,6 +2068,131 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (e.key === 'Enter') {
                 performCircleSearch(box);
             }
+        });
+        
+        // 圆形搜索框输入框键盘导航事件（历史记录上下选择）
+        circleInput.addEventListener('keydown', function(e) {
+            const input = this;
+            const dropdown = box.querySelector('.search-history-dropdown');
+            const listContainer = dropdown ? dropdown.querySelector('.search-history-list') : null;
+            
+            // 获取当前历史记录列表
+            if (!listContainer || listContainer.children.length === 0) {
+                // 没有历史记录时重置导航状态
+                historyNavigationState.currentIndex = -1;
+                historyNavigationState.filledQuery = '';
+                historyNavigationState.isNavigating = false;
+                return;
+            }
+            
+            const items = listContainer.querySelectorAll('.search-history-item');
+            
+            // ESC：清空输入框，取消填充
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                input.value = '';
+                // 移除所有高亮
+                items.forEach(item => item.classList.remove('highlighted'));
+                // 重置导航状态
+                historyNavigationState.currentIndex = -1;
+                historyNavigationState.filledQuery = '';
+                historyNavigationState.isNavigating = false;
+                return;
+            }
+            
+            // 上箭头：选择上一条
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                
+                // 如果没有历史记录，不做任何操作
+                if (items.length === 0) return;
+                
+                // 移除当前高亮
+                items.forEach(item => item.classList.remove('highlighted'));
+                
+                // 计算新索引
+                if (historyNavigationState.currentIndex <= 0) {
+                    historyNavigationState.currentIndex = items.length - 1;
+                } else {
+                    historyNavigationState.currentIndex--;
+                }
+                
+                // 高亮新项并填充到输入框
+                const newIndex = historyNavigationState.currentIndex;
+                const selectedItem = items[newIndex];
+                if (selectedItem) {
+                    selectedItem.classList.add('highlighted');
+                    const query = selectedItem.dataset.query;
+                    input.value = query;
+                    historyNavigationState.filledQuery = query;
+                    historyNavigationState.isNavigating = true;
+                    
+                    // 确保选中项可见
+                    selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+                return;
+            }
+            
+            // 下箭头：选择下一条
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                
+                // 如果没有历史记录，不做任何操作
+                if (items.length === 0) return;
+                
+                // 移除当前高亮
+                items.forEach(item => item.classList.remove('highlighted'));
+                
+                // 计算新索引
+                if (historyNavigationState.currentIndex >= items.length - 1 || historyNavigationState.currentIndex === -1) {
+                    historyNavigationState.currentIndex = 0;
+                } else {
+                    historyNavigationState.currentIndex++;
+                }
+                
+                // 高亮新项并填充到输入框
+                const newIndex = historyNavigationState.currentIndex;
+                const selectedItem = items[newIndex];
+                if (selectedItem) {
+                    selectedItem.classList.add('highlighted');
+                    const query = selectedItem.dataset.query;
+                    input.value = query;
+                    historyNavigationState.filledQuery = query;
+                    historyNavigationState.isNavigating = true;
+                    
+                    // 确保选中项可见
+                    selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+                return;
+            }
+            
+            // 左/右方向键：移除高亮状态
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                items.forEach(item => item.classList.remove('highlighted'));
+                historyNavigationState.currentIndex = -1;
+                historyNavigationState.isNavigating = false;
+                return;
+            }
+            
+            // 其他按键（普通输入）：移除高亮状态
+            items.forEach(item => item.classList.remove('highlighted'));
+            historyNavigationState.currentIndex = -1;
+            historyNavigationState.isNavigating = false;
+        });
+        
+        // 监听输入事件，当用户开始输入时移除高亮
+        circleInput.addEventListener('input', function() {
+            const dropdown = box.querySelector('.search-history-dropdown');
+            const listContainer = dropdown ? dropdown.querySelector('.search-history-list') : null;
+            
+            if (listContainer) {
+                const items = listContainer.querySelectorAll('.search-history-item');
+                items.forEach(item => item.classList.remove('highlighted'));
+            }
+            
+            // 重置导航状态
+            historyNavigationState.currentIndex = -1;
+            historyNavigationState.isNavigating = false;
         });
     });
     
@@ -2006,16 +2274,29 @@ document.addEventListener('DOMContentLoaded', async function() {
         const input = box.querySelector('.circle-search-input');
         const query = input.value.trim();
         const engineId = box.getAttribute('data-engine-id');
-        
-        const searchUrl = getSearchUrl(engineId, query);
 
-        if (searchUrl) {
-            window.open(searchUrl, '_blank');
+        // 检查是否开启历史记录
+        const historySettings = loadHistorySettings();
+        if (historySettings.searchHistoryRecording !== false) {
+            addSearchHistory(query, engineId).then(() => {
+                // 搜索后刷新当前打开的搜索历史列表
+                const input = box.querySelector('.circle-search-input');
+                if (input) {
+                    showSearchHistory(input);
+                }
+            });
         }
+
+        const searchUrl = getSearchUrl(engineId, query);
 
         // 搜索发起后清空输入框内容
         input.value = '';
         box.classList.remove('input-active');
+
+        // 打开搜索页面
+        if (searchUrl) {
+            window.open(searchUrl, '_blank');
+        }
     }
     
     // 展开中间搜索框
@@ -2042,6 +2323,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function openContextMenu(e) {
         e.stopPropagation();
+
+        // 隐藏移动端历史记录菜单
+        const mobileDropdown = document.querySelector('.search-history-mobile-dropdown');
+        if (mobileDropdown) {
+            mobileDropdown.classList.remove('active');
+        }
 
         const searchBoxContainer = document.querySelector('.search-boxes-container');
         searchBoxContainer.style.opacity = '0';
@@ -2126,6 +2413,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // 显示右键菜单（快捷访问）- 在搜索框区域显示
     document.addEventListener('contextmenu', function(e) {
+        // 如果右键点击在输入框中，不阻止默认的浏览器右键菜单
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
         e.preventDefault();
         
         // 隐藏搜索框部分，但保留时间日期
@@ -2677,6 +2969,567 @@ document.addEventListener('DOMContentLoaded', async function() {
     // SVG 图标定义
     const svgOff = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0zM514.460823 921.606867a409.618313 409.618313 0 1 1 409.595422-409.595421A409.595422 409.595422 0 0 1 514.460823 921.606867z" fill="#CCCCCC" p-id="7318"></path>';
     const svgOn = '<path d="M1536.011446 0H512.011446C229.234257 0 0 229.234257 0 512.011446c0 282.754298 229.234257 511.988554 512.011446 511.988554H1536.011446c282.777189 0 512.011446-229.234257 512.011445-511.988554C2048.022891 229.234257 1818.788635 0 1536.011446 0z m0 921.606867a409.618313 409.618313 0 1 1 409.595421-409.595421A409.595422 409.595422 0 0 1 1536.011446 921.606867z" fill="#4CAF50" p-id="7474"></path>';
+
+    // ==================== 搜索历史记录 ====================
+    const svgSearchIcon = '<svg class="search-history-item-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    let lastClickTarget = null;
+
+    // 记录点击目标的全局mousedown事件（只添加一次）
+    document.addEventListener('mousedown', function(e) {
+        lastClickTarget = e.target;
+    }, true);
+
+    // HTML实体转义（用于显示，不影响原始值）
+    function escapeHtmlForDisplay(text) {
+        const escapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            '/': '&#x2F;',
+            '`': '&#x60;',
+            '=': '&#x3D;'
+        };
+        return text.replace(/[&<>"'`=/]/g, char => escapeMap[char]);
+    }
+
+    // 从Cache API读取搜索历史
+    async function getSearchHistoryFromCache() {
+        try {
+            const cache = await caches.open(SEARCH_HISTORY_CACHE_NAME);
+            const response = await cache.match('history');
+            if (response) {
+                return await response.json();
+            }
+        } catch (e) {
+            console.error('读取搜索历史失败:', e);
+        }
+        return [];
+    }
+
+    // 添加搜索记录
+    async function addSearchHistory(query, engineId) {
+        if (!query || query.trim() === '') return;
+
+        query = query.trim();
+        let history = await getSearchHistoryFromCache();
+
+        // 查找是否已存在相同记录
+        const existingIndex = history.findIndex(item => item.query === query);
+        
+        if (existingIndex !== -1) {
+            // 已存在：更新时间戳和搜索引擎ID，并移到开头
+            history[existingIndex].timestamp = Date.now();
+            if (engineId) {
+                history[existingIndex].engineId = parseInt(engineId, 10);
+            }
+            const item = history.splice(existingIndex, 1)[0];
+            history.unshift(item);
+        } else {
+            // 不存在：添加新记录
+            history.unshift({
+                query: query,
+                timestamp: Date.now(),
+                engineId: engineId ? parseInt(engineId, 10) : null
+            });
+        }
+
+        // 限制数量
+        if (history.length > MAX_HISTORY_ITEMS) {
+            history = history.slice(0, MAX_HISTORY_ITEMS);
+        }
+
+        await saveSearchHistoryToCache(history);
+    }
+
+    // 清除搜索历史
+    // engineId为空时清除全部，为数字时只清除该引擎的历史记录
+    async function clearSearchHistory(engineId) {
+        try {
+            if (engineId === undefined || engineId === null) {
+                // 清除全部
+                const cache = await caches.open(SEARCH_HISTORY_CACHE_NAME);
+                await cache.delete('history');
+            } else {
+                // 只清除指定引擎的历史记录
+                let history = await getSearchHistoryFromCache();
+                history = history.filter(item => item.engineId !== engineId);
+                await saveSearchHistoryToCache(history);
+            }
+        } catch (e) {
+            console.error('清除搜索历史失败:', e);
+        }
+    }
+
+    // 删除单条搜索历史
+    async function deleteSearchHistory(queryToDelete) {
+        try {
+            const cache = await caches.open(SEARCH_HISTORY_CACHE_NAME);
+            const response = await cache.match('history');
+            if (response) {
+                const history = await response.json();
+                const filteredHistory = history.filter(item => item.query !== queryToDelete);
+                await cache.put('history', new Response(JSON.stringify(filteredHistory)));
+            }
+        } catch (e) {
+            console.error('删除历史记录失败:', e);
+        }
+    }
+
+    // 渲染搜索历史列表到指定容器
+    function renderSearchHistoryToContainer(history, container) {
+        if (!container) return;
+
+        // 获取列表容器和头部容器
+        const listContainer = container.querySelector('.search-history-list');
+        const headerContainer = container.querySelector('.search-history-header');
+
+        // 获取记录状态
+        const historySettings = loadHistorySettings();
+        const isRecording = historySettings.searchHistoryRecording !== false;
+        const showAll = historySettings.showAllHistory !== false;
+
+        // 渲染底部控制区域（开关 + 清除按钮）
+        const headerHtml = `
+            <span class="search-history-toggle" data-recording="${isRecording}">
+                <span>记录</span>
+                <span class="status-indicator ${isRecording ? 'enabled' : ''}">
+                    <svg class="status-icon" viewBox="0 0 2048 1024">${isRecording ? svgOn : svgOff}</svg>
+                </span>
+            </span>
+            <span class="search-history-toggle" data-showall="${showAll}">
+                <span>全部</span>
+                <span class="status-indicator ${showAll ? 'enabled' : ''}">
+                    <svg class="status-icon" viewBox="0 0 2048 1024">${showAll ? svgOn : svgOff}</svg>
+                </span>
+            </span>
+            <span class="search-history-clear">清除历史记录</span>
+        `;
+
+        if (history.length === 0) {
+            listContainer.innerHTML = '<div class="search-history-empty">暂无历史记录</div>';
+            if (headerContainer) {
+                headerContainer.innerHTML = headerHtml;
+            }
+            bindHistoryEvents(container, headerHtml);
+            return;
+        }
+
+        // 渲染历史记录项到列表容器
+        listContainer.innerHTML = history.map(item => {
+            return `
+                <div class="search-history-item" data-query="${escapeHtmlForDisplay(item.query)}">
+                    <span class="search-history-item-text" title="${escapeHtmlForDisplay(item.query)}">${escapeHtmlForDisplay(item.query)}</span>
+                    <span class="search-history-item-delete" title="删除" data-query="${escapeHtmlForDisplay(item.query)}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </span>
+                </div>
+            `;
+        }).join('');
+
+        // 渲染控制栏到头部容器
+        if (headerContainer) {
+            headerContainer.innerHTML = headerHtml;
+        }
+
+        // 绑定事件
+        bindHistoryEvents(container, headerHtml);
+
+        // 绑定历史记录项点击事件
+        container.querySelectorAll('.search-history-item').forEach(el => {
+            el.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const query = this.dataset.query;
+
+                // 获取当前搜索框
+                let searchBox = container.closest('.search-box-circle');
+                // 移动端：使用记录的搜索框
+                if (!searchBox && isMobile()) {
+                    searchBox = currentHistorySearchBox;
+                }
+                
+                if (searchBox) {
+                    const engineId = searchBox.getAttribute('data-engine-id');
+                    const searchUrl = getSearchUrl(engineId, query);
+                    
+                    if (searchUrl) {
+                        window.open(searchUrl, '_blank');
+                    }
+
+                    // 搜索后更新历史记录（异步），并刷新列表
+                    addSearchHistory(query, engineId).then(() => {
+                        const input = searchBox.querySelector('.circle-search-input');
+                        if (input) {
+                            showSearchHistory(input);
+                        }
+                    });
+                }
+            });
+        });
+
+        // 绑定删除按钮点击事件
+        container.querySelectorAll('.search-history-item-delete').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const query = this.dataset.query;
+                await deleteSearchHistory(query);
+                // 重新获取并渲染
+                const updatedHistory = await getSearchHistoryFromCache();
+                // 获取当前搜索引擎ID用于过滤
+                let searchBox = container.closest('.search-box-circle');
+                // 移动端：使用记录的搜索框
+                if (!searchBox && isMobile()) {
+                    searchBox = currentHistorySearchBox;
+                }
+                const historySettings = loadHistorySettings();
+                const showAll = historySettings.showAllHistory !== false;
+                const currentEngineId = searchBox ? parseInt(searchBox.getAttribute('data-engine-id'), 10) : null;
+                // 根据设置过滤历史记录
+                const filteredHistory = showAll || !currentEngineId 
+                    ? updatedHistory 
+                    : updatedHistory.filter(item => item.engineId === currentEngineId);
+                renderSearchHistoryToContainer(filteredHistory, container);
+            });
+        });
+    }
+
+    // 绑定历史记录底部事件
+    function bindHistoryEvents(container, footerHtml) {
+        // 绑定开关按钮（支持多个开关：记录、全部）
+        const toggleBtns = container.querySelectorAll('.search-history-toggle');
+        toggleBtns.forEach(toggleBtn => {
+            // 初始化图标
+            const indicator = toggleBtn.querySelector('.status-indicator');
+            const icon = toggleBtn.querySelector('.status-icon');
+            if (indicator.classList.contains('enabled') && icon) {
+                icon.innerHTML = svgOn;
+            } else if (icon) {
+                icon.innerHTML = svgOff;
+            }
+
+            toggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // 保持背景模糊
+                const settings = loadGlobalSettings();
+                if (settings.backgroundBlur) {
+                    setBackgroundBlur(true);
+                }
+
+                // 移动端：操作后聚焦搜索框
+                if (isMobile() && currentHistorySearchBox) {
+                    const input = currentHistorySearchBox.querySelector('.circle-search-input');
+                    if (input) {
+                        input.focus();
+                    }
+                }
+
+                // 判断是哪个开关
+                const isRecordingToggle = this.dataset.recording !== undefined;
+                const isShowAllToggle = this.dataset.showall !== undefined;
+
+                if (isRecordingToggle) {
+                    const isRecording = this.dataset.recording === 'true';
+                    const newState = !isRecording;
+                    this.dataset.recording = newState;
+
+                    // 更新UI
+                    const indicator = this.querySelector('.status-indicator');
+                    const icon = this.querySelector('.status-icon');
+                    if (newState) {
+                        indicator.classList.add('enabled');
+                        if (icon) icon.innerHTML = svgOn;
+                    } else {
+                        indicator.classList.remove('enabled');
+                        if (icon) icon.innerHTML = svgOff;
+                    }
+
+                    // 保存设置
+                    const historySettings = loadHistorySettings();
+                    historySettings.searchHistoryRecording = newState;
+                    saveHistorySettings(historySettings);
+
+                    sendNotice(newState ? '历史记录已开启' : '历史记录已关闭', 'info');
+                } else if (isShowAllToggle) {
+                    const showAll = this.dataset.showall === 'true';
+                    const newState = !showAll;
+                    this.dataset.showall = newState;
+
+                    // 更新UI
+                    const indicator = this.querySelector('.status-indicator');
+                    const icon = this.querySelector('.status-icon');
+                    if (newState) {
+                        indicator.classList.add('enabled');
+                        if (icon) icon.innerHTML = svgOn;
+                    } else {
+                        indicator.classList.remove('enabled');
+                        if (icon) icon.innerHTML = svgOff;
+                    }
+
+                    // 保存设置
+                    const historySettings = loadHistorySettings();
+                    historySettings.showAllHistory = newState;
+                    saveHistorySettings(historySettings);
+
+                    // 刷新历史记录显示
+                    if (isMobile()) {
+                        // 移动端：直接重新渲染列表
+                        (async () => {
+                            const historySettings = loadHistorySettings();
+                            const showAll = historySettings.showAllHistory !== false;
+                            let history = await getSearchHistoryFromCache();
+                            
+                            const searchBox = currentHistorySearchBox;
+                            if (!showAll && searchBox) {
+                                const currentEngineId = searchBox.getAttribute('data-engine-id');
+                                if (currentEngineId) {
+                                    const engineIdNum = parseInt(currentEngineId, 10);
+                                    history = history.filter(item => item.engineId === engineIdNum);
+                                }
+                            }
+                            
+                            const listContainer = container.querySelector('.search-history-list');
+                            if (listContainer) {
+                                if (history.length === 0) {
+                                    listContainer.innerHTML = '<div class="search-history-empty">暂无历史记录</div>';
+                                } else {
+                                    listContainer.innerHTML = history.map(item => {
+                                        return `
+                                            <div class="search-history-item" data-query="${escapeHtmlForDisplay(item.query)}">
+                                                <span class="search-history-item-text" title="${escapeHtmlForDisplay(item.query)}">${escapeHtmlForDisplay(item.query)}</span>
+                                                <span class="search-history-item-delete" title="删除" data-query="${escapeHtmlForDisplay(item.query)}">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M18 6L6 18M6 6l12 12"/>
+                                                    </svg>
+                                                </span>
+                                            </div>
+                                        `;
+                                    }).join('');
+                                }
+                                
+                                // 重新绑定列表项点击事件
+                                listContainer.querySelectorAll('.search-history-item').forEach(el => {
+                                    el.addEventListener('click', async function(e) {
+                                        e.stopPropagation();
+                                        const query = this.dataset.query;
+                                        let sb = currentHistorySearchBox;
+                                        if (sb) {
+                                            const engineId = sb.getAttribute('data-engine-id');
+                                            const searchUrl = getSearchUrl(engineId, query);
+                                            if (searchUrl) {
+                                                window.open(searchUrl, '_blank');
+                                            }
+                                            addSearchHistory(query, engineId).then(() => {
+                                                const input = sb.querySelector('.circle-search-input');
+                                                if (input) {
+                                                    showSearchHistory(input);
+                                                }
+                                            });
+                                        }
+                                    });
+                                });
+                                
+                                // 重新绑定删除按钮事件
+                                listContainer.querySelectorAll('.search-history-item-delete').forEach(btn => {
+                                    btn.addEventListener('click', async function(e) {
+                                        e.stopPropagation();
+                                        const query = this.dataset.query;
+                                        await deleteSearchHistory(query);
+                                        const updatedHistory = await getSearchHistoryFromCache();
+                                        let sb = currentHistorySearchBox;
+                                        const hs = loadHistorySettings();
+                                        const showAll = hs.showAllHistory !== false;
+                                        const currentEngineId = sb ? parseInt(sb.getAttribute('data-engine-id'), 10) : null;
+                                        const filteredHistory = showAll || !currentEngineId 
+                                            ? updatedHistory 
+                                            : updatedHistory.filter(item => item.engineId === currentEngineId);
+                                        renderSearchHistoryToContainer(filteredHistory, container);
+                                    });
+                                });
+                            }
+                        })();
+                    } else {
+                        // 桌面端：使用原有方式
+                        const searchBox = container.closest('.search-box-circle');
+                        if (searchBox) {
+                            const input = searchBox.querySelector('.circle-search-input');
+                            if (input) {
+                                showSearchHistory(input);
+                            }
+                        }
+                    }
+
+                    sendNotice(newState ? '显示全部历史记录' : '仅显示当前搜索引擎历史记录', 'info');
+                }
+            });
+        });
+
+        // 绑定清除历史记录按钮
+        const clearBtn = container.querySelector('.search-history-clear');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                // 保持背景模糊
+                const settings = loadGlobalSettings();
+                if (settings.backgroundBlur) {
+                    setBackgroundBlur(true);
+                }
+                
+                // 移动端：操作后聚焦搜索框
+                if (isMobile() && currentHistorySearchBox) {
+                    const input = currentHistorySearchBox.querySelector('.circle-search-input');
+                    if (input) {
+                        input.focus();
+                    }
+                }
+                
+                // 获取当前搜索引擎ID
+                let searchBox = container.closest('.search-box-circle');
+                // 移动端：使用记录的搜索框
+                if (!searchBox && isMobile()) {
+                    searchBox = currentHistorySearchBox;
+                }
+                const engineId = searchBox ? searchBox.getAttribute('data-engine-id') : null;
+                
+                // 获取设置判断是清除全部还是当前引擎
+                const historySettings = loadHistorySettings();
+                const showAll = historySettings.showAllHistory !== false;
+                
+                // 根据设置构建不同的消息
+                let message, onOk;
+                
+                if (showAll || !engineId) {
+                    // 清除全部
+                    message = '确定要清除<span style="color: #FFD700; font-weight: bold;">全部</span>搜索历史记录吗？此操作无法撤销。';
+                    onOk = async function() {
+                        await clearSearchHistory();
+                        // 刷新当前打开的搜索历史列表
+                        if (searchBox) {
+                            const input = searchBox.querySelector('.circle-search-input');
+                            if (input) {
+                                await showSearchHistory(input);
+                            }
+                        }
+                        sendNotice('历史记录已清除', 'info');
+                    };
+                } else {
+                    // 清除当前搜索引擎的历史记录
+                    message = '确定要清除<span style="color: #FFD700; font-weight: bold;">当前搜索引擎</span>的历史记录吗？此操作无法撤销。';
+                    onOk = async function() {
+                        await clearSearchHistory(parseInt(engineId, 10));
+                        // 刷新当前打开的搜索历史列表
+                        if (searchBox) {
+                            const input = searchBox.querySelector('.circle-search-input');
+                            if (input) {
+                                await showSearchHistory(input);
+                            }
+                        }
+                        sendNotice('当前搜索引擎历史记录已清除', 'info');
+                    };
+                }
+                
+                // 打开确认对话框
+                openConfirmDialog('clear-search-history', {
+                    title: '清除历史记录',
+                    message: message,
+                    onOk: onOk
+                });
+            });
+        }
+    }
+
+    // 获取对应的历史记录dropdown容器
+    function getHistoryDropdown(box) {
+        if (isMobile()) {
+            return document.querySelector('.search-history-mobile-dropdown');
+        }
+        return box.querySelector('.search-history-dropdown');
+    }
+
+    // 显示搜索历史下拉列表
+    async function showSearchHistory(input) {
+        if (!input) return;
+
+        const box = input.closest('.search-box-circle');
+        if (!box) return;
+
+        // 记录当前触发历史记录菜单的搜索框（移动端用）
+        if (isMobile()) {
+            currentHistorySearchBox = box;
+        }
+
+        // 隐藏桌面端历史记录菜单（移动端时）
+        if (isMobile()) {
+            const desktopDropdown = box.querySelector('.search-history-dropdown');
+            if (desktopDropdown) {
+                desktopDropdown.style.display = 'none';
+            }
+        }
+
+        const dropdown = getHistoryDropdown(box);
+        if (!dropdown) return;
+
+        // 获取当前搜索引擎ID
+        const currentEngineId = box.getAttribute('data-engine-id');
+        
+        // 获取历史记录设置
+        const historySettings = loadHistorySettings();
+        const showAll = historySettings.showAllHistory !== false;
+
+        // 获取历史数据
+        let history = await getSearchHistoryFromCache();
+        
+        // 根据设置过滤历史记录
+        if (!showAll && currentEngineId) {
+            const engineIdNum = parseInt(currentEngineId, 10);
+            history = history.filter(item => item.engineId === engineIdNum);
+        }
+        
+        // 渲染历史记录
+        renderSearchHistoryToContainer(history, dropdown);
+
+        // 显示下拉列表
+        if (isMobile()) {
+            dropdown.classList.add('active');
+        } else {
+            dropdown.style.display = 'flex';
+        }
+    }
+
+    // 隐藏搜索历史下拉列表
+    function hideSearchHistory() {
+        // 隐藏桌面端
+        const boxes = document.querySelectorAll('.search-box-circle');
+        boxes.forEach(box => {
+            const dropdown = box.querySelector('.search-history-dropdown');
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        // 隐藏移动端
+        const mobileDropdown = document.querySelector('.search-history-mobile-dropdown');
+        if (mobileDropdown) {
+            mobileDropdown.classList.remove('active');
+        }
+        
+        // 清空当前历史记录搜索框记录
+        currentHistorySearchBox = null;
+    }
+
+    // 点击其他区域关闭下拉列表
+    document.addEventListener('click', function(e) {
+        // 如果点击在搜索框输入框或历史记录面板内，不关闭
+        if (e.target.closest('.circle-search-input') || 
+            e.target.closest('.search-history-dropdown') || 
+            e.target.closest('.search-history-mobile-dropdown')) {
+            return;
+        }
+        // 隐藏所有搜索历史下拉列表
+        hideSearchHistory();
+    });
 
     // ==================== 初始化全局设置 ====================
     // 在SVG定义后应用全局设置
@@ -3260,13 +4113,42 @@ document.addEventListener('DOMContentLoaded', async function() {
             message: '确定要清除所有Cookie和本地存储数据吗？此操作不可撤销，页面将立即刷新。',
             onOk: async function() {
                 // 清除所有localStorage数据
-                localStorage.clear();
-                // 清除所有壁纸存储
-                await clearAllWallpaperStorage();
+                try {
+                    localStorage.clear();
+                } catch (e) {
+                    console.error('清除localStorage失败:', e);
+                }
                 // 清除所有cookie
-                document.cookie.split(";").forEach(function(c) {
-                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                });
+                try {
+                    document.cookie.split(";").forEach(function(c) {
+                        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                    });
+                } catch (e) {
+                    console.error('清除Cookie失败:', e);
+                }
+                // 清除所有Cache API缓存
+                try {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+                } catch (e) {
+                    console.error('清除Cache API失败:', e);
+                }
+                // 清除所有IndexedDB数据库
+                try {
+                    const databases = await indexedDB.databases();
+                    await Promise.all(databases.map(dbInfo => {
+                        if (dbInfo.name) {
+                            return new Promise((resolve, reject) => {
+                                const request = indexedDB.deleteDatabase(dbInfo.name);
+                                request.onsuccess = () => resolve();
+                                request.onerror = () => resolve();
+                                request.onblocked = () => resolve();
+                            });
+                        }
+                    }));
+                } catch (e) {
+                    console.error('清除IndexedDB失败:', e);
+                }
                 // 刷新页面
                 location.reload();
             }
@@ -3366,7 +4248,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         'reset-search-engines': {
             title: '重置搜索引擎',
             message: '确定要重置所有搜索引擎设置吗？这将删除所有自定义搜索引擎和排序设置。',
-            onOk: function() {
+            onOk: async function() {
                 localStorage.removeItem('search_engine_settings');
                 localStorage.removeItem('custom_search_engines');
                 // 重置搜索引擎数据并刷新显示
@@ -3376,21 +4258,25 @@ document.addEventListener('DOMContentLoaded', async function() {
                 searchEngineSettingsWorking = null;
                 refreshSearchEngines();
                 // 同时刷新主页搜索框
-                loadSearchEngines();
+                await loadSearchEngines();
+                // 刷新历史记录中无效的搜索引擎ID
+                await fixSearchHistoryEngineIds();
                 sendNotice('搜索引擎已重置', 'info');
             }
         },
         'restore-search-engines': {
             title: '还原搜索引擎排序',
             message: '确定要恢复默认排序吗？这将把所有预设引擎恢复为默认顺序，自定义搜索引擎将被移至未使用列表。',
-            onOk: function() {
+            onOk: async function() {
                 localStorage.removeItem('search_engine_settings');
                 // 刷新搜索引擎显示
                 searchEngineSettings = null;
                 searchEngineSettingsWorking = null;
                 refreshSearchEngines();
                 // 同时刷新主页搜索框
-                loadSearchEngines();
+                await loadSearchEngines();
+                // 刷新历史记录中无效的搜索引擎ID
+                await fixSearchHistoryEngineIds();
                 sendNotice('搜索引擎排序已还原', 'info');
             }
         },
@@ -3440,15 +4326,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // 打开确认对话框
-    function openConfirmDialog(actionId) {
+    // 支持传入自定义配置覆盖默认配置
+    function openConfirmDialog(actionId, customConfig) {
         const action = confirmActions[actionId];
         if (!action) return;
 
-        if (confirmDialogTitle) confirmDialogTitle.textContent = action.title;
-        if (confirmDialogMessage) confirmDialogMessage.textContent = action.message;
+        // 合并默认配置和自定义配置
+        const config = { ...action, ...customConfig };
+
+        if (confirmDialogTitle) confirmDialogTitle.textContent = config.title;
+        if (confirmDialogMessage) confirmDialogMessage.innerHTML = config.message;
         
         // 存储当前操作
         confirmDialog.dataset.currentAction = actionId;
+        
+        // 存储自定义onOk回调
+        if (customConfig && customConfig.onOk) {
+            confirmDialog.dataset.customOnOk = 'true';
+            // 将自定义onOk保存到confirmActions中临时使用
+            confirmActions[actionId] = { ...config };
+        }
         
         if (confirmDialog) {
             confirmDialog.classList.add('active');
@@ -3649,7 +4546,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const saved = localStorage.getItem('custom_search_engines');
             if (saved) {
-                const customEngines = JSON.parse(saved);
+                let customEngines = JSON.parse(saved);
+                
+                // 检查是否有被标记为删除的引擎（从search_engine_settings中读取pendingDeleteIds）
+                const savedSettings = localStorage.getItem('search_engine_settings');
+                let pendingDeleteIds = [];
+                if (savedSettings) {
+                    try {
+                        const settings = JSON.parse(savedSettings);
+                        pendingDeleteIds = settings.pendingDeleteIds || [];
+                    } catch (e) {
+                        console.error('解析搜索引擎设置失败:', e);
+                    }
+                }
+                
+                // 过滤掉被标记为删除的引擎
+                if (pendingDeleteIds.length > 0) {
+                    const beforeCount = customEngines.length;
+                    customEngines = customEngines.filter(engine => !pendingDeleteIds.includes(engine.id));
+                    console.log(`清理了 ${beforeCount - customEngines.length} 个已标记删除的自定义搜索引擎`);
+                    
+                    // 清理后重新保存custom_search_engines
+                    localStorage.setItem('custom_search_engines', JSON.stringify(customEngines));
+                    
+                    // 清理search_engine_settings中的pendingDeleteIds
+                    if (savedSettings) {
+                        const settings = JSON.parse(savedSettings);
+                        delete settings.pendingDeleteIds;
+                        localStorage.setItem('search_engine_settings', JSON.stringify(settings));
+                    }
+                }
+                
                 customEngines.forEach(engine => {
                     searchEngineData.engines.push(engine);
                     searchEngines[engine.id] = engine;
@@ -3796,7 +4723,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             item.innerHTML = `
-                <div class="search-engine-item-icon">${engine.icon}</div>
+                <div class="search-engine-item-icon">${getSearchEngineIcon(engine.icon)}</div>
                 <span class="search-engine-item-name">
                     ${isPreset ? '<span class="preset-tag">预设</span>' : ''}${engine.title}
                 </span>
@@ -3994,16 +4921,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 检查名称是否合法：非空且不包含HTML标签
         const isNameValid = rawName.length > 0 && !/<[^>]*>/i.test(rawName);
         
-        // MC百科图标（用于自定义搜索引擎）
-        const mcIcon = '<svg t="1766328430081" class="search-icon" viewBox="0 0 1035 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="37846" width="24" height="24"><path d="M1013.852766 1011.332492a42.225028 42.225028 0 0 1-59.70619 0L702.316509 759.502424a428.900723 428.900723 0 1 1 133.958901-196.00858 41.718328 41.718328 0 0 1-4.919216 14.166497c-1.330088 3.61024-2.385714 7.347155-3.800252 10.91517l-2.385714-2.385714a42.225028 42.225028 0 0 1-72.690386-29.13527l-0.380025-3.905815a41.950565 41.950565 0 0 1 11.379645-28.670794l-3.926928-3.905815a336.976836 336.976836 0 1 0-88.123633 150.764463 6.333754 6.333754 0 0 0 0.612262-0.928951l61.120729 1.055626 145.254096 145.232984 0.274463-0.274463 135.12009 135.12009a42.225028 42.225028 0 0 1 0.042225 59.79064z" fill="#515151" p-id="37847"></path></svg>';
+        // 自定义搜索引擎ID从10001开始，如果有冲突则顺延
+        let newId = 10001;
+        while (searchEngines[newId]) {
+            newId++;
+        }
         
-        // 创建新的搜索引擎
-        const newId = Math.max(...searchEngineData.engines.map(e => e.id)) + 1;
         const newEngine = {
             id: newId,
             // 如果名称不合法，使用"未命名的搜索引擎"
             title: isNameValid ? sanitizedName : '未命名的搜索引擎',
-            icon: mcIcon,
+            icon: 'mc',  // 存储图标名称(MyCustom)而不是完整SVG
             url: url,
             comment: '自定义搜索引擎'
         };
@@ -4122,6 +5050,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             saveCustomSearchEngines();
             
+            // 刷新历史记录中无效的搜索引擎ID
+            fixSearchHistoryEngineIds();
+            
             // 重新渲染主页搜索引擎
             renderSearchEngineIcons();
             sendNotice('搜索引擎设置已保存', 'info');
@@ -4165,6 +5096,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 });
                 saveCustomSearchEngines();
                 
+                // 刷新历史记录中无效的搜索引擎ID
+                fixSearchHistoryEngineIds();
+                
                 // 重新渲染主页搜索引擎
                 renderSearchEngineIcons();
                 sendNotice('设置已应用', 'info');
@@ -4203,6 +5137,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 localStorage.setItem('search_engine_settings', JSON.stringify(searchEngineSettings));
                 searchEngineSettingsWorking = null;
                 searchEngineSettingsHasInnerChanges = false; // 重置内层编辑标志
+                
+                // 刷新历史记录中无效的搜索引擎ID
+                fixSearchHistoryEngineIds();
                 
                 // 重新渲染主页搜索引擎
                 renderSearchEngineIcons();
@@ -5766,7 +6703,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             item.innerHTML = `
-                <div class="search-engine-item-icon">${engine.icon}</div>
+                <div class="search-engine-item-icon">${getSearchEngineIcon(engine.icon)}</div>
                 <span class="search-engine-item-name">
                     ${isPreset ? '<span class="preset-tag">预设</span>' : ''}${engine.title}
                 </span>
@@ -5837,6 +6774,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         onOk: function() {
             editSearchEngineHasChanges = false;
             closeEditSearchEnginePanel(false, true);
+        }
+    };
+
+    confirmActions['clear-search-history'] = {
+        title: '清除历史记录',
+        message: '确定要清除所有搜索历史记录吗？此操作无法撤销。',
+        onOk: function() {
+            clearSearchHistory();
+            sendNotice('历史记录已清除', 'info');
         }
     };
 

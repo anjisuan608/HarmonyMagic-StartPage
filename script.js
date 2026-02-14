@@ -4575,7 +4575,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 10. 关于面板 - 最低优先级
+        // 10. 历史记录设置面板
+        if (historySettingsPanel && historySettingsPanel.classList.contains('active')) {
+            closeHistorySettingsPanel();
+            return;
+        }
+
+        // 11. 关于面板 - 最低优先级
         if (aboutPanel && aboutPanel.classList.contains('active')) {
             closeAboutPanel();
         }

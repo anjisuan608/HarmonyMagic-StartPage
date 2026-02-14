@@ -53,6 +53,12 @@
                 </div>
                 <span>壁纸设置</span>
             </div>
+            <div class="settings-menu-item" data-action="history-settings">
+                <div class="settings-menu-icon">
+                    <svg t="1771051950424" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2045" width="20" height="20"><path d="M480 0C214.9 0 0 214.9 0 480s214.9 480 480 480 480-214.9 480-480S745.1 0 480 0z m0 896C250.6 896 64 709.4 64 480S250.6 64 480 64s416 186.6 416 416-186.6 416-416 416z" fill="#7a7a7a" p-id="2046"></path><path d="M512 192h-64v320h320v-64H512z" fill="#7a7a7a" p-id="2047"></path></svg>
+                </div>
+                <span>历史记录设置</span>
+            </div>
             <div class="settings-menu-item" data-action="about">
                 <div class="settings-menu-icon">
                     <svg t="1769007386374" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8114" width="20" height="20"><path d="M512 64c247.424 0 448 200.576 448 448s-200.576 448-448 448S64 759.424 64 512 264.576 64 512 64z m0 85.333333C311.701333 149.333333 149.333333 311.701333 149.333333 512s162.368 362.666667 362.666667 362.666667 362.666667-162.368 362.666667-362.666667S712.298667 149.333333 512 149.333333z m21.333333 277.333334a21.333333 21.333333 0 0 1 21.333334 21.333333v298.666667a21.333333 21.333333 0 0 1-21.333334 21.333333h-42.666666a21.333333 21.333333 0 0 1-21.333334-21.333333V448a21.333333 21.333333 0 0 1 21.333334-21.333333h42.666666z m0-170.666667a21.333333 21.333333 0 0 1 21.333334 21.333333v42.666667a21.333333 21.333333 0 0 1-21.333334 21.333333h-42.666666a21.333333 21.333333 0 0 1-21.333334-21.333333v-42.666667a21.333333 21.333333 0 0 1 21.333334-21.333333h42.666666z" fill="#7a7a7a" p-id="8115"></path></svg>
@@ -402,6 +408,27 @@
                     <button id="edit-shortcut-item-cancel" class="add-shortcut-btn add-shortcut-cancel">取消</button>
                     <button id="edit-shortcut-item-apply" class="add-shortcut-btn add-shortcut-apply">应用</button>
                     <button id="edit-shortcut-item-save" class="add-shortcut-btn add-shortcut-save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录设置面板 -->
+    <div id="history-settings-panel" class="settings-modal">
+        <div class="settings-modal-overlay"></div>
+        <div class="settings-modal-content">
+            <div class="settings-header">
+                <span class="settings-title">历史记录设置</span>
+                <div id="history-settings-close" class="settings-close icon-close">
+                    <!-- 关闭图标由JS生成 -->
+                </div>
+            </div>
+            <div class="settings-body">
+                <div class="setting-item" data-setting="show-history-menu">
+                    <span class="setting-item-text">显示历史记录菜单</span>
+                    <span class="status-indicator enabled">
+                        <svg class="status-icon" viewBox="0 0 2048 1024"></svg>
+                    </span>
                 </div>
             </div>
         </div>

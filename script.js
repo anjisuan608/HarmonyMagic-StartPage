@@ -877,7 +877,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 默认设置值
     const defaultHistorySettings = {
         searchHistoryRecording: true, // 搜索历史记录（默认开启）
-        showAllHistory: true          // 显示全部历史记录（默认开启，false时仅显示当前搜索引擎的历史记录）
+        showAllHistory: true,         // 显示全部历史记录（默认开启，false时仅显示当前搜索引擎的历史记录）
+        showHistoryMenu: true        // 显示历史记录菜单（默认开启）
     };
 
     // 加载历史记录设置
@@ -2935,6 +2936,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 } else if (action === 'appearance') {
                     // 壁纸设置 - 打开壁纸面板
                     openWallpaperPanel();
+                } else if (action === 'history-settings') {
+                    // 历史记录设置 - 打开历史记录设置面板
+                    openHistorySettingsPanel();
                 } else if (action === 'about') {
                     // 关于 - 打开关于面板
                     openAboutPanel();
@@ -3452,6 +3456,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function showSearchHistory(input) {
         if (!input) return;
 
+        // 检查是否允许显示历史记录菜单
+        const historySettings = loadHistorySettings();
+        if (historySettings.showHistoryMenu === false) {
+            return; // 如果关闭了历史记录菜单，则不显示
+        }
+
         const box = input.closest('.search-box-circle');
         if (!box) return;
 
@@ -3474,8 +3484,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 获取当前搜索引擎ID
         const currentEngineId = box.getAttribute('data-engine-id');
         
-        // 获取历史记录设置
-        const historySettings = loadHistorySettings();
+        // 获取历史记录设置（复用已加载的设置）
         const showAll = historySettings.showAllHistory !== false;
 
         // 获取历史数据
@@ -3839,6 +3848,60 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // ==================== 历史记录设置面板功能 ====================
+    const historySettingsPanel = document.getElementById('history-settings-panel');
+    const historySettingsClose = document.getElementById('history-settings-close');
+    const historySettingsPanelOverlay = document.querySelector('#history-settings-panel .settings-modal-overlay');
+
+    // 初始化关闭按钮图标
+    if (historySettingsClose) {
+        historySettingsClose.innerHTML = svgClose;
+    }
+
+    // 绑定历史记录设置面板的关闭事件
+    if (historySettingsClose) {
+        historySettingsClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeHistorySettingsPanel();
+        });
+    }
+
+    if (historySettingsPanelOverlay) {
+        historySettingsPanelOverlay.addEventListener('click', function() {
+            closeHistorySettingsPanel();
+        });
+    }
+
+    // 绑定历史记录设置面板的开关点击事件
+    if (historySettingsPanel) {
+        const showHistoryMenuItem = historySettingsPanel.querySelector('[data-setting="show-history-menu"]');
+        if (showHistoryMenuItem) {
+            showHistoryMenuItem.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const indicator = this.querySelector('.status-indicator');
+                const icon = this.querySelector('.status-icon');
+                const isEnabled = indicator.classList.contains('enabled');
+                const newState = !isEnabled;
+                
+                // 更新UI
+                if (newState) {
+                    indicator.classList.add('enabled');
+                    if (icon) icon.innerHTML = svgOn;
+                } else {
+                    indicator.classList.remove('enabled');
+                    if (icon) icon.innerHTML = svgOff;
+                }
+                
+                // 保存设置
+                const historySettings = loadHistorySettings();
+                historySettings.showHistoryMenu = newState;
+                saveHistorySettings(historySettings);
+                
+                sendNotice(newState ? '历史记录菜单已开启' : '历史记录菜单已关闭', 'info');
+            });
+        }
+    }
+
     // ==================== 关于面板功能 ====================
     const aboutPanel = document.getElementById('about-panel');
     const aboutClose = document.getElementById('about-close');
@@ -3848,6 +3911,48 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 初始化关闭按钮图标
     if (aboutClose) {
         aboutClose.innerHTML = svgClose;
+    }
+
+    // 打开历史记录设置面板
+    function openHistorySettingsPanel() {
+        if (historySettingsPanel) {
+            // 初始化开关状态
+            initHistorySettingsToggle();
+            historySettingsPanel.classList.add('active');
+            setBackgroundBlur(true);
+            updateSettingsButtonVisibility();
+        }
+    }
+
+    // 关闭历史记录设置面板
+    function closeHistorySettingsPanel() {
+        if (historySettingsPanel) {
+            historySettingsPanel.classList.remove('active');
+            if (!contextMenu.classList.contains('active')) {
+                setBackgroundBlur(false);
+            }
+            updateSettingsButtonVisibility();
+        }
+    }
+
+    // 初始化历史记录设置开关
+    function initHistorySettingsToggle() {
+        const historySettings = loadHistorySettings();
+        const showHistoryMenu = historySettings.showHistoryMenu !== false;
+        
+        const toggleItem = historySettingsPanel.querySelector('[data-setting="show-history-menu"]');
+        if (toggleItem) {
+            const indicator = toggleItem.querySelector('.status-indicator');
+            const icon = toggleItem.querySelector('.status-icon');
+            
+            if (showHistoryMenu) {
+                indicator.classList.add('enabled');
+                if (icon) icon.innerHTML = svgOn;
+            } else {
+                indicator.classList.remove('enabled');
+                if (icon) icon.innerHTML = svgOff;
+            }
+        }
     }
 
     // 打开关于面板

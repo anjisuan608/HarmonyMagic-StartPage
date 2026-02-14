@@ -845,7 +845,7 @@ body[data-filter-disabled="true"]::after {
         flex-wrap: wrap !important;
         align-content: flex-start !important;
         justify-content: center !important;
-        height: 300px !important;
+        max-height: 300px !important;
         width: 100% !important;
         max-width: 100% !important;
         gap: 8px !important;
@@ -3294,4 +3294,552 @@ body[data-filter-disabled="true"]::after {
         width: 100%;
         margin-top: 8px;
     }
+}
+
+/* ==================== 搜索历史下拉列表 ==================== */
+.search-history-dropdown {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    min-width: 280px;
+    max-width: 90vw;
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* 移动端历史记录下拉菜单 - 默认隐藏 */
+.search-history-mobile-dropdown {
+    display: none;
+}
+
+/* 移动端媒体查询 */
+@media (max-width: 768px) {
+    /* 隐藏桌面端历史记录菜单 */
+    .search-history-dropdown {
+        display: none !important;
+    }
+    
+    /* 显示移动端历史记录菜单 */
+    .search-history-mobile-dropdown {
+        display: none;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        max-height: 60vh;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+    
+    [data-theme="dark"] .search-history-mobile-dropdown {
+        background: rgba(60, 60, 60, 0.5);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .search-history-mobile-dropdown.active {
+        display: flex;
+    }
+    
+    /* 复桌面端样式 */
+    .search-history-mobile-dropdown .search-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--divider-color);
+    }
+    
+    .search-history-mobile-dropdown .search-history-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    
+    .search-history-mobile-dropdown .search-history-clear {
+        font-size: 12px;
+        color: var(--text-color);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    [data-theme="dark"] .search-history-mobile-dropdown .search-history-clear {
+        color: #e0e0e0;
+    }
+    
+    /* 移动端历史记录开关样式 */
+    .search-history-mobile-dropdown .search-history-toggle {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 2px 6px;
+        margin-right: auto;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .search-history-mobile-dropdown .search-history-toggle:hover {
+        background: rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="dark"] .search-history-mobile-dropdown .search-history-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .search-history-mobile-dropdown .search-history-toggle span:first-child {
+        font-size: 12px;
+        color: var(--text-color);
+        transition: color 0.2s;
+    }
+
+    [data-theme="dark"] .search-history-mobile-dropdown .search-history-toggle span:first-child {
+        color: #e0e0e0;
+    }
+
+    .search-history-mobile-dropdown .status-indicator {
+        width: 22px;
+        height: 22px;
+        margin-left: 4px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .search-history-mobile-dropdown .status-icon {
+        width: 18px;
+        height: 18px;
+        fill: white;
+    }
+
+    .search-history-mobile-dropdown .status-indicator.enabled .status-icon {
+        opacity: 1;
+    }
+
+    .search-history-mobile-dropdown .status-indicator:not(.enabled) .status-icon {
+        opacity: 0.5;
+    }
+    
+    .search-history-mobile-dropdown .search-history-clear:hover {
+        color: var(--danger-color);
+    }
+    
+    .search-history-mobile-dropdown .search-history-list {
+        padding: 4px;
+    }
+    
+    .search-history-mobile-dropdown .search-history-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: background-color 0.15s;
+        color: var(--text-color);
+    }
+    
+    .search-history-mobile-dropdown .search-history-item:hover {
+        background: var(--button-bg);
+    }
+    
+    .search-history-mobile-dropdown .search-history-item.highlighted {
+        background: var(--button-bg);
+        box-shadow: inset 0 0 0 2px var(--accent-color, #9acd32);
+    }
+    
+    .search-history-mobile-dropdown .search-history-item-icon {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+        opacity: 0.5;
+    }
+    
+    .search-history-mobile-dropdown .search-history-item-text {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text-color);
+    }
+    
+    .search-history-mobile-dropdown .search-history-item-delete {
+        opacity: 1;
+        padding: 4px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    
+    .search-history-mobile-dropdown .search-history-item-delete svg {
+        width: 14px;
+        height: 14px;
+        fill: var(--text-secondary);
+    }
+    
+    .search-history-mobile-dropdown .search-history-item-delete:hover svg {
+        fill: var(--danger-color);
+    }
+    
+    .search-history-mobile-dropdown .search-history-empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-color);
+    }
+
+    [data-theme="dark"] .search-history-mobile-dropdown .search-history-empty {
+        color: #e0e0e0;
+    }
+}
+
+.search-history-dropdown.active {
+    display: flex;
+}
+
+.search-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--divider-color);
+}
+
+.search-history-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.search-history-clear {
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+[data-theme="dark"] .search-history-clear {
+    color: #e0e0e0;
+}
+
+.search-history-clear:hover {
+    color: var(--danger-color);
+}
+
+.search-history-list {
+    padding: 4px;
+}
+
+.search-history-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.15s;
+}
+
+.search-history-item:hover {
+    background: var(--button-bg);
+}
+
+/* 历史记录键盘导航高亮样式 */
+.search-history-item.highlighted {
+    background: var(--button-bg);
+    box-shadow: inset 0 0 0 2px var(--accent-color, #9acd32);
+}
+
+.search-history-item-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    opacity: 0.5;
+}
+
+.search-history-item-text {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-history-item-delete {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    margin-left: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.search-history-item-delete svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+.search-history-item-delete:hover {
+    background: rgba(229, 57, 53, 0.15);
+    color: #e53935;
+}
+
+.search-history-item-delete svg {
+    width: 100%;
+    height: 100%;
+}
+
+.search-history-empty {
+    padding: 20px 14px;
+    text-align: center;
+    color: #333;
+    font-size: 13px;
+}
+
+[data-theme="dark"] .search-history-empty {
+    color: #e0e0e0;
+}
+
+/* 深色模式下搜索历史样式适配 */
+[data-theme="dark"] .search-history-dropdown {
+    background: rgba(45, 45, 45, 0.95);
+}
+
+[data-theme="dark"] .search-history-item:hover {
+    background: rgba(80, 80, 80, 0.8);
+}
+
+/* ==================== 搜索框内的历史记录下拉列表 ==================== */
+/* 历史记录下拉列表 - 与搜索框一体式设计 */
+.search-box-circle .search-history-dropdown {
+    position: absolute;
+    right: 40px;
+    top: calc(100% + 4px);
+    width: calc(100% - 57px);
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+    box-sizing: border-box;
+    max-height: calc(100vh - 350px);
+    overflow: hidden;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .search-box-circle .search-history-dropdown {
+    background: rgba(60, 60, 60, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* 历史记录列表容器 - 可滚动区域 */
+.search-box-circle .search-history-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+/* 历史记录项 */
+.search-box-circle .search-history-item {
+    display: flex;
+    align-items: center;
+    padding: 2px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.15s;
+    color: var(--text-color);
+}
+
+.search-box-circle .search-history-item:hover {
+    background: rgba(76, 175, 80, 0.15);
+}
+
+.search-box-circle .search-history-item-text {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.search-box-circle .search-history-item-delete {
+    width: 24px;
+    height: 24px;
+    padding: 3px;
+    margin-left: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.search-box-circle .search-history-item-delete svg {
+    width: 12px;
+    height: 12px;
+    fill: currentColor;
+}
+
+.search-box-circle .search-history-item-delete:hover {
+    background: rgba(229, 57, 53, 0.15);
+    color: #e53935;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .search-box-circle .search-history-item-delete {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .search-box-circle .search-history-item-delete:hover {
+    background: rgba(229, 57, 53, 0.25);
+    color: #ef5350;
+}
+
+.search-box-circle .search-history-empty {
+    padding: 20px 16px;
+    text-align: center;
+    color: #333;
+    font-size: 12px;
+}
+
+[data-theme="dark"] .search-box-circle .search-history-empty {
+    color: #e0e0e0;
+}
+
+/* 历史记录控制栏 - 固定在底部不参与滚动 */
+.search-box-circle .search-history-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 4px 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .search-box-circle .search-history-header {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.search-box-circle .search-history-clear {
+    font-size: 11px;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.search-box-circle .search-history-clear:hover {
+    color: var(--danger-color);
+    background: rgba(211, 47, 47, 0.1);
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .search-box-circle .search-history-clear {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .search-box-circle .search-history-clear:hover {
+    color: #ef5350;
+    background: rgba(239, 83, 80, 0.15);
+}
+
+/* 历史记录头部 - 开关按钮 */
+.search-box-circle .search-history-toggle {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-right: auto;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.search-box-circle .search-history-toggle:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .search-box-circle .search-history-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.search-box-circle .search-history-toggle span:first-child {
+    font-size: 11px;
+    color: #333;
+    transition: color 0.2s;
+    padding: 0;
+    border-radius: 0;
+}
+
+[data-theme="dark"] .search-box-circle .search-history-toggle span:first-child {
+    color: #e0e0e0;
+}
+
+.search-box-circle .status-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.search-box-circle .status-icon {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+.search-box-circle .status-indicator.enabled .status-icon {
+    opacity: 1;
+}
+
+.search-box-circle .status-indicator:not(.enabled) .status-icon {
+    opacity: 0.5;
+}
+
+/* 滚动条样式 */
+.search-box-circle .search-history-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.search-box-circle .search-history-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.search-box-circle .search-history-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+[data-theme="dark"] .search-box-circle .search-history-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
 }

@@ -775,6 +775,16 @@ body[data-filter-disabled="true"]::after {
 }
 
 @media (max-width: 768px) {
+    /* 移动端调整body的padding-top，使用更小的值 */
+    body {
+        padding-top: 40px;
+    }
+
+    /* 移动端时间日期容器调整 */
+    .time-date {
+        margin-bottom: 20px;
+    }
+
     #time {
         font-size: 2.5rem;
         font-weight: bold;

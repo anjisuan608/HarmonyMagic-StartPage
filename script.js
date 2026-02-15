@@ -1584,10 +1584,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             const timeHeight = timeDisplay.offsetHeight + (dateDisplay ? dateDisplay.offsetHeight : 0);
             const searchHeight = searchBoxesContainer.offsetHeight;
 
-            // 检查是否有输入法键盘弹出
-            const isKeyboardOpen = viewportHeight < window.visualViewport?.height || window.innerHeight < screen.height * 0.6;
+            // 检查是否有输入法键盘弹出 - 使用更可靠的检测方法
+            // 方法1：如果visualViewport高度小于window高度，说明键盘弹出
+            const visualViewportHeight = window.visualViewport ? window.visualViewport.height : viewportHeight;
+            const isKeyboardOpen = visualViewportHeight < viewportHeight - 50 || window.innerHeight < screen.height * 0.5;
 
-            if (isKeyboardOpen) {
+            // 如果当前页面已经有输入框聚焦，才检测键盘弹出
+            const activeElement = document.activeElement;
+            const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
+            // 只有在输入框聚焦时才检测键盘弹出状态
+            const shouldDetectKeyboard = isInputFocused && isKeyboardOpen;
+
+            if (shouldDetectKeyboard) {
                 // 输入法弹出时，将时间日期上移到顶端
                 timeDate.style.position = 'absolute';
                 timeDate.style.top = '20px';
@@ -2562,6 +2571,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 初始化移动端位置和搜索框宽度
     setMobileContainerPosition();
     setMobileSearchWidth();
+
+    // 延迟再次调用以确保DOM完全渲染后位置正确（修复刷新时位置不正确的问题）
+    setTimeout(() => {
+        setMobileContainerPosition();
+    }, 100);
 
     // 设置输入法自适应处理
     setupInputMethodHandlers();

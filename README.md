@@ -20,10 +20,10 @@
 
 仓库 | 备注
 :--------:|:--------:
-[GitCode](https://gitcode.com/MeKv/HarmonyMagic-StartPage) | 主仓库
-[Gitee](https://gitee.com/MeKv/HarmonyMagic-StartPage) | GitCode镜像
-[GitLink](https://gitlink.org.cn/MeKv/HarmonyMagic-StartPage) | Gitee镜像
-[GitHub](https://github.com/MeKv/HarmonyMagic-StartPage) | Gitee镜像
+[GitCode](https://gitcode.com/anjisuan608/HarmonyMagic-StartPage) | 主仓库
+[Gitee](https://gitee.com/anjisuan608/HarmonyMagic-StartPage) | GitCode镜像
+[GitLink](https://gitlink.org.cn/anjisuan608/HarmonyMagic-StartPage) | Gitee镜像
+[GitHub](https://github.com/anjisuan608/HarmonyMagic-StartPage) | Gitee镜像
 
 ## 功能特性
 

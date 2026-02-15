@@ -3325,6 +3325,20 @@ body[data-filter-disabled="true"]::after {
     -webkit-backdrop-filter: blur(10px);
 }
 
+/* 桌面端历史记录列表容器 - 确保至少显示一条记录 */
+.search-history-dropdown .search-history-list {
+    flex: 1;
+    min-height: 40px;
+    overflow-y: auto;
+}
+
+/* 桌面端历史记录控制区域 - 高度固定不变 */
+.search-history-dropdown .search-history-control {
+    flex-shrink: 0;
+    min-height: 44px;
+    max-height: 44px;
+}
+
 /* 移动端历史记录下拉菜单 - 默认隐藏 */
 .search-history-mobile-dropdown {
     display: none;
@@ -3408,6 +3422,8 @@ body[data-filter-disabled="true"]::after {
         padding: 5px 14px;
         border-bottom: 1px solid var(--divider-color);
         flex-shrink: 0;
+        min-height: 44px;
+        max-height: 44px;
     }
     
     .search-history-mobile-dropdown .search-history-title {

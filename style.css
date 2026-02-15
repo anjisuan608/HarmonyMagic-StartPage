@@ -3389,7 +3389,7 @@ body[data-filter-disabled="true"]::after {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 14px;
+        padding: 5px 14px;
         border-bottom: 1px solid var(--divider-color);
         flex-shrink: 0;
     }
@@ -3476,7 +3476,7 @@ body[data-filter-disabled="true"]::after {
     .search-history-mobile-dropdown .search-history-item {
         display: flex;
         align-items: center;
-        padding: 8px 12px;
+        padding: 4px 12px;
         cursor: pointer;
         border-radius: 6px;
         transition: background-color 0.15s;

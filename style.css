@@ -150,7 +150,7 @@ body[data-filter-disabled="true"]::after {
     width: 90%;
     max-width: 1000px;
     text-align: center;
-    z-index: 10;
+    z-index: 101;
     position: relative;
 }
 
@@ -775,6 +775,16 @@ body[data-filter-disabled="true"]::after {
 }
 
 @media (max-width: 768px) {
+    /* 移动端调整body的padding-top，使用更小的值 */
+    body {
+        padding-top: 40px;
+    }
+
+    /* 移动端时间日期容器调整 */
+    .time-date {
+        margin-bottom: 20px;
+    }
+
     #time {
         font-size: 2.5rem;
         font-weight: bold;
@@ -3315,6 +3325,20 @@ body[data-filter-disabled="true"]::after {
     -webkit-backdrop-filter: blur(10px);
 }
 
+/* 桌面端历史记录列表容器 - 确保至少显示一条记录 */
+.search-history-dropdown .search-history-list {
+    flex: 1;
+    min-height: 40px;
+    overflow-y: auto;
+}
+
+/* 桌面端历史记录控制区域 - 高度固定不变 */
+.search-history-dropdown .search-history-control {
+    flex-shrink: 0;
+    min-height: 44px;
+    max-height: 44px;
+}
+
 /* 移动端历史记录下拉菜单 - 默认隐藏 */
 .search-history-mobile-dropdown {
     display: none;
@@ -3337,7 +3361,7 @@ body[data-filter-disabled="true"]::after {
         border: 2px solid rgba(255, 255, 255, 0.5);
         border-radius: 12px;
         max-height: 60vh;
-        overflow-y: auto;
+        overflow: hidden;
         z-index: 1000;
     }
     
@@ -3350,13 +3374,56 @@ body[data-filter-disabled="true"]::after {
         display: flex;
     }
     
+    /* 移动端历史记录菜单容器 - 确保控制区域始终可见 */
+    .search-history-mobile-dropdown {
+        /* 最小高度 = 控制区域高度 + 至少一条历史记录高度 */
+        min-height: 90px;
+    }
+    
+    /* 移动端历史记录列表 - 可滚动区域 */
+    .search-history-mobile-dropdown .search-history-list {
+        flex: 1;
+        min-height: 40px; /* 至少能显示一条历史记录 */
+        overflow-y: auto;
+        padding: 4px;
+    }
+    
+    /* 移动端历史记录滚动条样式 */
+    .search-history-mobile-dropdown .search-history-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .search-history-mobile-dropdown .search-history-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .search-history-mobile-dropdown .search-history-list::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+    
+    .search-history-mobile-dropdown .search-history-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+    
+    [data-theme="dark"] .search-history-mobile-dropdown .search-history-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    [data-theme="dark"] .search-history-mobile-dropdown .search-history-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+    
     /* 复桌面端样式 */
-    .search-history-mobile-dropdown .search-history-header {
+    .search-history-mobile-dropdown .search-history-control {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 14px;
+        padding: 5px 14px;
         border-bottom: 1px solid var(--divider-color);
+        flex-shrink: 0;
+        min-height: 44px;
+        max-height: 44px;
     }
     
     .search-history-mobile-dropdown .search-history-title {
@@ -3441,7 +3508,7 @@ body[data-filter-disabled="true"]::after {
     .search-history-mobile-dropdown .search-history-item {
         display: flex;
         align-items: center;
-        padding: 8px 12px;
+        padding: 4px 12px;
         cursor: pointer;
         border-radius: 6px;
         transition: background-color 0.15s;
@@ -3504,7 +3571,7 @@ body[data-filter-disabled="true"]::after {
     display: flex;
 }
 
-.search-history-header {
+.search-history-control {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3734,7 +3801,7 @@ body[data-filter-disabled="true"]::after {
 }
 
 /* 历史记录控制栏 - 固定在底部不参与滚动 */
-.search-box-circle .search-history-header {
+.search-box-circle .search-history-control {
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -3743,7 +3810,7 @@ body[data-filter-disabled="true"]::after {
     flex-shrink: 0;
 }
 
-[data-theme="dark"] .search-box-circle .search-history-header {
+[data-theme="dark"] .search-box-circle .search-history-control {
     border-top-color: rgba(255, 255, 255, 0.1);
 }
 

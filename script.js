@@ -877,7 +877,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 默认设置值
     const defaultHistorySettings = {
         searchHistoryRecording: true, // 搜索历史记录（默认开启）
-        showAllHistory: true          // 显示全部历史记录（默认开启，false时仅显示当前搜索引擎的历史记录）
+        showAllHistory: true,         // 显示全部历史记录（默认开启，false时仅显示当前搜索引擎的历史记录）
+        showHistoryMenu: true        // 显示历史记录菜单（默认开启）
     };
 
     // 加载历史记录设置
@@ -1583,10 +1584,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             const timeHeight = timeDisplay.offsetHeight + (dateDisplay ? dateDisplay.offsetHeight : 0);
             const searchHeight = searchBoxesContainer.offsetHeight;
 
-            // 检查是否有输入法键盘弹出
-            const isKeyboardOpen = viewportHeight < window.visualViewport?.height || window.innerHeight < screen.height * 0.6;
+            // 检查是否有输入法键盘弹出 - 使用更可靠的检测方法
+            // 方法1：如果visualViewport高度小于window高度，说明键盘弹出
+            const visualViewportHeight = window.visualViewport ? window.visualViewport.height : viewportHeight;
+            const isKeyboardOpen = visualViewportHeight < viewportHeight - 50 || window.innerHeight < screen.height * 0.5;
 
-            if (isKeyboardOpen) {
+            // 如果当前页面已经有输入框聚焦，才检测键盘弹出
+            const activeElement = document.activeElement;
+            const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
+            // 只有在输入框聚焦时才检测键盘弹出状态
+            const shouldDetectKeyboard = isInputFocused && isKeyboardOpen;
+
+            if (shouldDetectKeyboard) {
                 // 输入法弹出时，将时间日期上移到顶端
                 timeDate.style.position = 'absolute';
                 timeDate.style.top = '20px';
@@ -2051,6 +2061,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 执行搜索逻辑
             const query = input.value.trim();
             const engineId = box.getAttribute('data-engine-id');
+            
+            // 检查是否开启历史记录，并添加搜索历史
+            const historySettings = loadHistorySettings();
+            if (historySettings.searchHistoryRecording !== false && query) {
+                addSearchHistory(query, engineId);
+            }
+
             const searchUrl = getSearchUrl(engineId, query);
 
             // 搜索后清空输入框，但保持展开状态
@@ -2063,9 +2080,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
         
-        // 圆形搜索框输入框回车事件
-        circleInput.addEventListener('keypress', function(e) {
+        // 圆形搜索框输入框回车事件（使用 keydown 替代已废弃的 keypress）
+        circleInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
+                e.preventDefault();
                 performCircleSearch(box);
             }
         });
@@ -2420,6 +2438,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         e.preventDefault();
         
+        // 隐藏移动端历史记录菜单
+        const mobileDropdown = document.querySelector('.search-history-mobile-dropdown');
+        if (mobileDropdown) {
+            mobileDropdown.classList.remove('active');
+        }
+        
         // 隐藏搜索框部分，但保留时间日期
         const searchBox = document.querySelector('.search-boxes-container');
         searchBox.style.opacity = '0';
@@ -2556,6 +2580,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     setMobileContainerPosition();
     setMobileSearchWidth();
 
+    // 延迟再次调用以确保DOM完全渲染后位置正确（修复刷新时位置不正确的问题）
+    setTimeout(() => {
+        setMobileContainerPosition();
+    }, 100);
+
     // 设置输入法自适应处理
     setupInputMethodHandlers();
     setupViewportHandler();
@@ -2633,6 +2662,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 通知呈现器
     const noticesContainer = document.getElementById('notices');
 
+    // 通知全局配置
+    const noticeConfig = {
+        enabled: true  // 是否在页面上显示通知，false则只输出console.log
+    };
+
     // 通知等级配置
     const NOTICE_LEVELS = {
         fatal: { color: '#f7a699', duration: 60000 },
@@ -2660,17 +2694,23 @@ document.addEventListener('DOMContentLoaded', async function() {
      * 发送通知
      * @param {string} content - 通知内容
      * @param {string} level - 通知等级: fatal, error, warns, info, debug
-     * @param {Object} options - 可选配置: customColor(自定义颜色), customDuration(自定义持续时间ms)
+     * @param {Object} options - 可选配置: customColor(自定义颜色), customDuration(自定义持续时间ms), showOnPage(是否在页面显示，默认为true)
      */
     function sendNotice(content, level = 'info', options = {}) {
         const config = NOTICE_LEVELS[level] || NOTICE_LEVELS.info;
         const color = options.customColor || config.color;
         const duration = options.customDuration !== undefined ? options.customDuration : config.duration;
+        const showOnPage = options.showOnPage !== false && noticeConfig.enabled;  // 默认为true，受全局配置影响
 
         // 使用Security模块净化内容
         const sanitizedContent = Security.sanitizeNotice(content);
         const plainText = sanitizedContent.replace(/<[^>]*>/g, '');
         console.log(`[${getTimeString()}][${level.toUpperCase()}]${plainText}`);
+
+        // 如果不显示在页面上，直接返回
+        if (!showOnPage) {
+            return;
+        }
 
         // 创建通知元素
         const notice = document.createElement('div');
@@ -2797,6 +2837,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.networkTimeoutNotice = networkTimeoutNotice;
     window.pageLoadStoppedNotice = pageLoadStoppedNotice;
     window.resourceBlockedNotice = resourceBlockedNotice;
+    window.noticeConfig = noticeConfig;  // 通知全局配置，可通过 noticeConfig.enabled = false 禁用页面通知
 
     // ==================== 设置菜单功能 ====================
     const settingsButton = document.getElementById('settings-button');
@@ -2935,6 +2976,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 } else if (action === 'appearance') {
                     // 壁纸设置 - 打开壁纸面板
                     openWallpaperPanel();
+                } else if (action === 'history-settings') {
+                    // 历史记录设置 - 打开历史记录设置面板
+                    openHistorySettingsPanel();
                 } else if (action === 'about') {
                     // 关于 - 打开关于面板
                     openAboutPanel();
@@ -3083,7 +3127,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // 获取列表容器和头部容器
         const listContainer = container.querySelector('.search-history-list');
-        const headerContainer = container.querySelector('.search-history-header');
+        const controlContainer = container.querySelector('.search-history-control');
 
         // 获取记录状态
         const historySettings = loadHistorySettings();
@@ -3109,8 +3153,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         if (history.length === 0) {
             listContainer.innerHTML = '<div class="search-history-empty">暂无历史记录</div>';
-            if (headerContainer) {
-                headerContainer.innerHTML = headerHtml;
+            if (controlContainer) {
+                controlContainer.innerHTML = headerHtml;
             }
             bindHistoryEvents(container, headerHtml);
             return;
@@ -3131,8 +3175,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         }).join('');
 
         // 渲染控制栏到头部容器
-        if (headerContainer) {
-            headerContainer.innerHTML = headerHtml;
+        if (controlContainer) {
+            controlContainer.innerHTML = headerHtml;
         }
 
         // 绑定事件
@@ -3251,7 +3295,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     historySettings.searchHistoryRecording = newState;
                     saveHistorySettings(historySettings);
 
-                    sendNotice(newState ? '历史记录已开启' : '历史记录已关闭', 'info');
+                    sendNotice(newState ? '历史记录已开启' : '历史记录已关闭', 'info', { showOnPage: false });
                 } else if (isShowAllToggle) {
                     const showAll = this.dataset.showall === 'true';
                     const newState = !showAll;
@@ -3361,7 +3405,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         }
                     }
 
-                    sendNotice(newState ? '显示全部历史记录' : '仅显示当前搜索引擎历史记录', 'info');
+                    sendNotice(newState ? '显示全部历史记录' : '仅显示当前搜索引擎历史记录', 'info', { showOnPage: false });
                 }
             });
         });
@@ -3412,7 +3456,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 await showSearchHistory(input);
                             }
                         }
-                        sendNotice('历史记录已清除', 'info');
+                        sendNotice('历史记录已清除', 'info', { showOnPage: false });
                     };
                 } else {
                     // 清除当前搜索引擎的历史记录
@@ -3426,7 +3470,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 await showSearchHistory(input);
                             }
                         }
-                        sendNotice('当前搜索引擎历史记录已清除', 'info');
+                        sendNotice('当前搜索引擎历史记录已清除', 'info', { showOnPage: false });
                     };
                 }
                 
@@ -3452,6 +3496,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function showSearchHistory(input) {
         if (!input) return;
 
+        // 检查是否允许显示历史记录菜单
+        const historySettings = loadHistorySettings();
+        if (historySettings.showHistoryMenu === false) {
+            return; // 如果关闭了历史记录菜单，则不显示
+        }
+
         const box = input.closest('.search-box-circle');
         if (!box) return;
 
@@ -3474,8 +3524,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 获取当前搜索引擎ID
         const currentEngineId = box.getAttribute('data-engine-id');
         
-        // 获取历史记录设置
-        const historySettings = loadHistorySettings();
+        // 获取历史记录设置（复用已加载的设置）
         const showAll = historySettings.showAllHistory !== false;
 
         // 获取历史数据
@@ -3492,9 +3541,70 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // 显示下拉列表
         if (isMobile()) {
+            // 先添加active类让dropdown显示出来
             dropdown.classList.add('active');
+            
+            // 更新dropdown高度的函数
+            const updateDropdownHeight = () => {
+                if (!dropdown.classList.contains('active')) return;
+                const dropdownRect = dropdown.getBoundingClientRect();
+                const screenHeight = window.innerHeight;
+                const availableHeight = screenHeight - dropdownRect.top - 20; // 20px 底部边距
+                
+                // 动态设置最大高度，取计算值和60vh中的较小值
+                const maxHeight60vh = screenHeight * 0.6;
+                dropdown.style.maxHeight = Math.min(availableHeight, maxHeight60vh) + 'px';
+            };
+            
+            // 等待DOM布局完成后计算高度
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updateDropdownHeight();
+                });
+            });
+            
+            // 监听窗口大小变化（处理虚拟键盘弹出/收起）
+            const resizeHandler = () => {
+                updateDropdownHeight();
+            };
+            window.addEventListener('resize', resizeHandler);
+            
+            // 将resizeHandler绑定到dropdown上，以便隐藏时移除
+            dropdown._resizeHandler = resizeHandler;
         } else {
+            // 桌面端：动态计算 max-height
+            const updateDesktopDropdownHeight = () => {
+                const searchBoxEl = document.querySelector('.search-box');
+                if (!searchBoxEl) return;
+                
+                const searchBoxRect = searchBoxEl.getBoundingClientRect();
+                const screenHeight = window.innerHeight;
+                
+                // 计算从搜索框底部到屏幕底部的可用高度
+                const availableHeight = screenHeight - searchBoxRect.bottom - 20; // 20px 底部边距
+                
+                // 取可用高度和 60vh 中的较小值作为 max-height
+                const maxHeight60vh = screenHeight * 0.6;
+                dropdown.style.maxHeight = Math.min(availableHeight, maxHeight60vh) + 'px';
+            };
+            
             dropdown.style.display = 'flex';
+            
+            // 等待DOM布局完成后计算高度
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updateDesktopDropdownHeight();
+                });
+            });
+            
+            // 监听窗口大小变化（处理输入法弹出/收起）
+            const resizeHandlerDesktop = () => {
+                updateDesktopDropdownHeight();
+            };
+            window.addEventListener('resize', resizeHandlerDesktop);
+            
+            // 将resizeHandler绑定到dropdown上，以便隐藏时移除
+            dropdown._resizeHandlerDesktop = resizeHandlerDesktop;
         }
     }
 
@@ -3506,6 +3616,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             const dropdown = box.querySelector('.search-history-dropdown');
             if (dropdown) {
                 dropdown.style.display = 'none';
+                // 恢复 max-height 到默认值
+                dropdown.style.maxHeight = '';
+                // 移除resize事件监听器
+                if (dropdown._resizeHandlerDesktop) {
+                    window.removeEventListener('resize', dropdown._resizeHandlerDesktop);
+                    dropdown._resizeHandlerDesktop = null;
+                }
             }
         });
         
@@ -3513,6 +3630,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         const mobileDropdown = document.querySelector('.search-history-mobile-dropdown');
         if (mobileDropdown) {
             mobileDropdown.classList.remove('active');
+            // 移除resize事件监听器
+            if (mobileDropdown._resizeHandler) {
+                window.removeEventListener('resize', mobileDropdown._resizeHandler);
+                mobileDropdown._resizeHandler = null;
+            }
         }
         
         // 清空当前历史记录搜索框记录
@@ -3839,6 +3961,70 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // ==================== 历史记录设置面板功能 ====================
+    const historySettingsPanel = document.getElementById('history-settings-panel');
+    const historySettingsClose = document.getElementById('history-settings-close');
+    const historySettingsPanelOverlay = document.querySelector('#history-settings-panel .settings-modal-overlay');
+
+    // 初始化关闭按钮图标
+    if (historySettingsClose) {
+        historySettingsClose.innerHTML = svgClose;
+    }
+
+    // 绑定历史记录设置面板的关闭事件
+    if (historySettingsClose) {
+        historySettingsClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeHistorySettingsPanel();
+        });
+    }
+
+    if (historySettingsPanelOverlay) {
+        historySettingsPanelOverlay.addEventListener('click', function() {
+            closeHistorySettingsPanel();
+        });
+    }
+
+    // 绑定历史记录设置面板的开关点击事件
+    if (historySettingsPanel) {
+        const showHistoryMenuItem = historySettingsPanel.querySelector('[data-setting="show-history-menu"]');
+        console.log('[DEBUG] showHistoryMenuItem元素:', showHistoryMenuItem);
+        if (showHistoryMenuItem) {
+            showHistoryMenuItem.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const indicator = this.querySelector('.status-indicator');
+                const icon = this.querySelector('.status-icon');
+                const isEnabled = indicator ? indicator.classList.contains('enabled') : false;
+                const newState = !isEnabled;
+                
+                // 保存设置
+                const historySettings = loadHistorySettings();
+                historySettings.showHistoryMenu = newState;
+                saveHistorySettings(historySettings);
+
+                // 使用setTimeout强制异步更新UI
+                setTimeout(() => {
+                    const showHistoryMenu = historySettings.showHistoryMenu !== false;
+                    
+                    if (showHistoryMenu) {
+                        indicator.classList.add('enabled');
+                        if (icon) icon.innerHTML = svgOn;
+                    } else {
+                        indicator.classList.remove('enabled');
+                        if (icon) icon.innerHTML = svgOff;
+                    }
+                }, 0);
+
+                // 刷新历史记录菜单状态
+                if (!newState) {
+                    hideSearchHistory();
+                }
+
+                sendNotice(newState ? '历史记录菜单已开启' : '历史记录菜单已关闭', 'info', { showOnPage: false });
+            });
+        }
+    }
+
     // ==================== 关于面板功能 ====================
     const aboutPanel = document.getElementById('about-panel');
     const aboutClose = document.getElementById('about-close');
@@ -3848,6 +4034,48 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 初始化关闭按钮图标
     if (aboutClose) {
         aboutClose.innerHTML = svgClose;
+    }
+
+    // 打开历史记录设置面板
+    function openHistorySettingsPanel() {
+        if (historySettingsPanel) {
+            // 初始化开关状态
+            initHistorySettingsToggle();
+            historySettingsPanel.classList.add('active');
+            setBackgroundBlur(true);
+            updateSettingsButtonVisibility();
+        }
+    }
+
+    // 关闭历史记录设置面板
+    function closeHistorySettingsPanel() {
+        if (historySettingsPanel) {
+            historySettingsPanel.classList.remove('active');
+            if (!contextMenu.classList.contains('active')) {
+                setBackgroundBlur(false);
+            }
+            updateSettingsButtonVisibility();
+        }
+    }
+
+    // 初始化历史记录设置开关
+    function initHistorySettingsToggle() {
+        const historySettings = loadHistorySettings();
+        const showHistoryMenu = historySettings.showHistoryMenu !== false;
+        
+        const toggleItem = historySettingsPanel.querySelector('[data-setting="show-history-menu"]');
+        if (toggleItem) {
+            const indicator = toggleItem.querySelector('.status-indicator');
+            const icon = toggleItem.querySelector('.status-icon');
+            
+            if (showHistoryMenu) {
+                indicator.classList.add('enabled');
+                if (icon) icon.innerHTML = svgOn;
+            } else {
+                indicator.classList.remove('enabled');
+                if (icon) icon.innerHTML = svgOff;
+            }
+        }
     }
 
     // 打开关于面板
@@ -4470,7 +4698,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // 10. 关于面板 - 最低优先级
+        // 10. 历史记录设置面板
+        if (historySettingsPanel && historySettingsPanel.classList.contains('active')) {
+            closeHistorySettingsPanel();
+            return;
+        }
+
+        // 11. 关于面板 - 最低优先级
         if (aboutPanel && aboutPanel.classList.contains('active')) {
             closeAboutPanel();
         }
@@ -6782,7 +7016,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         message: '确定要清除所有搜索历史记录吗？此操作无法撤销。',
         onOk: function() {
             clearSearchHistory();
-            sendNotice('历史记录已清除', 'info');
+            sendNotice('历史记录已清除', 'info', { showOnPage: false });
         }
     };
 

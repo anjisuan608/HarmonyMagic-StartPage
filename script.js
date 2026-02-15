@@ -3536,6 +3536,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 先添加active类让dropdown显示出来
             dropdown.classList.add('active');
             
+            // 恢复显示所有历史记录项（确保切换搜索框时不会保留之前的隐藏状态）
+            const listContainer = dropdown.querySelector('.search-history-list');
+            const allItems = listContainer.querySelectorAll('.search-history-item');
+            allItems.forEach(item => {
+                item.style.display = '';
+            });
+            
             // 更新dropdown高度的函数
             const updateDropdownHeight = () => {
                 if (!dropdown.classList.contains('active')) return;
@@ -3545,7 +3552,29 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 // 动态设置最大高度，取计算值和60vh中的较小值
                 const maxHeight60vh = screenHeight * 0.6;
-                dropdown.style.maxHeight = Math.min(availableHeight, maxHeight60vh) + 'px';
+                const newMaxHeight = Math.min(availableHeight, maxHeight60vh);
+                dropdown.style.maxHeight = newMaxHeight + 'px';
+                
+                // 当屏幕高度不够时，限制显示的历史记录数量
+                const listContainer = dropdown.querySelector('.search-history-list');
+                const allItems = listContainer.querySelectorAll('.search-history-item');
+                if (allItems.length > 0) {
+                    // 估计每个历史记录项的高度（约40px）
+                    const itemHeight = 40;
+                    // 计算可显示的最大项数
+                    const maxVisibleItems = Math.floor((newMaxHeight - 40) / itemHeight); // 减去控制区域约40px
+                    // 确保至少显示1条，最多显示计算出的数量
+                    const visibleCount = Math.max(1, Math.min(maxVisibleItems, allItems.length));
+                    
+                    // 隐藏超出数量的项
+                    allItems.forEach((item, index) => {
+                        if (index < visibleCount) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                }
             };
             
             // 等待DOM布局完成后计算高度
@@ -3583,6 +3612,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         const mobileDropdown = document.querySelector('.search-history-mobile-dropdown');
         if (mobileDropdown) {
             mobileDropdown.classList.remove('active');
+            // 恢复显示所有历史记录项
+            const allItems = mobileDropdown.querySelectorAll('.search-history-item');
+            allItems.forEach(item => {
+                item.style.display = '';
+            });
             // 移除resize事件监听器
             if (mobileDropdown._resizeHandler) {
                 window.removeEventListener('resize', mobileDropdown._resizeHandler);

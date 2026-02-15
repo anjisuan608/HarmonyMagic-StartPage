@@ -3522,18 +3522,33 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 先添加active类让dropdown显示出来
             dropdown.classList.add('active');
             
+            // 更新dropdown高度的函数
+            const updateDropdownHeight = () => {
+                if (!dropdown.classList.contains('active')) return;
+                const dropdownRect = dropdown.getBoundingClientRect();
+                const screenHeight = window.innerHeight;
+                const availableHeight = screenHeight - dropdownRect.top - 20; // 20px 底部边距
+                
+                // 动态设置最大高度，取计算值和60vh中的较小值
+                const maxHeight60vh = screenHeight * 0.6;
+                dropdown.style.maxHeight = Math.min(availableHeight, maxHeight60vh) + 'px';
+            };
+            
             // 等待DOM布局完成后计算高度
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    const dropdownRect = dropdown.getBoundingClientRect();
-                    const screenHeight = window.innerHeight;
-                    const availableHeight = screenHeight - dropdownRect.top - 20; // 20px 底部边距
-                    
-                    // 动态设置最大高度，取计算值和60vh中的较小值
-                    const maxHeight60vh = screenHeight * 0.6;
-                    dropdown.style.maxHeight = Math.min(availableHeight, maxHeight60vh) + 'px';
+                    updateDropdownHeight();
                 });
             });
+            
+            // 监听窗口大小变化（处理虚拟键盘弹出/收起）
+            const resizeHandler = () => {
+                updateDropdownHeight();
+            };
+            window.addEventListener('resize', resizeHandler);
+            
+            // 将resizeHandler绑定到dropdown上，以便隐藏时移除
+            dropdown._resizeHandler = resizeHandler;
         } else {
             dropdown.style.display = 'flex';
         }
@@ -3554,6 +3569,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         const mobileDropdown = document.querySelector('.search-history-mobile-dropdown');
         if (mobileDropdown) {
             mobileDropdown.classList.remove('active');
+            // 移除resize事件监听器
+            if (mobileDropdown._resizeHandler) {
+                window.removeEventListener('resize', mobileDropdown._resizeHandler);
+                mobileDropdown._resizeHandler = null;
+            }
         }
         
         // 清空当前历史记录搜索框记录

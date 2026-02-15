@@ -2421,6 +2421,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         e.preventDefault();
         
+        // 隐藏移动端历史记录菜单
+        const mobileDropdown = document.querySelector('.search-history-mobile-dropdown');
+        if (mobileDropdown) {
+            mobileDropdown.classList.remove('active');
+        }
+        
         // 隐藏搜索框部分，但保留时间日期
         const searchBox = document.querySelector('.search-boxes-container');
         searchBox.style.opacity = '0';

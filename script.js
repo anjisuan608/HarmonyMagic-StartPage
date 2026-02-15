@@ -2634,6 +2634,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 通知呈现器
     const noticesContainer = document.getElementById('notices');
 
+    // 通知全局配置
+    const noticeConfig = {
+        enabled: true  // 是否在页面上显示通知，false则只输出console.log
+    };
+
     // 通知等级配置
     const NOTICE_LEVELS = {
         fatal: { color: '#f7a699', duration: 60000 },
@@ -2661,17 +2666,23 @@ document.addEventListener('DOMContentLoaded', async function() {
      * 发送通知
      * @param {string} content - 通知内容
      * @param {string} level - 通知等级: fatal, error, warns, info, debug
-     * @param {Object} options - 可选配置: customColor(自定义颜色), customDuration(自定义持续时间ms)
+     * @param {Object} options - 可选配置: customColor(自定义颜色), customDuration(自定义持续时间ms), showOnPage(是否在页面显示，默认为true)
      */
     function sendNotice(content, level = 'info', options = {}) {
         const config = NOTICE_LEVELS[level] || NOTICE_LEVELS.info;
         const color = options.customColor || config.color;
         const duration = options.customDuration !== undefined ? options.customDuration : config.duration;
+        const showOnPage = options.showOnPage !== false && noticeConfig.enabled;  // 默认为true，受全局配置影响
 
         // 使用Security模块净化内容
         const sanitizedContent = Security.sanitizeNotice(content);
         const plainText = sanitizedContent.replace(/<[^>]*>/g, '');
         console.log(`[${getTimeString()}][${level.toUpperCase()}]${plainText}`);
+
+        // 如果不显示在页面上，直接返回
+        if (!showOnPage) {
+            return;
+        }
 
         // 创建通知元素
         const notice = document.createElement('div');
@@ -2798,6 +2809,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.networkTimeoutNotice = networkTimeoutNotice;
     window.pageLoadStoppedNotice = pageLoadStoppedNotice;
     window.resourceBlockedNotice = resourceBlockedNotice;
+    window.noticeConfig = noticeConfig;  // 通知全局配置，可通过 noticeConfig.enabled = false 禁用页面通知
 
     // ==================== 设置菜单功能 ====================
     const settingsButton = document.getElementById('settings-button');

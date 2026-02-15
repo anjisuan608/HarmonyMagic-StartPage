@@ -3267,7 +3267,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     historySettings.searchHistoryRecording = newState;
                     saveHistorySettings(historySettings);
 
-                    sendNotice(newState ? '历史记录已开启' : '历史记录已关闭', 'info');
+                    sendNotice(newState ? '历史记录已开启' : '历史记录已关闭', 'info', { showOnPage: false });
                 } else if (isShowAllToggle) {
                     const showAll = this.dataset.showall === 'true';
                     const newState = !showAll;
@@ -3377,7 +3377,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         }
                     }
 
-                    sendNotice(newState ? '显示全部历史记录' : '仅显示当前搜索引擎历史记录', 'info');
+                    sendNotice(newState ? '显示全部历史记录' : '仅显示当前搜索引擎历史记录', 'info', { showOnPage: false });
                 }
             });
         });
@@ -3428,7 +3428,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 await showSearchHistory(input);
                             }
                         }
-                        sendNotice('历史记录已清除', 'info');
+                        sendNotice('历史记录已清除', 'info', { showOnPage: false });
                     };
                 } else {
                     // 清除当前搜索引擎的历史记录
@@ -3442,7 +3442,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 await showSearchHistory(input);
                             }
                         }
-                        sendNotice('当前搜索引擎历史记录已清除', 'info');
+                        sendNotice('当前搜索引擎历史记录已清除', 'info', { showOnPage: false });
                     };
                 }
                 
@@ -3919,7 +3919,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     hideSearchHistory();
                 }
 
-                sendNotice(newState ? '历史记录菜单已开启' : '历史记录菜单已关闭', 'info');
+                sendNotice(newState ? '历史记录菜单已开启' : '历史记录菜单已关闭', 'info', { showOnPage: false });
             });
         }
     }
@@ -6915,7 +6915,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         message: '确定要清除所有搜索历史记录吗？此操作无法撤销。',
         onOk: function() {
             clearSearchHistory();
-            sendNotice('历史记录已清除', 'info');
+            sendNotice('历史记录已清除', 'info', { showOnPage: false });
         }
     };
 

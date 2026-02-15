@@ -3105,7 +3105,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // 获取列表容器和头部容器
         const listContainer = container.querySelector('.search-history-list');
-        const headerContainer = container.querySelector('.search-history-header');
+        const controlContainer = container.querySelector('.search-history-control');
 
         // 获取记录状态
         const historySettings = loadHistorySettings();
@@ -3131,8 +3131,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         if (history.length === 0) {
             listContainer.innerHTML = '<div class="search-history-empty">暂无历史记录</div>';
-            if (headerContainer) {
-                headerContainer.innerHTML = headerHtml;
+            if (controlContainer) {
+                controlContainer.innerHTML = headerHtml;
             }
             bindHistoryEvents(container, headerHtml);
             return;
@@ -3153,8 +3153,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         }).join('');
 
         // 渲染控制栏到头部容器
-        if (headerContainer) {
-            headerContainer.innerHTML = headerHtml;
+        if (controlContainer) {
+            controlContainer.innerHTML = headerHtml;
         }
 
         // 绑定事件

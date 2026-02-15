@@ -3564,7 +3564,39 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 将resizeHandler绑定到dropdown上，以便隐藏时移除
             dropdown._resizeHandler = resizeHandler;
         } else {
+            // 桌面端：动态计算 max-height
+            const updateDesktopDropdownHeight = () => {
+                const searchBoxEl = document.querySelector('.search-box');
+                if (!searchBoxEl) return;
+                
+                const searchBoxRect = searchBoxEl.getBoundingClientRect();
+                const screenHeight = window.innerHeight;
+                
+                // 计算从搜索框底部到屏幕底部的可用高度
+                const availableHeight = screenHeight - searchBoxRect.bottom - 20; // 20px 底部边距
+                
+                // 取可用高度和 60vh 中的较小值作为 max-height
+                const maxHeight60vh = screenHeight * 0.6;
+                dropdown.style.maxHeight = Math.min(availableHeight, maxHeight60vh) + 'px';
+            };
+            
             dropdown.style.display = 'flex';
+            
+            // 等待DOM布局完成后计算高度
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updateDesktopDropdownHeight();
+                });
+            });
+            
+            // 监听窗口大小变化（处理输入法弹出/收起）
+            const resizeHandlerDesktop = () => {
+                updateDesktopDropdownHeight();
+            };
+            window.addEventListener('resize', resizeHandlerDesktop);
+            
+            // 将resizeHandler绑定到dropdown上，以便隐藏时移除
+            dropdown._resizeHandlerDesktop = resizeHandlerDesktop;
         }
     }
 
@@ -3576,6 +3608,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             const dropdown = box.querySelector('.search-history-dropdown');
             if (dropdown) {
                 dropdown.style.display = 'none';
+                // 恢复 max-height 到默认值
+                dropdown.style.maxHeight = '';
+                // 移除resize事件监听器
+                if (dropdown._resizeHandlerDesktop) {
+                    window.removeEventListener('resize', dropdown._resizeHandlerDesktop);
+                    dropdown._resizeHandlerDesktop = null;
+                }
             }
         });
         

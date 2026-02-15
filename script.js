@@ -3519,7 +3519,21 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // 显示下拉列表
         if (isMobile()) {
+            // 先添加active类让dropdown显示出来
             dropdown.classList.add('active');
+            
+            // 等待DOM布局完成后计算高度
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const dropdownRect = dropdown.getBoundingClientRect();
+                    const screenHeight = window.innerHeight;
+                    const availableHeight = screenHeight - dropdownRect.top - 20; // 20px 底部边距
+                    
+                    // 动态设置最大高度，取计算值和60vh中的较小值
+                    const maxHeight60vh = screenHeight * 0.6;
+                    dropdown.style.maxHeight = Math.min(availableHeight, maxHeight60vh) + 'px';
+                });
+            });
         } else {
             dropdown.style.display = 'flex';
         }

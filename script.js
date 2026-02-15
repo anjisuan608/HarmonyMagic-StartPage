@@ -3875,28 +3875,38 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 绑定历史记录设置面板的开关点击事件
     if (historySettingsPanel) {
         const showHistoryMenuItem = historySettingsPanel.querySelector('[data-setting="show-history-menu"]');
+        console.log('[DEBUG] showHistoryMenuItem元素:', showHistoryMenuItem);
         if (showHistoryMenuItem) {
             showHistoryMenuItem.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const indicator = this.querySelector('.status-indicator');
                 const icon = this.querySelector('.status-icon');
-                const isEnabled = indicator.classList.contains('enabled');
+                const isEnabled = indicator ? indicator.classList.contains('enabled') : false;
                 const newState = !isEnabled;
-                
-                // 更新UI
-                if (newState) {
-                    indicator.classList.add('enabled');
-                    if (icon) icon.innerHTML = svgOn;
-                } else {
-                    indicator.classList.remove('enabled');
-                    if (icon) icon.innerHTML = svgOff;
-                }
                 
                 // 保存设置
                 const historySettings = loadHistorySettings();
                 historySettings.showHistoryMenu = newState;
                 saveHistorySettings(historySettings);
-                
+
+                // 使用setTimeout强制异步更新UI
+                setTimeout(() => {
+                    const showHistoryMenu = historySettings.showHistoryMenu !== false;
+                    
+                    if (showHistoryMenu) {
+                        indicator.classList.add('enabled');
+                        if (icon) icon.innerHTML = svgOn;
+                    } else {
+                        indicator.classList.remove('enabled');
+                        if (icon) icon.innerHTML = svgOff;
+                    }
+                }, 0);
+
+                // 刷新历史记录菜单状态
+                if (!newState) {
+                    hideSearchHistory();
+                }
+
                 sendNotice(newState ? '历史记录菜单已开启' : '历史记录菜单已关闭', 'info');
             });
         }

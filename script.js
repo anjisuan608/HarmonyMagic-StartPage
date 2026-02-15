@@ -2061,6 +2061,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 执行搜索逻辑
             const query = input.value.trim();
             const engineId = box.getAttribute('data-engine-id');
+            
+            // 检查是否开启历史记录，并添加搜索历史
+            const historySettings = loadHistorySettings();
+            if (historySettings.searchHistoryRecording !== false && query) {
+                addSearchHistory(query, engineId);
+            }
+
             const searchUrl = getSearchUrl(engineId, query);
 
             // 搜索后清空输入框，但保持展开状态
@@ -2073,9 +2080,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
         
-        // 圆形搜索框输入框回车事件
-        circleInput.addEventListener('keypress', function(e) {
+        // 圆形搜索框输入框回车事件（使用 keydown 替代已废弃的 keypress）
+        circleInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
+                e.preventDefault();
                 performCircleSearch(box);
             }
         });

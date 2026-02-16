@@ -19,13 +19,13 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    user-select: none; /* 禁止拖拽选择 */
+    -webkit-user-select: none; /* 禁止拖拽选择 */
+    user-select: none;
 }
 
 html, body {
     touch-action: none; /* 禁止触摸操作 */
     overscroll-behavior: none; /* 禁止橡皮筋滚动 */
-    -webkit-overflow-scrolling: none; /* 禁用iOS弹性滚动 */
 }
 
 /* ==================== 深色模式变量 ==================== */
@@ -101,8 +101,8 @@ body {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 0;
@@ -193,6 +193,7 @@ body[data-filter-disabled="true"]::after {
     height: 50px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.45);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.5);
     display: flex;
@@ -348,6 +349,7 @@ body[data-filter-disabled="true"]::after {
     transition: opacity 0.3s ease,
                 visibility 0.3s ease,
                 width 0.3s ease;
+    -webkit-user-select: text;
     user-select: text;
     text-align: center; /* 文字居中对齐 */
 }
@@ -457,6 +459,7 @@ body[data-filter-disabled="true"]::after {
     overflow: visible; /* 确保展开时内容可见 */
     border-radius: 50%; /* 圆形状态 */
     background: rgba(255, 255, 255, 0.5);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.5);
     display: flex;
@@ -501,6 +504,7 @@ body[data-filter-disabled="true"]::after {
     outline: none;
     transition: all 0.3s ease;
     color: var(--text-color);
+    -webkit-user-select: text;
     user-select: text; /* 输入框允许选择文本 */
     opacity: 0;
     visibility: hidden;
@@ -655,17 +659,31 @@ body[data-filter-disabled="true"]::after {
     z-index: 2001;
     /* 移除背景板 */
     background: transparent;
+    -webkit-backdrop-filter: none;
     backdrop-filter: none;
     border-radius: 0;
     opacity: 0;
     transform: scale(0.95);
     overflow-y: auto; /* 纵向滚动条 */
-    scrollbar-width: thin; /* Firefox滚动条样式 */
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox滚动条颜色 */
+    /* 使用@supports条件应用Firefox专用滚动条样式 */
+    @supports (scrollbar-width: thin) {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    }
 }
 
+/* Webkit浏览器(Chrome/Safari)滚动条样式 */
 .menu-items::-webkit-scrollbar {
-    width: 6px;
+    width: 6px; /* Webkit滚动条宽度 */
+}
+
+.menu-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.menu-items::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3); /* Webkit滚动条颜色 */
+    border-radius: 3px;
 }
 
 .menu-items::-webkit-scrollbar-track {
@@ -964,6 +982,10 @@ body[data-filter-disabled="true"]::after {
         position: relative;
     }
 
+    .wallpaper-preview-img.no-bg {
+        background-image: none;
+    }
+
     .wallpaper-preview-img > svg {
         position: absolute;
         z-index: 0;
@@ -1242,6 +1264,11 @@ body[data-filter-disabled="true"]::after {
     transform: scale(0.95) translateY(-20px);
     transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease;
     overflow: hidden;
+}
+
+.settings-modal-content.modal-narrow {
+    width: 400px;
+    max-width: 90vw;
 }
 
 /* 壁纸面板使用更宽的布局 */
@@ -1895,6 +1922,7 @@ body[data-filter-disabled="true"]::after {
     padding: 10px 16px;
     background: #f5f5f5;
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
     transition: background 0.2s;
 }
@@ -2311,7 +2339,6 @@ body[data-filter-disabled="true"]::after {
         width: 100%;
         max-width: 100%;
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
     }
 
     .notice-item {
@@ -2901,6 +2928,7 @@ body[data-filter-disabled="true"]::after {
     padding: 10px 16px;
     background: #f5f5f5;
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
     transition: background 0.2s;
 }
@@ -3321,8 +3349,8 @@ body[data-filter-disabled="true"]::after {
     z-index: 1000;
     display: none;
     flex-direction: column;
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 /* 桌面端历史记录列表容器 - 确保至少显示一条记录 */
@@ -3356,8 +3384,8 @@ body[data-filter-disabled="true"]::after {
         display: none;
         flex-direction: column;
         background: rgba(255, 255, 255, 0.45);
-        backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
         border: 2px solid rgba(255, 255, 255, 0.5);
         border-radius: 12px;
         max-height: 60vh;
@@ -3700,6 +3728,7 @@ body[data-filter-disabled="true"]::after {
     width: calc(100% - 57px);
     max-width: 400px;
     background: rgba(255, 255, 255, 0.45);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.5);
     border-radius: 12px;

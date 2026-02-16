@@ -21,7 +21,6 @@
     <meta name="keywords" content="起始页,浏览器首页,搜索,网址导航">
     <meta property="og:title" content="HarmonyMagic 起始页">
     <meta property="og:description" content="一个简洁高效的浏览器起始页">
-    <meta name="theme-color" content="#f5f5f5">
     <title>HarmonyMagic起始页</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -88,7 +87,7 @@
                     <div class="wallpaper-custom-row">
                         <!-- 预览图 -->
                         <div class="wallpaper-preview">
-                            <div id="wallpaper-preview-img" class="wallpaper-preview-img" style="background-image: none;">
+                            <div id="wallpaper-preview-img" class="wallpaper-preview-img no-bg">
                                 <svg class="wallpaper-placeholder-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7106" width="48" height="48"><path d="M950.869333 73.130667H73.130667s-36.565333 0-36.565334 36.565333V914.346667c0 36.565333 36.565333 36.565333 36.565334 36.565333h877.738666s36.565333 0 36.565334-36.565333V109.653333s0-36.565333-36.565334-36.565333z m-36.565333 804.565333H109.653333V146.346667H914.346667V877.653333zM292.565333 402.346667a73.130667 73.130667 0 1 0 0-146.346667 73.130667 73.130667 0 0 0 0 146.346667z m365.738667-21.333334l-216.746667 328.277334-112.426666-167.594667-182.826667 281.173333H877.653333L658.346667 381.013333z" fill="#999999" p-id="7107"></path></svg>
                             </div>
                         </div>
@@ -100,13 +99,13 @@
                             </div>
                             <!-- 本地图片选项 -->
                             <div class="wallpaper-tab-content active" id="wallpaper-tab-local">
-                                <input type="text" id="wallpaper-local-url" class="wallpaper-input" placeholder="点击浏览按钮选择壁纸" readonly>
-                                <input type="file" id="wallpaper-local-file" class="wallpaper-file-input" accept="image/*">
-                                <button id="wallpaper-local-browse" class="wallpaper-browse-btn">浏览</button>
+                                <input type="text" id="wallpaper-local-url" class="wallpaper-input" placeholder="点击浏览按钮选择壁纸" readonly aria-label="本地壁纸路径">
+                                <input type="file" id="wallpaper-local-file" class="wallpaper-file-input" accept="image/*" aria-label="选择本地壁纸文件">
+                                <button id="wallpaper-local-browse" class="wallpaper-browse-btn" aria-label="浏览本地文件">浏览</button>
                             </div>
                             <!-- 在线图片选项 -->
                             <div class="wallpaper-tab-content" id="wallpaper-tab-online">
-                                <input type="url" id="wallpaper-online-url" class="wallpaper-input" placeholder="https://...">
+                                <input type="url" id="wallpaper-online-url" class="wallpaper-input" placeholder="https://..." aria-label="在线壁纸URL">
                             </div>
                         </div>
                     </div>
@@ -229,7 +228,7 @@
     <!-- 添加搜索引擎面板 -->
     <div id="add-search-engine-panel" class="settings-modal">
         <div class="settings-modal-overlay"></div>
-        <div class="settings-modal-content" style="width: 400px; max-width: 90vw;">
+        <div class="settings-modal-content modal-narrow">
             <div class="settings-header">
                 <span class="settings-title">添加搜索引擎</span>
                 <div id="add-search-engine-close" class="settings-close icon-close">
@@ -343,7 +342,7 @@
     <!-- 编辑搜索引擎面板 -->
     <div id="edit-search-engine-panel" class="settings-modal">
         <div class="settings-modal-overlay"></div>
-        <div class="settings-modal-content" style="width: 400px; max-width: 90vw;">
+        <div class="settings-modal-content modal-narrow">
             <div class="settings-header">
                 <span class="settings-title">编辑搜索引擎</span>
                 <div id="edit-search-engine-close" class="settings-close icon-close">
@@ -452,24 +451,24 @@
                     <p>Copyright &copy; 2026 <a href="mailto:anjisuan608@petalmail.com">anjisuan608</a></p>
                 </div>
                 <div class="about-license">
-                    <p>本项目基于 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a> 开源</p>
+                    <p>本项目基于 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer">GPLv3</a> 开源</p>
                 </div>
                 <div class="about-icons">
-                    <p>图标素材来自 <a href="https://www.iconfont.cn" target="_blank">阿里巴巴矢量图标库</a></p>
+                    <p>图标素材来自 <a href="https://www.iconfont.cn" target="_blank" rel="noopener noreferrer">阿里巴巴矢量图标库</a></p>
                 </div>
                 <div class="about-links">
                     <p>开源仓库：</p>
                     <div class="about-link-buttons">
-                        <a href="https://gitcode.com/anjisuan608/HarmonyMagic-StartPage" target="_blank" class="about-link-btn primary">
+                        <a href="https://gitcode.com/anjisuan608/HarmonyMagic-StartPage" target="_blank" rel="noopener noreferrer" class="about-link-btn primary">
                             GitCode <span class="main-badge">主仓库</span>
                         </a>
-                        <a href="https://gitee.com/anjisuan608/HarmonyMagic-StartPage" target="_blank" class="about-link-btn">
+                        <a href="https://gitee.com/anjisuan608/HarmonyMagic-StartPage" target="_blank" rel="noopener noreferrer" class="about-link-btn">
                             Gitee <span class="mirror-badge">镜像</span>
                         </a>
-                        <a href="https://gitlink.org.cn/anjisuan608/HarmonyMagic-StartPage" target="_blank" class="about-link-btn">
+                        <a href="https://gitlink.org.cn/anjisuan608/HarmonyMagic-StartPage" target="_blank" rel="noopener noreferrer" class="about-link-btn">
                             GitLink <span class="mirror-badge">镜像</span>
                         </a>
-                        <a href="https://github.com/anjisuan608/HarmonyMagic-StartPage" target="_blank" class="about-link-btn">
+                        <a href="https://github.com/anjisuan608/HarmonyMagic-StartPage" target="_blank" rel="noopener noreferrer" class="about-link-btn">
                             GitHub <span class="mirror-badge">镜像</span>
                         </a>
                     </div>
@@ -494,8 +493,8 @@
             <div class="search-box-circle left-circle-1" data-engine-id="1">
                 <div class="search-circle-content"></div>
                 <span class="search-engine-name"></span>
-                <input type="text" class="circle-search-input" placeholder="">
-                <button class="circle-search-btn"></button>
+                <input type="text" class="circle-search-input" placeholder="" aria-label="搜索框1">
+                <button class="circle-search-btn" aria-label="搜索1"></button>
                 <div class="search-history-dropdown">
                     <div class="search-history-list"></div>
                     <div class="search-history-control"></div>
@@ -504,8 +503,8 @@
             <div class="search-box-circle left-circle-2" data-engine-id="2">
                 <div class="search-circle-content"></div>
                 <span class="search-engine-name"></span>
-                <input type="text" class="circle-search-input" placeholder="">
-                <button class="circle-search-btn"></button>
+                <input type="text" class="circle-search-input" placeholder="" aria-label="搜索框2">
+                <button class="circle-search-btn" aria-label="搜索2"></button>
                 <div class="search-history-dropdown">
                     <div class="search-history-list"></div>
                     <div class="search-history-control"></div>
@@ -514,8 +513,8 @@
             <div class="search-box-circle left-circle-3" data-engine-id="3">
                 <div class="search-circle-content"></div>
                 <span class="search-engine-name"></span>
-                <input type="text" class="circle-search-input" placeholder="">
-                <button class="circle-search-btn"></button>
+                <input type="text" class="circle-search-input" placeholder="" aria-label="搜索框3">
+                <button class="circle-search-btn" aria-label="搜索3"></button>
                 <div class="search-history-dropdown">
                     <div class="search-history-list"></div>
                     <div class="search-history-control"></div>
@@ -526,8 +525,8 @@
             <div class="search-box-circle center-0 expanded" data-engine-id="4">
                 <div class="search-circle-content"></div>
                 <span class="search-engine-name"></span>
-                <input type="text" class="circle-search-input" placeholder="">
-                <button class="circle-search-btn"></button>
+                <input type="text" class="circle-search-input" placeholder="" aria-label="主搜索框">
+                <button class="circle-search-btn" aria-label="搜索"></button>
                 <div class="search-history-dropdown">
                     <div class="search-history-list"></div>
                     <div class="search-history-control"></div>
@@ -537,8 +536,8 @@
             <div class="search-box-circle right-circle-1" data-engine-id="5">
                 <div class="search-circle-content"></div>
                 <span class="search-engine-name"></span>
-                <input type="text" class="circle-search-input" placeholder="">
-                <button class="circle-search-btn"></button>
+                <input type="text" class="circle-search-input" placeholder="" aria-label="搜索框5">
+                <button class="circle-search-btn" aria-label="搜索5"></button>
                 <div class="search-history-dropdown">
                     <div class="search-history-list"></div>
                     <div class="search-history-control"></div>
@@ -547,8 +546,8 @@
             <div class="search-box-circle right-circle-2" data-engine-id="6">
                 <div class="search-circle-content"></div>
                 <span class="search-engine-name"></span>
-                <input type="text" class="circle-search-input" placeholder="">
-                <button class="circle-search-btn"></button>
+                <input type="text" class="circle-search-input" placeholder="" aria-label="搜索框6">
+                <button class="circle-search-btn" aria-label="搜索6"></button>
                 <div class="search-history-dropdown">
                     <div class="search-history-list"></div>
                     <div class="search-history-control"></div>
@@ -557,8 +556,8 @@
             <div class="search-box-circle right-circle-3" data-engine-id="7">
                 <div class="search-circle-content"></div>
                 <span class="search-engine-name"></span>
-                <input type="text" class="circle-search-input" placeholder="">
-                <button class="circle-search-btn"></button>
+                <input type="text" class="circle-search-input" placeholder="" aria-label="搜索框7">
+                <button class="circle-search-btn" aria-label="搜索7"></button>
                 <div class="search-history-dropdown">
                     <div class="search-history-list"></div>
                     <div class="search-history-control"></div>

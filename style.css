@@ -599,6 +599,7 @@ body[data-filter-disabled="true"]::after {
     opacity: 1;
     visibility: visible;
     transition: all 0.3s ease;
+    fill: #515151 !important;
 }
 
 /* 深色模式适配 - 图标变亮以在深色背景上清晰显示 */

@@ -1154,9 +1154,12 @@ body[data-filter-disabled="true"]::after {
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     min-width: 160px;
+    max-height: 60vh;
     padding: 8px 0;
     display: none;
     z-index: 10002;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* 深色模式适配 */

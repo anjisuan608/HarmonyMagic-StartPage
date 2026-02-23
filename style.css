@@ -3064,14 +3064,20 @@ body[data-filter-disabled="true"]::after {
 
 .search-engine-item-name {
     flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 150px;
+    overflow-x: auto;
     white-space: nowrap;
     font-size: 14px;
     color: var(--modal-text);
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+/* 隐藏文字区域的滚动条 */
+.search-engine-item-name::-webkit-scrollbar {
+    height: 0;
+    width: 0;
 }
 
 /* 深色模式适配 */

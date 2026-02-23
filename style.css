@@ -2725,6 +2725,16 @@ body[data-filter-disabled="true"]::after {
 
 #about-panel .settings-modal-content {
     width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#about-panel .about-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(90vh - 60px);
 }
 
 .about-title {

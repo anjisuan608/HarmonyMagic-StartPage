@@ -2696,6 +2696,9 @@ body[data-filter-disabled="true"]::after {
     font-size: 12px;
     text-align: center;
     border-radius: 0 0 10px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 关于面板样式 */

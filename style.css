@@ -2995,6 +2995,24 @@ body[data-filter-disabled="true"]::after {
     flex-direction: column;
     gap: 2px;
     padding: 0 8px;
+    overflow-x: auto;
+}
+
+.search-engine-items::-webkit-scrollbar {
+    height: 6px;
+}
+
+.search-engine-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.search-engine-items::-webkit-scrollbar-thumb {
+    background: #cccccc;
+    border-radius: 3px;
+}
+
+.search-engine-items::-webkit-scrollbar-thumb:hover {
+    background: #aaaaaa;
 }
 
 .search-engine-item {

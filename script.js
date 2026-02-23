@@ -3735,15 +3735,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             const url = wp.querySelector('url')?.textContent || '';
             const comment = wp.querySelector('comment')?.textContent || '';
             
-            // 缩略图URL（添加尺寸参数）
-            const thumbnailUrl = url + '&width=240&height=135&crop=1';
-            
+            // 缩略图URL（直接使用原始URL，尺寸由CSS控制）
             const item = document.createElement('div');
             item.className = 'wallpaper-preset-item';
             item.dataset.id = id;
             item.title = comment; // 悬停显示 comment
             item.innerHTML = `
-                <div class="wallpaper-preset-img" style="background-image: url('${thumbnailUrl}');"></div>
+                <div class="wallpaper-preset-img" style="background-image: url('${url}');"></div>
                 <div class="wallpaper-preset-name">${title}</div>
                 <div class="wallpaper-preset-checkmark">✓</div>
             `;

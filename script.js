@@ -4928,6 +4928,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const item = document.createElement('div');
             item.className = 'search-engine-item';
             item.dataset.engineId = engine.id;
+            item.title = engine.comment || ''; // 悬停显示 comment
             const isPreset = presetIds.includes(engine.id); // 判断是否为预设搜索引擎
             const isFirst = index === 0;
             const isLast = index === engines.length - 1;
@@ -6884,6 +6885,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const item = document.createElement('div');
             item.className = 'search-engine-item';
             item.dataset.engineId = engine.id;
+            item.title = engine.comment || ''; // 悬停显示 comment
             const isPreset = presetIds.includes(engine.id);
             const isFirst = index === 0;
             const isLast = index === engines.length - 1;

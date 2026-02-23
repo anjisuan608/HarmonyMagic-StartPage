@@ -2033,14 +2033,20 @@ body[data-filter-disabled="true"]::after {
 
 .edit-shortcut-item-text {
     flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 150px;
+    overflow-x: auto;
     white-space: nowrap;
     font-size: 14px;
     color: #333;
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+/* 隐藏文字区域的滚动条 */
+.edit-shortcut-item-text::-webkit-scrollbar {
+    height: 0;
+    width: 0;
 }
 
 .preset-tag {
